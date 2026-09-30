@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Carnet d'entraînement</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#1C2620">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Carnet">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -208,6 +216,9 @@ tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
 .tot{font-size:.85rem;color:var(--muted);margin-top:4px}
 .chk{display:flex;flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:.88rem}
 .chk input{width:16px;height:16px;accent-color:var(--accent)}
+.perf-sub{font-size:.85rem;color:var(--muted);font-weight:600;margin:10px 0 2px}
+#murphTable td.l b{font-family:"Barlow Condensed",sans-serif;font-size:1.1rem}
+.limit{color:var(--warn);font-weight:700}
 .kcal-line{margin:10px 0 0;font-size:.95rem}
 .kcal-line b{font-family:"Barlow Condensed",sans-serif;font-size:1.3rem}
 #goalText p{margin:6px 0 0}
@@ -292,6 +303,7 @@ tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
           <label>Intitulé<input type="text" id="s-title"></label>
           <label>Durée (min)<input type="number" id="s-duration" min="0" step="5" inputmode="numeric"></label>
           <div class="full">
+            <p class="hint" id="s-note" hidden style="margin:0 0 8px;color:var(--ink);font-weight:600"></p>
             <p class="hint" style="margin:0 0 8px">Note le réalisé série par série (ex. <b>12,12,10,10</b> ou <b>1x12, 1x12, 1x10, 1x10</b>) et ton ressenti : la prochaine cible se calcule toute seule.</p>
             <div id="s-exercises"></div>
             <button type="button" class="addlink" id="s-addex">+ Ajouter un exercice</button>
@@ -378,7 +390,23 @@ tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
       <section class="panel">
         <h2>Tests <small>départ → meilleur résultat noté</small></h2>
         <div class="tests" id="tests"></div>
+        <div id="nextBlock" style="margin-top:16px"></div>
         <p class="hint" style="margin-top:10px">Pour noter un nouveau test, ouvre « Test Murph ce jour-là » en bas de la journée.</p>
+      </section>
+      <section class="panel">
+        <h2>Progression des perfs</h2>
+        <div class="row" style="justify-content:space-between;margin-bottom:10px">
+          <div class="seg" id="perfSeg" style="flex-wrap:wrap"></div>
+          <div class="range" id="perfRange" style="margin:0"><button data-days="90" aria-pressed="true">90 j</button><button data-days="180" aria-pressed="false">6 mois</button><button data-days="0" aria-pressed="false">Tout</button></div>
+        </div>
+        <div class="stat-row" id="perfStats"></div>
+        <div id="perfCharts"></div>
+      </section>
+      <section class="panel">
+        <h2>Simulateur Murph <small>1,6 km · 100 tractions · 200 pompes · 300 squats · 1,6 km</small></h2>
+        <div class="stat-row" id="murphStats"></div>
+        <div class="tbl"><table id="murphTable" style="min-width:520px"></table></div>
+        <p class="hint" id="murphText" style="margin-top:10px"></p>
       </section>
       <section class="panel">
         <h2>Tes séances</h2>
@@ -466,6 +494,7 @@ tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
 
 <script>
 window.CARNET_CAN_DOWNLOAD = true;
+if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));
 const HISTORY_SEED = {"2026-06-22": {"date": "2026-06-22", "weight": 111.1, "steps": 11100, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 7.42, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-06-22", "type": "Musculation", "title": "PEC / DELTO LAT", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "20 min"}, "2026-06-23": {"date": "2026-06-23", "weight": 110.0, "steps": 13100, "soreness": 3, "stress": 0, "energy": 5, "sleepHours": 7.15, "sleepQuality": 4, "note": "", "sessions": [], "cardio": ""}, "2026-06-24": {"date": "2026-06-24", "weight": 109.7, "steps": 11000, "soreness": 4, "stress": 0, "energy": 3, "sleepHours": 5.8, "sleepQuality": 3, "note": "", "sessions": [{"id": "imp2026-06-24", "type": "Musculation", "title": "Dos / Delto Post", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "25 min"}, "2026-06-25": {"date": "2026-06-25", "weight": 108.8, "steps": 13800, "soreness": 1, "stress": 1, "energy": 4, "sleepHours": 6.75, "sleepQuality": 4, "note": "", "sessions": [], "cardio": ""}, "2026-06-26": {"date": "2026-06-26", "weight": 109.4, "steps": 10200, "soreness": 0, "stress": 2, "energy": 3, "sleepHours": 7.77, "sleepQuality": 4, "note": "", "sessions": [], "cardio": ""}, "2026-06-27": {"date": "2026-06-27", "weight": 108.8, "steps": 14200, "soreness": 1, "stress": 0, "energy": 2, "sleepHours": 5.67, "sleepQuality": 2, "note": "", "sessions": [{"id": "imp2026-06-27", "type": "Musculation", "title": "Épaule / Bras", "performance": "", "perfNote": "", "pleasure": 3, "duration": null, "exercises": [], "feeling": ""}], "cardio": "25 min"}, "2026-06-28": {"date": "2026-06-28", "weight": 109.4, "steps": 10000, "soreness": 0, "stress": 0, "energy": 4, "sleepHours": 7.67, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-06-28", "type": "Musculation", "title": "Jambes", "performance": "", "perfNote": "", "pleasure": 4, "duration": null, "exercises": [], "feeling": ""}], "cardio": "25 min"}, "2026-06-29": {"date": "2026-06-29", "weight": 109.0, "steps": 14200, "soreness": 3, "stress": 0, "energy": 5, "sleepHours": 7.63, "sleepQuality": 5, "note": "# 🍔 Repas plaisir 30/06/2026\n\n## Plat\n\n* ½ avocat\n* Burger maison :\n\n  * 175 g de viande hachée à 5 % de matières grasses\n  * 1 œuf\n  * 1 pain à burger complet\n  * Sauce maison : moutarde, ketchup et skyr\n* Brocolis\n\n## Dessert\n\n* Skyr\n* Whey\n* Fruits rouges\n* Beurre de cacahuète", "sessions": [], "cardio": ""}, "2026-06-30": {"date": "2026-06-30", "weight": 109.3, "steps": 12000, "soreness": 0, "stress": 3, "energy": 5, "sleepHours": 8.02, "sleepQuality": 5, "note": "", "sessions": [{"id": "imp2026-06-30", "type": "Musculation", "title": "PEC / DELTO LAT", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "25 min"}, "2026-07-01": {"date": "2026-07-01", "weight": 110.4, "steps": 11125, "soreness": 3, "stress": 3, "energy": 2, "sleepHours": 7.03, "sleepQuality": 3, "note": "", "sessions": [{"id": "imp2026-07-01", "type": "Musculation", "title": "Dos / Delto Post", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "25 min"}, "2026-07-02": {"date": "2026-07-02", "weight": 109.4, "steps": 10350, "soreness": 0, "stress": 2, "energy": 3, "sleepHours": 5.63, "sleepQuality": 1, "note": "", "sessions": [], "cardio": ""}, "2026-07-03": {"date": "2026-07-03", "weight": 109.0, "steps": 14300, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 7.95, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-07-03", "type": "Musculation", "title": "Épaule / Bras", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-04": {"date": "2026-07-04", "weight": 108.8, "steps": 12050, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 6.4, "sleepQuality": 3, "note": "", "sessions": [{"id": "imp2026-07-04", "type": "Musculation", "title": "Jambes", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-05": {"date": "2026-07-05", "weight": 109.1, "steps": 12800, "soreness": 5, "stress": 0, "energy": 3, "sleepHours": 7.4, "sleepQuality": 4, "note": "", "sessions": [], "cardio": ""}, "2026-07-06": {"date": "2026-07-06", "weight": 108.9, "steps": 12000, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 6.67, "sleepQuality": 4, "note": "Progression générale ( poids, rep et exécution des mouvements); Cette semaine je peux définir avec précision les répétitions et les charges pour chaque mouvement de chaque séance / Run extérieur 07/07/26 : 5km / 33 minutes / 6'37", "sessions": [{"id": "imp2026-07-06", "type": "Musculation", "title": "PEC /DELTO LAT", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-07": {"date": "2026-07-07", "weight": 108.8, "steps": 18500, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 6.07, "sleepQuality": 3, "note": "", "sessions": [], "cardio": "33-run-extérieur"}, "2026-07-08": {"date": "2026-07-08", "weight": 108.5, "steps": 11200, "soreness": 2, "stress": 0, "energy": 5, "sleepHours": 7.05, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-07-08", "type": "Musculation", "title": "Dos / Delto Post", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": ""}, "2026-07-09": {"date": "2026-07-09", "weight": 108.4, "steps": 10100, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 6.48, "sleepQuality": 3, "note": "", "sessions": [], "cardio": ""}, "2026-07-10": {"date": "2026-07-10", "weight": 108.3, "steps": 12300, "soreness": 3, "stress": 2, "energy": 4, "sleepHours": 6.33, "sleepQuality": 3, "note": "", "sessions": [{"id": "imp2026-07-10", "type": "Musculation", "title": "ÉPAULES / BRAS", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-11": {"date": "2026-07-11", "weight": 109.5, "steps": 14000, "soreness": 0, "stress": 0, "energy": 4, "sleepHours": 7.32, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "34 run ext"}, "2026-07-12": {"date": "2026-07-12", "weight": 108.5, "steps": 11200, "soreness": 2, "stress": 0, "energy": 4, "sleepHours": 7.17, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-07-12", "type": "Musculation", "title": "Jambes", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-13": {"date": "2026-07-13", "weight": 108.3, "steps": 11000, "soreness": 3, "stress": 1, "energy": 4, "sleepHours": 6.55, "sleepQuality": 4, "note": "Dessert plaisir le jeudi midi : 1 cookie + fondant au chocolat   (boulangerie ) ;", "sessions": [{"id": "imp2026-07-13", "type": "Musculation", "title": "PEC / DELTO LAT", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-14": {"date": "2026-07-14", "weight": 108.0, "steps": 13500, "soreness": 2, "stress": 0, "energy": 4, "sleepHours": 7.77, "sleepQuality": 5, "note": "", "sessions": [], "cardio": "30 min run ext"}, "2026-07-15": {"date": "2026-07-15", "weight": 108.2, "steps": 11500, "soreness": 2, "stress": 1, "energy": 4, "sleepHours": 6.67, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-07-15", "type": "Musculation", "title": "Dos / Delto post", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-16": {"date": "2026-07-16", "weight": 108.8, "steps": 14000, "soreness": 4, "stress": 1, "energy": 2, "sleepHours": 7.42, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "1h20 marche"}, "2026-07-17": {"date": "2026-07-17", "weight": 108.3, "steps": 11600, "soreness": 4, "stress": 2, "energy": 2, "sleepHours": 8.52, "sleepQuality": 3, "note": "", "sessions": [], "cardio": "30 min Run"}, "2026-07-18": {"date": "2026-07-18", "weight": 108.3, "steps": 10500, "soreness": 1, "stress": 1, "energy": 4, "sleepHours": 6.5, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-07-18", "type": "Musculation", "title": "Épaules / Bras", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-19": {"date": "2026-07-19", "weight": 108.2, "steps": 11500, "soreness": 0, "stress": 2, "energy": 5, "sleepHours": 8.17, "sleepQuality": 5, "note": "", "sessions": [], "cardio": ""}, "2026-07-20": {"date": "2026-07-20", "weight": 109.1, "steps": 16130, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 6.68, "sleepQuality": 4, "note": "imprévu dimanche , je dois reporter la séance jambes à lundi. J'ai commencé la journée de dimanche en on jusqu'à midi et termine en off ce qui explique peut être cette remonté de poids, hydratation plus faible .", "sessions": [{"id": "imp2026-07-20", "type": "Musculation", "title": "Jambes", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-21": {"date": "2026-07-21", "weight": 109.1, "steps": 18200, "soreness": 0, "stress": 0, "energy": 4, "sleepHours": 6.5, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-07-21", "type": "Musculation", "title": "Pecs / Delto Lat", "performance": "", "perfNote": "", "pleasure": 4, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-22": {"date": "2026-07-22", "weight": 108.3, "steps": 13000, "soreness": 2, "stress": 0, "energy": 5, "sleepHours": 8.97, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "60 min"}, "2026-07-23": {"date": "2026-07-23", "weight": 109.0, "steps": 10500, "soreness": 0, "stress": 3, "energy": 3, "sleepHours": 6.42, "sleepQuality": 3, "note": "", "sessions": [{"id": "imp2026-07-23", "type": "Musculation", "title": "Dos / Delto post", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-24": {"date": "2026-07-24", "weight": 108.4, "steps": 16200, "soreness": 2, "stress": 3, "energy": 4, "sleepHours": 6.5, "sleepQuality": 5, "note": "", "sessions": [{"id": "imp2026-07-24", "type": "Musculation", "title": "Full body 1", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "60 min"}, "2026-07-25": {"date": "2026-07-25", "weight": 109.0, "steps": 14000, "soreness": 3, "stress": 1, "energy": 4, "sleepHours": 7.98, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-07-25", "type": "Circuit", "title": "Circuit 1", "performance": "", "perfNote": "3 tours complets + 4 eme tours thruster", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 run ext"}, "2026-07-26": {"date": "2026-07-26", "weight": 108.5, "steps": 10674, "soreness": 4, "stress": 2, "energy": 3, "sleepHours": 7.33, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "60 marche"}, "2026-07-27": {"date": "2026-07-27", "weight": 109.4, "steps": 11350, "soreness": 3, "stress": 0, "energy": 5, "sleepHours": 7.05, "sleepQuality": 5, "note": "Repas plaisir jeudi soir : melon + jambon cru ( 2 tranches ) un croque monsieur maison + fondant au chocolat boulangerie.", "sessions": [{"id": "imp2026-07-27", "type": "Musculation", "title": "Full body 1", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 run ext"}, "2026-07-28": {"date": "2026-07-28", "weight": 108.4, "steps": 10000, "soreness": 5, "stress": 0, "energy": 3, "sleepHours": 7.97, "sleepQuality": 5, "note": "", "sessions": [{"id": "imp2026-07-28", "type": "Circuit", "title": "Circuit 1", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-29": {"date": "2026-07-29", "weight": 108.4, "steps": 17500, "soreness": 4, "stress": 0, "energy": 5, "sleepHours": 7.6, "sleepQuality": 5, "note": "", "sessions": [{"id": "imp2026-07-29", "type": "Musculation", "title": "Full body 2", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "50 run ext"}, "2026-07-30": {"date": "2026-07-30", "weight": 107.9, "steps": 10500, "soreness": 3, "stress": 2, "energy": 3, "sleepHours": 7.55, "sleepQuality": 5, "note": "", "sessions": [], "cardio": "30 marche"}, "2026-07-31": {"date": "2026-07-31", "weight": 109.2, "steps": 10000, "soreness": 2, "stress": 2, "energy": 3, "sleepHours": 7.0, "sleepQuality": 5, "note": "", "sessions": [], "cardio": ""}, "2026-08-01": {"date": "2026-08-01", "weight": 108.5, "steps": 10500, "soreness": 0, "stress": 0, "energy": 4, "sleepHours": 6.75, "sleepQuality": 5, "note": "", "sessions": [], "cardio": "40 marche"}, "2026-08-02": {"date": "2026-08-02", "weight": 108.6, "steps": 19600, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 8.22, "sleepQuality": 5, "note": "", "sessions": [], "cardio": "68 min run"}, "2026-08-03": {"date": "2026-08-03", "weight": 107.9, "steps": 11500, "soreness": 0, "stress": 3, "energy": 5, "sleepHours": 7.5, "sleepQuality": 5, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-04": {"date": "2026-08-04", "weight": 107.9, "steps": 16600, "soreness": 2, "stress": 0, "energy": 3, "sleepHours": 6.5, "sleepQuality": 3, "note": "", "sessions": [], "cardio": "60 run"}, "2026-08-05": {"date": "2026-08-05", "weight": 108.5, "steps": 12600, "soreness": 3, "stress": 0, "energy": 2, "sleepHours": 6.67, "sleepQuality": 2, "note": "", "sessions": [], "cardio": "40 run"}, "2026-08-06": {"date": "2026-08-06", "weight": 108.1, "steps": null, "soreness": null, "stress": null, "energy": null, "sleepHours": 6.33, "sleepQuality": 3, "note": "", "sessions": [], "cardio": ""}, "2026-08-07": {"date": "2026-08-07", "weight": 108.5, "steps": 15000, "soreness": 1, "stress": 3, "energy": 5, "sleepHours": 9.68, "sleepQuality": 5, "note": "", "sessions": [{"id": "imp2026-08-07", "type": "Musculation", "title": "Full body 1", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 run"}, "2026-08-08": {"date": "2026-08-08", "weight": 107.9, "steps": 10000, "soreness": 2, "stress": 0, "energy": 3, "sleepHours": 6.77, "sleepQuality": 3, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-09": {"date": "2026-08-09", "weight": 107.5, "steps": null, "soreness": null, "stress": null, "energy": null, "sleepHours": null, "sleepQuality": null, "note": "", "sessions": [], "cardio": ""}, "2026-08-10": {"date": "2026-08-10", "weight": 107.9, "steps": 10000, "soreness": 0, "stress": 3, "energy": 3, "sleepHours": 7.97, "sleepQuality": 3, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-11": {"date": "2026-08-11", "weight": 108.5, "steps": 51570, "soreness": 0, "stress": 1, "energy": 4, "sleepHours": 5.4, "sleepQuality": 2, "note": "", "sessions": [{"id": "imp2026-08-11", "type": "Marche", "title": "Rando 35km", "performance": "", "perfNote": "", "pleasure": null, "duration": null, "exercises": [], "feeling": ""}], "cardio": "8h"}, "2026-08-12": {"date": "2026-08-12", "weight": 107.7, "steps": 10500, "soreness": 2, "stress": 0, "energy": 3, "sleepHours": 8, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-13": {"date": "2026-08-13", "weight": 108.3, "steps": 10100, "soreness": 0, "stress": 0, "energy": 2, "sleepHours": 6.5, "sleepQuality": 2, "note": "", "sessions": [{"id": "imp2026-08-13", "type": "Musculation", "title": "Full body 1", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-08-14": {"date": "2026-08-14", "weight": 107.3, "steps": 6000, "soreness": 2, "stress": 0, "energy": 4, "sleepHours": 8.5, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-15": {"date": "2026-08-15", "weight": 108.0, "steps": 52000, "soreness": 2, "stress": 0, "energy": 5, "sleepHours": 6, "sleepQuality": 3, "note": "", "sessions": [{"id": "imp2026-08-15", "type": "Marche", "title": "Rando 38km", "performance": "", "perfNote": "", "pleasure": null, "duration": null, "exercises": [], "feeling": ""}], "cardio": "8h"}, "2026-08-16": {"date": "2026-08-16", "weight": 107.3, "steps": 8000, "soreness": 4, "stress": 0, "energy": 4, "sleepHours": 9.67, "sleepQuality": 5, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-17": {"date": "2026-08-17", "weight": 108.3, "steps": 23000, "soreness": 2, "stress": 0, "energy": 3, "sleepHours": 4, "sleepQuality": 2, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-18": {"date": "2026-08-18", "weight": 107.2, "steps": 6000, "soreness": 4, "stress": 0, "energy": 4, "sleepHours": 8.83, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-08-18", "type": "Musculation", "title": "Full body 1", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-08-19": {"date": "2026-08-19", "weight": 106.7, "steps": 19000, "soreness": 3, "stress": 0, "energy": 4, "sleepHours": 5.25, "sleepQuality": 3, "note": "", "sessions": [{"id": "imp2026-08-19", "type": "Musculation", "title": "Full body 2", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-08-20": {"date": "2026-08-20", "weight": 106.2, "steps": 20880, "soreness": 3, "stress": 0, "energy": 3, "sleepHours": 7.25, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-21": {"date": "2026-08-21", "weight": 106.9, "steps": 23000, "soreness": 3, "stress": 0, "energy": 3, "sleepHours": 6, "sleepQuality": 2, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-22": {"date": "2026-08-22", "weight": 106.2, "steps": 20000, "soreness": 3, "stress": 0, "energy": 2, "sleepHours": 9, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-23": {"date": "2026-08-23", "weight": 106.3, "steps": 8000, "soreness": null, "stress": null, "energy": null, "sleepHours": 7.67, "sleepQuality": 5, "note": "", "sessions": [], "cardio": ""}, "2026-08-24": {"date": "2026-08-24", "weight": 107.2, "steps": 26550, "soreness": 4, "stress": 0, "energy": 4, "sleepHours": 5.75, "sleepQuality": 4, "note": "Repas plaisir vendredi soir", "sessions": [{"id": "imp2026-08-24", "type": "Musculation", "title": "Full body", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "20 min"}, "2026-08-25": {"date": "2026-08-25", "weight": 106.1, "steps": 6000, "soreness": 4, "stress": 0, "energy": 3, "sleepHours": 8.83, "sleepQuality": 5, "note": "", "sessions": [], "cardio": "20 min"}, "2026-08-26": {"date": "2026-08-26", "weight": 106.9, "steps": 20000, "soreness": 3, "stress": 0, "energy": 4, "sleepHours": 6.58, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-08-26", "type": "Musculation", "title": "Full body", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "20 min"}, "2026-08-27": {"date": "2026-08-27", "weight": 106.1, "steps": 7000, "soreness": 3, "stress": 0, "energy": 3, "sleepHours": 7, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "20 min"}, "2026-08-28": {"date": "2026-08-28", "weight": 106.2, "steps": 24500, "soreness": 4, "stress": 0, "energy": 4, "sleepHours": 6.17, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "20 min"}, "2026-08-29": {"date": "2026-08-29", "weight": 106.9, "steps": 23000, "soreness": null, "stress": null, "energy": null, "sleepHours": null, "sleepQuality": null, "note": "", "sessions": [], "cardio": "20 min"}, "2026-08-30": {"date": "2026-08-30", "weight": 106.6, "steps": 18000, "soreness": null, "stress": null, "energy": null, "sleepHours": null, "sleepQuality": null, "note": "", "sessions": [{"id": "imp2026-08-30", "type": "Musculation", "title": "Full body", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "20 min"}, "2026-08-31": {"date": "2026-08-31", "weight": 106.5, "steps": 17000, "soreness": 2, "stress": 0, "energy": 4, "sleepHours": 5, "sleepQuality": 3, "note": "", "sessions": [], "cardio": "20 min"}, "2026-09-01": {"date": "2026-09-01", "weight": 106.6, "steps": 11000, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 8.2, "sleepQuality": 5, "note": "", "sessions": [{"id": "imp2026-09-01", "type": "Musculation", "title": "Full body 1", "performance": "", "perfNote": "", "pleasure": null, "duration": null, "exercises": [], "feeling": ""}], "cardio": "20 min"}, "2026-09-02": {"date": "2026-09-02", "weight": 106.9, "steps": 20000, "soreness": null, "stress": null, "energy": 4, "sleepHours": 5, "sleepQuality": 3, "note": "", "sessions": [], "cardio": "20 min"}, "2026-09-03": {"date": "2026-09-03", "weight": 106.5, "steps": 20100, "soreness": null, "stress": null, "energy": 4, "sleepHours": 5.33, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-09-03", "type": "Musculation", "title": "Full body", "performance": "", "perfNote": "", "pleasure": null, "duration": null, "exercises": [], "feeling": ""}], "cardio": "20 min"}, "2026-09-04": {"date": "2026-09-04", "weight": 106.9, "steps": 17000, "soreness": null, "stress": null, "energy": 4, "sleepHours": 5.83, "sleepQuality": 5, "note": "", "sessions": [], "cardio": ""}, "2026-09-05": {"date": "2026-09-05", "weight": 107.5, "steps": 20000, "soreness": null, "stress": null, "energy": 4, "sleepHours": 5.83, "sleepQuality": 5, "note": "", "sessions": [], "cardio": ""}, "2026-09-06": {"date": "2026-09-06", "weight": 107.5, "steps": 25000, "soreness": null, "stress": null, "energy": 5, "sleepHours": 9.0, "sleepQuality": 5, "note": "", "sessions": [{"id": "imp2026-09-06", "type": "Musculation", "title": "Full body 2", "performance": "", "perfNote": "", "pleasure": null, "duration": null, "exercises": [], "feeling": ""}], "cardio": ""}, "2026-09-07": {"date": "2026-09-07", "weight": 105.8, "steps": 20000, "soreness": 5, "stress": 0, "energy": 5, "sleepHours": 9, "sleepQuality": 5, "note": "Blessure adducteur tendinite", "sessions": [], "cardio": ""}, "2026-09-08": {"date": "2026-09-08", "weight": 106.2, "steps": 11000, "soreness": null, "stress": null, "energy": null, "sleepHours": 6, "sleepQuality": 5, "note": "", "sessions": [], "cardio": ""}, "2026-09-09": {"date": "2026-09-09", "weight": 105.9, "steps": 17000, "soreness": null, "stress": null, "energy": null, "sleepHours": 5.83, "sleepQuality": null, "note": "", "sessions": [], "cardio": ""}, "2026-09-10": {"date": "2026-09-10", "weight": 105.3, "steps": 20000, "soreness": null, "stress": null, "energy": null, "sleepHours": 8.83, "sleepQuality": null, "note": "", "sessions": [], "cardio": ""}, "2026-09-11": {"date": "2026-09-11", "weight": 106.0, "steps": 11000, "soreness": null, "stress": null, "energy": null, "sleepHours": null, "sleepQuality": null, "note": "", "sessions": [], "cardio": ""}, "2026-09-12": {"date": "2026-09-12", "weight": 106.5, "steps": 10500, "soreness": null, "stress": null, "energy": null, "sleepHours": null, "sleepQuality": null, "note": "", "sessions": [], "cardio": ""}};
 const NUTRITION_SEED = {"on": {"meals": [{"n": 1, "name": "Matin", "items": [{"food": "Œuf x1", "q": "1", "kcal": 78.0, "p": 6.0, "g": 0.6, "l": 5.0, "alt": ""}, {"food": "Whey ISO", "q": "35", "kcal": 126.0, "p": 30.8, "g": 1.4, "l": 0.7, "alt": ""}, {"food": "Flocons d'avoine/farine d'avoine", "q": "100", "kcal": 385.0, "p": 12.0, "g": 69.0, "l": 6.0, "alt": ""}, {"food": "Lait d'amandes sans sucres ajouté", "q": "120", "kcal": 30.0, "p": 0.84, "g": 1.92, "l": 2.04, "alt": ""}, {"food": "Fruits rouges surgelés", "q": "50", "kcal": 26.5, "p": 0.3, "g": 4.95, "l": 0.25, "alt": ""}, {"food": "Chocolat 80%", "q": "10", "kcal": 58.0, "p": 0.0, "g": 3.5, "l": 5.0, "alt": "1 CARRÉ"}], "tot": {"kcal": 703.5, "p": 49.94, "g": 81.37, "l": 18.99}}, {"n": 2, "name": "Collation 1", "items": [{"food": "Whey ISO", "q": "35", "kcal": 126.0, "p": 30.8, "g": 1.4, "l": 0.7, "alt": ""}, {"food": "Galette de riz x1", "q": "4", "kcal": 108.0, "p": 2.4, "g": 24.8, "l": 0.12, "alt": ""}, {"food": "Fruits rouges surgelés", "q": "50", "kcal": 26.5, "p": 0.3, "g": 4.95, "l": 0.25, "alt": ""}], "tot": {"kcal": 260.5, "p": 33.5, "g": 31.15, "l": 1.07}}, {"n": 3, "name": "Midi", "items": [{"food": "Poulet", "q": "125", "kcal": 137.5, "p": 30.0, "g": 2.5, "l": 1.875, "alt": "OU DINDE/CREVETTE / 150G POISSON BLANC / 135g filet mignon / 125g rôti porc"}, {"food": "Riz blanc cuit", "q": "250", "kcal": 385.0, "p": 8.0, "g": 84.25, "l": 1.25, "alt": "OU PÂTES/SEMOULE/ 500G PDT / 400G PATATES DOUCES"}, {"food": "Légumes verts", "q": "100", "kcal": 29.0, "p": 2.0, "g": 2.8, "l": 0.0, "alt": "OU CRUDITÉS (TOMATES - LAITUES - CONCOMBRES)"}, {"food": "Ketchup -50% sucre", "q": "30", "kcal": 19.2, "p": 0.42, "g": 3.6, "l": 0.03, "alt": ""}], "tot": {"kcal": 570.7, "p": 40.42, "g": 93.15, "l": 3.155}}, {"n": 4, "name": "Collation 2", "items": [{"food": "Whey ISO", "q": "35", "kcal": 126.0, "p": 30.8, "g": 1.4, "l": 0.7, "alt": ""}, {"food": "Pain de mie grandes tranches x1", "q": "2", "kcal": 212.0, "p": 6.2, "g": 39.0, "l": 3.2, "alt": ""}, {"food": "Beurre d'amande", "q": "20", "kcal": 122.4, "p": 5.02, "g": 1.18, "l": 11.16, "alt": "noix de cajou, amandes..."}], "tot": {"kcal": 460.4, "p": 42.02, "g": 41.58, "l": 15.06}}, {"n": 5, "name": "Soir", "items": [{"food": "Steak Haché 5%", "q": "200", "kcal": 258.0, "p": 42.0, "g": 0.0, "l": 10.0, "alt": "OU 150G POULET/DINDE + 10G NOIX/AMANDES"}, {"food": "Pommes de terre", "q": "300", "kcal": 219.0, "p": 6.0, "g": 48.0, "l": 0.0, "alt": "OU 150G RIZ/PÂTES / 250G PATATES DOUCES"}, {"food": "Légumes verts", "q": "100", "kcal": 29.0, "p": 2.0, "g": 2.8, "l": 0.0, "alt": "OU CRUDITÉS (TOMATES - LAITUES - CONCOMBRES)"}, {"food": "Ketchup -50% sucre", "q": "30", "kcal": 19.2, "p": 0.42, "g": 3.6, "l": 0.03, "alt": ""}], "tot": {"kcal": 525.2, "p": 50.42, "g": 54.4, "l": 10.03}}], "total": {"kcal": 2520.3, "p": 216.3, "g": 301.65, "l": 48.305}, "water": "MINIMUM 3L", "salt": "SALE TES REPAS", "supps": ["Repas 1 : 8000ui D3 / Nowfoods", "Repas 1/2/4: 1000mg vitamine C / Lifepro", "R4 : Magnesium Bisglycinate 1200mg / Lifepro", "R4 : Zinc bisglycinate 25mg / Labz", "Sommeil si besoin :", "R5 : Mélatonin 2-5mg / Swanson"]}, "off": {"meals": [{"n": 1, "name": "Matin", "items": [{"food": "Œuf x1", "q": "1", "kcal": 78.0, "p": 6.0, "g": 0.6, "l": 5.0, "alt": ""}, {"food": "Whey ISO", "q": "35", "kcal": 126.0, "p": 30.8, "g": 1.4, "l": 0.7, "alt": ""}, {"food": "Flocons d'avoine/farine d'avoine", "q": "40", "kcal": 154.0, "p": 4.8, "g": 27.6, "l": 2.4, "alt": ""}, {"food": "Lait d'amandes sans sucres ajouté", "q": "120", "kcal": 30.0, "p": 0.84, "g": 1.92, "l": 2.04, "alt": ""}, {"food": "Fruits rouges surgelés", "q": "50", "kcal": 26.5, "p": 0.3, "g": 4.95, "l": 0.25, "alt": ""}, {"food": "Chocolat 80%", "q": "20", "kcal": 116.0, "p": 0.0, "g": 7.0, "l": 10.0, "alt": "2 carré"}], "tot": {"kcal": 530.5, "p": 42.74, "g": 43.47, "l": 20.39}}, {"n": 2, "name": "Midi", "items": [{"food": "Poulet", "q": "150", "kcal": 165.0, "p": 36.0, "g": 3.0, "l": 2.25, "alt": "OU DINDE/CREVETTE / 200G POISSON BLANC / 160g filet mignon / 125g rôti de porc"}, {"food": "Riz blanc cuit", "q": "150", "kcal": 231.0, "p": 4.8, "g": 50.55, "l": 0.75, "alt": "OU PÂTES/SEMOULE/ 200G PDT / 180G PATATES DOUCES"}, {"food": "Légumes verts", "q": "100", "kcal": 29.0, "p": 2.0, "g": 2.8, "l": 0.0, "alt": "OU CRUDITÉS (TOMATES - LAITUES - CONCOMBRES)"}, {"food": "Ketchup -50% sucre", "q": "30", "kcal": 19.2, "p": 0.42, "g": 3.6, "l": 0.03, "alt": ""}], "tot": {"kcal": 444.2, "p": 43.22, "g": 59.95, "l": 3.03}}, {"n": 3, "name": "Collation 1", "items": [{"food": "Whey ISO", "q": "35", "kcal": 126.0, "p": 30.8, "g": 1.4, "l": 0.7, "alt": ""}, {"food": "Pain de mie grandes tranches x1", "q": "2", "kcal": 212.0, "p": 6.2, "g": 39.0, "l": 3.2, "alt": ""}], "tot": {"kcal": 338.0, "p": 37.0, "g": 40.4, "l": 3.9}}, {"n": 4, "name": "Soir", "items": [{"food": "Saumon", "q": "125", "kcal": 280.0, "p": 25.0, "g": 0.625, "l": 20.0, "alt": "OU MAQUERAUX / SARDINE ou 125g poulet/dinde + 15g noix/amandes / 110g filet mignon / 120g rôtie"}, {"food": "Pommes de terre", "q": "250", "kcal": 182.5, "p": 5.0, "g": 40.0, "l": 0.0, "alt": "OU 125G RIZ/PÂTES/SEMOULE / 200 PATATES DOUCES"}, {"food": "Légumes verts", "q": "100", "kcal": 29.0, "p": 2.0, "g": 2.8, "l": 0.0, "alt": "OU CRUDITÉS (TOMATES - LAITUES - CONCOMBRES)"}, {"food": "Ketchup -50% sucre", "q": "30", "kcal": 19.2, "p": 0.42, "g": 3.6, "l": 0.03, "alt": ""}], "tot": {"kcal": 510.7, "p": 32.42, "g": 47.025, "l": 20.03}}, {"n": 5, "name": "Pré Dodo", "items": [{"food": "Skyr 0%", "q": "300", "kcal": 174.0, "p": 30.0, "g": 11.7, "l": 1.2, "alt": ""}, {"food": "Fruits rouges surgelés", "q": "50", "kcal": 26.5, "p": 0.3, "g": 4.95, "l": 0.25, "alt": ""}, {"food": "Miel", "q": "15", "kcal": 49.05, "p": 0.06, "g": 12.165, "l": 0.015, "alt": ""}, {"food": "Whey ISO", "q": "20", "kcal": 72.0, "p": 17.6, "g": 0.8, "l": 0.4, "alt": ""}], "tot": {"kcal": 321.55, "p": 47.96, "g": 29.615, "l": 1.865}}], "total": {"kcal": 2144.95, "p": 203.34, "g": 220.46, "l": 49.215}, "water": "4.5 à 6L/jours", "salt": "4 à 6g/jours", "supps": ["Repas 1 : 8000ui D3 / Nowfoods", "Repas 1/2/4: 1000mg vitamine C / Lifepro", "R4 : Magnesium Bisglycinate 1200mg / Lifepro", "R4 : Zinc bisglycinate 25mg / Labz", "Sommeil si besoin :", "R5 : Mélatonin 2-5mg / Swanson"]}};
 </script>
@@ -524,30 +553,41 @@ function defaultSettings(){
     ],
     baseline:{pullups:4, pushups:20, squats:70, mile:"8:13"},
     templates:[
-      {id:"s1",label:"Séance 1 — Force PDC",type:"Force PDC",run:false,ex:[{name:"Tractions",target:"6 × 2 · repos 2 min"},{name:"Pompes",target:"4 × 10 · repos 90 s"},{name:"Dips",target:"3 × 6–10 · repos 90–120 s"},{name:"Squats",target:"3 × 15"},{name:"Gainage",target:"3 × 30–45 s"}]},
-      {id:"s2",label:"Séance 2 — Course",type:"Course",run:true,ex:[{name:"Endurance facile",target:"30–35 min · 6'20–6'50/km"},{name:"Accélérations",target:"4 × 100 m un peu plus vite, récup confortable"}]},
-      {id:"s3",label:"Séance 3 — Volume Murph",type:"Volume Murph",run:false,ex:[{name:"5 rounds : 3 tractions / 6 pompes / 9 squats",target:"Total 15/30/45 · repos 60–90 s · 2 tractions si 3 devient dur · aucun échec"}]},
-      {id:"s4",label:"Séance 4 — Conditioning PDC",type:"Conditioning",run:true,ex:[{name:"4 rounds : 2–3 tractions / 10 pompes / 15 squats / 400 m",target:"Repos ~2 min"},{name:"Gainage (optionnel)",target:"2 × 30–45 s si récup excellente"}]},
+      {id:"s1",label:"Séance 1 — Force PDC + équilibre",type:"Force PDC",run:false,note:"Blocs séparés, pas de circuit. Aucune série à l'échec.",ex:[{name:"Tractions",target:"6 × 2 · repos 2 min"},{name:"Rowing inversé",target:"3 × 8–12 · repos 90 s"},{name:"Pompes",target:"4 × 10 · repos 90 s"},{name:"Dips",target:"3 × 6–10 · repos 90–120 s"},{name:"Fentes",target:"3 × 10 · par jambe · 1 semaine sur 2 : pont fessier 3 × 15–20"},{name:"Squats",target:"3 × 15"},{name:"Gainage",target:"3 × 30–45 s"}]},
+      {id:"s2",label:"Séance 2 — Course",type:"Course",run:true,note:"Allure facile : tu dois pouvoir parler.",ex:[{name:"Endurance facile",target:"30–35 min · 6'20–6'50/km"},{name:"Accélérations",target:"4 × 100 m légèrement plus rapide, récup confortable"}]},
+      {id:"s3",label:"Séance 3 — Volume Murph ajusté",type:"Volume Murph",run:false,note:"100 % PDC, pas de gilet. Si les 4 tractions deviennent difficiles, passe à 3 plutôt que forcer.",ex:[{name:"6 rounds : 4 tractions / 8 pompes / 12 squats",target:"Total 24/48/72 · repos 90 s entre les rounds"}]},
+      {id:"s4",label:"Séance 4 — Conditioning PDC",type:"Conditioning",run:true,note:"",ex:[{name:"4 rounds : 2–3 tractions / 10 pompes / 15 squats / 400 m",target:"Repos ~2 min"},{name:"Gainage (optionnel)",target:"2 × 30–45 s si récup excellente"}]},
       {id:"run",label:"Course libre",type:"Course",run:true,ex:[]},
       {id:"walk",label:"Marche / rando",type:"Marche",run:true,ex:[]},
       {id:"free",label:"Autre séance",type:"Autre",run:false,ex:[]}
     ],
     blocks:[
-      {name:"Bloc 1",period:"Sept. → ~6 semaines",content:"Fondations PDC : technique, force, volume progressif, course",from:"2026-09-01",to:"2026-10-12"},
-      {name:"Bloc 2",period:"",content:"Plus de volume + introduction progressive du 5-10-15",from:"",to:""},
-      {name:"Bloc 3",period:"",content:"Volume spécifique Murph + course sous fatigue",from:"",to:""},
-      {name:"Bloc 4",period:"",content:"1,6 km → 100/200/300 → 1,6 km + simulations",from:"",to:""},
-      {name:"Mai 2027",period:"",content:"Affûtage, récupération et Murph",from:"",to:""}
+      {name:"Bloc 1",period:"Sept. → ~5–6 semaines",content:"Fondation, technique, force PDC, tirage horizontal, jambes, endurance",from:"2026-09-01",to:"2026-10-12"},
+      {name:"Bloc 2",period:"",content:"Volume progressif et introduction du format 5/10/15",from:"",to:""},
+      {name:"Bloc 3",period:"",content:"Gros volumes, enchaînements et course sous fatigue",from:"",to:""},
+      {name:"Bloc 4",period:"",content:"Simulations 1,6 km → 100/200/300 → 1,6 km",from:"",to:""},
+      {name:"Mai 2027",period:"",content:"Réduction du volume, récupération et Murph",from:"",to:""}
     ],
+    programVersion:2,
+    nextBlock:{name:"Bloc 2", pullups:7, pushups:30, squats2:50, mile:"8:00"},
     plans:[
       {id:"on", label:"Jour ON (entraînement)", ...conv(NUTRITION_SEED.on)},
       {id:"off", label:"Jour OFF", ...conv(NUTRITION_SEED.off)}
     ]
   };
 }
-const PROG_KEYS = ["programStart","eventName","eventDate","phases","baseline","templates","blocks"];
+const PROG_KEYS = ["programStart","eventName","eventDate","phases","baseline","templates","blocks","nextBlock"];
+let settingsMigrated = false;
 function normalizeSettings(s){
+  const ver = s ? (s.programVersion||1) : 2;
   const d = defaultSettings(); const o = Object.assign(d, s||{});
+  if(ver<2){ // programme final bloc 1 (PDF « FINAL ») : séances 1 à 4, blocs et critères de passage
+    const D=defaultSettings();
+    ["s1","s2","s3","s4"].forEach(id=>{ const nt=D.templates.find(x=>x.id===id), i=(o.templates||[]).findIndex(x=>x.id===id); if(!Array.isArray(o.templates)) o.templates=[]; if(i>=0) o.templates[i]=nt; else o.templates.push(nt); });
+    o.blocks=(o.blocks||D.blocks).map(b=>{ const nb=D.blocks.find(x=>x.name===b.name); return nb?{...b, content:nb.content, period:nb.period||b.period}:b; });
+    o.nextBlock = s.nextBlock || D.nextBlock;
+    o.programVersion = 2; settingsMigrated = true;
+  }
   if(!Array.isArray(o.plans)||!o.plans.length) o.plans = defaultSettings().plans;
   if(!Array.isArray(o.templates)) o.templates = defaultSettings().templates;
   o.phases = (o.phases||[]).map(p=>({...p, detail:String(p.detail||"").replace(/Objectif\s*:?\s*~?\d+([.,]\d+)?\s*kg( à la semaine \d+)?\s*(·\s*)?/i,"").replace(/^Objectif\s*:\s*/i,"").replace(/^\((.*)\)$/,"$1").trim()}));
@@ -724,7 +764,7 @@ const apiStore = {
 };
 async function pullRemote(first){
   const [st, dd] = await Promise.all([api("GET","settings"), api("GET","days")]);
-  if(st && st.settings){ S=normalizeSettings(st.settings); try{ localStorage.setItem(SET_KEY, JSON.stringify(S)); }catch(e){} }
+  if(st && st.settings){ S=normalizeSettings(st.settings); try{ localStorage.setItem(SET_KEY, JSON.stringify(S)); }catch(e){} if(settingsMigrated){ settingsMigrated=false; await api("PUT","settings",S); } }
   else if(first){ await api("PUT","settings",S); }
   const remote={}; (dd.days||[]).forEach(d=>{ if(d&&d.date) remote[d.date]=normalize(d); });
   if(first){ // pousse ce qui n'existe que sur cet appareil
@@ -750,6 +790,8 @@ async function initDb(){
     try{ await flushPending(); await pullRemote(false); apiOk=true; setStatus("Synchronisé — accessible depuis tous tes appareils."); applySettings(); renderAll(false); }catch(e){}
   };
   document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") refresh(); });
+  window.addEventListener("online", refresh);
+  window.addEventListener("offline", ()=>setStatus("Hors ligne — tes saisies restent sur l'appareil et partiront au retour du réseau."));
   setInterval(refresh, 60000);
 }
 function applySettings(){
@@ -1009,7 +1051,7 @@ function suggestNext(last, prev, sessionRpe, prevRpe, tplTarget){
     t = join(`${p.sets} × ${s} s`, p.tail);
   } else if(p.kind==="rounds"){
     let r = p.rounds; if(dir==="up" && feel==="easy") r+=1; else if(dir==="up") dir="same"; if(dir==="down") r=Math.max(1,r-1);
-    if(e.miss) note = "Rappel : si 3 tractions par round deviennent dures, passe à 2. Aucun échec.";
+    if(e.miss) note = "Rappel : si les tractions par round deviennent dures, retires-en une (ex. 4 → 3) plutôt que forcer. Aucun échec.";
     t = p.fromName ? join(`${r} rounds`, p.tail) : join(`${r} rounds`, p.tail);
   } else if(p.kind==="duration"){
     let m = p.mins; if(dir==="up") m = Math.max(p.mins, e.value) + (feel==="easy"?3:2); if(dir==="down") m=Math.max(10,p.mins-2);
@@ -1055,6 +1097,7 @@ function applyTpl(){
   if(!t){ $("#s-exercises").innerHTML=""; return; }
   $("#s-title").value = t.label.replace(/^Séance \d+ — /,"");
   $("#s-isrun").checked = !!t.run; $("#s-run").hidden = !t.run;
+  $("#s-note").textContent = t.note||""; $("#s-note").hidden = !t.note;
   renderExRows(t.ex.map(e=>{ const r=suggestionFor(t.id, e, current?current.date:todayIso()); return {name:e.name, target:r.sug?.target || e.target, done:"", feel:null, hint:hintHtml(r)}; }));
 }
 function renderExRows(list){
@@ -1069,7 +1112,7 @@ function renderExRows(list){
 function readExRows(){ return $$("#s-exercises [data-row]").map(r=>({name:r.querySelector('[data-k=name]').value.trim(), target:r.querySelector('[data-k=target]').value.trim(), done:r.querySelector('[data-k=done]').value.trim(), feel:r.querySelector('.exfeel [aria-pressed="true"]')?.dataset.v||null})).filter(e=>e.name||e.done); }
 $("#s-addex").onclick=()=>{ const cur=readExRows(); cur.push({name:"",target:"",done:""}); renderExRows(cur); $$("#s-exercises [data-k=name]").pop().focus(); };
 $("#s-isrun").onchange=e=>{ $("#s-run").hidden=!e.target.checked; };
-function exampleFor(n){ if(/Tractions/i.test(n)) return "2,2,2,2,2,1"; if(/Pompes/i.test(n)) return "10,10,9,8"; if(/rounds/i.test(n)) return "5 rounds complets"; if(/Gainage/i.test(n)) return "45 s, 40 s, 35 s"; if(/Endurance/i.test(n)) return "32 min à 6'35"; return "fait / détail"; }
+function exampleFor(n){ const r=String(n).match(/(\d+)\s*rounds?/i); if(r) return `${r[1]} rounds complets`; if(/Tractions/i.test(n)) return "2,2,2,2,2,1"; if(/Pompes/i.test(n)) return "10,10,9,8"; if(/Rowing/i.test(n)) return "12,10,10"; if(/Fentes/i.test(n)) return "10,10,10"; if(/Pont/i.test(n)) return "20,18,15"; if(/Gainage/i.test(n)) return "45 s, 40 s, 35 s"; if(/Endurance/i.test(n)) return "32 min à 6'35"; return "fait / détail"; }
 function updatePace(){ const d=num($("#s-dist").value), t=parseTime($("#s-time").value); $("#s-pace").textContent = d&&t? fmtPace(t/d) : "–"; }
 $("#s-dist").addEventListener("input",updatePace); $("#s-time").addEventListener("input",updatePace);
 
@@ -1214,8 +1257,134 @@ $("#copyBilan").onclick=async()=>{
   catch(e){ ta.focus(); ta.select(); try{ document.execCommand("copy"); $("#copyMsg").textContent="Bilan copié"; }catch(_){ $("#copyMsg").textContent="Texte sélectionné — copie-le avec Ctrl+C"; } }
 };
 
+/* ---------- perfs : extraction depuis les séances ---------- */
+const MOVES = {
+  tractions:{label:"Tractions", re:/traction|pull.?up|chin/i, murph:100, sec:3.0, rest:25},
+  pompes:{label:"Pompes", re:/pompe|push.?up/i, murph:200, sec:1.8, rest:18},
+  squats:{label:"Squats", re:/squat/i, murph:300, sec:1.7, rest:12}
+};
+const TEST_KEY = {tractions:"pullups", pompes:"pushups", squats:"squats"};
+function paceFromText(s){ const m=String(s||"").match(/(\d+)\s*['’]\s*(\d{1,2})/); return m? +m[1]*60 + +m[2] : null; }
+function dayPerf(d){
+  const out={}; Object.keys(MOVES).forEach(k=>out[k]={vol:0,best:null});
+  let pace=null;
+  (d.sessions||[]).forEach(s=>{
+    const tm=parseTime(s.time); if(s.distance&&tm){ const p=tm/s.distance; if(p>150&&p<900) pace = pace==null?p:Math.min(pace,p); }
+    (s.exercises||[]).forEach(e=>{
+      if(!e.done) return;
+      const rm = String(e.name).match(/(\d+)\s*rounds?\s*:(.*)/i);
+      if(rm){ // ex. « 5 rounds : 3 tractions / 6 pompes / 9 squats »
+        const r = String(e.done).match(/(\d+)\s*rounds?/i), rounds = r? +r[1] : (doneNums(e.done)[0]??0);
+        [...rm[2].matchAll(/(\d+)(?:\s*[–-]\s*\d+)?\s*([a-zé]+)/gi)].forEach(x=>{ const k=Object.keys(MOVES).find(k=>MOVES[k].re.test(x[2])); if(k) out[k].vol += +x[1]*rounds; });
+        return;
+      }
+      if(/endurance|course|run|footing/i.test(e.name)){ const p=paceFromText(e.done); if(p&&p>150&&p<900) pace = pace==null?p:Math.min(pace,p); return; }
+      const k=Object.keys(MOVES).find(k=>MOVES[k].re.test(e.name)); if(!k) return;
+      const n=doneNums(e.done).filter(x=>x>0&&x<500); if(!n.length) return;
+      out[k].vol += n.reduce((a,b)=>a+b,0); out[k].best = Math.max(out[k].best??0, ...n);
+    });
+  });
+  const T=d.tests||{};
+  Object.entries(TEST_KEY).forEach(([k,tk])=>{ if(T[tk]!=null && k!=="squats") out[k].best=Math.max(out[k].best??0, Number(T[tk])); });
+  return {moves:out, pace, mile: T.mile? parseTime(T.mile) : null, squats2: T.squats!=null? Number(T.squats) : null};
+}
+let perfView="tractions", perfDays=90;
+function perfSeries(fn){
+  const keys=Object.keys(days).sort(); if(!keys.length) return [];
+  const end=todayIso(), start = perfDays ? addDays(end,-(perfDays-1)) : keys[0];
+  const n = Math.max(1, diffDays(end,start)+1), out=[];
+  for(let i=0;i<n;i++){ const d=addDays(start,i); const v = days[d] ? fn(dayPerf(days[d])) : null; out.push({d, v: v==null||v===0&&fn.skipZero!==false? (v===0?null:v) : v}); }
+  return out;
+}
+const fmtPaceShort = v => { const m=Math.floor(v/60), s=Math.round(v%60); return m+"'"+pad(s===60?0:s); };
+function renderPerf(){
+  $("#perfSeg").innerHTML = [...Object.entries(MOVES).map(([k,m])=>[k,m.label]),["course","Course"]].map(([k,l])=>`<button type="button" data-v="${k}" aria-pressed="${k===perfView}">${l}</button>`).join("");
+  $$("#perfSeg button").forEach(b=>b.onclick=()=>{ perfView=b.dataset.v; renderPerf(); });
+  $$("#perfRange button").forEach(b=>{ b.setAttribute("aria-pressed",String(Number(b.dataset.days)===perfDays)); b.onclick=()=>{ perfDays=Number(b.dataset.days); renderPerf(); }; });
+  const col=css("--accent");
+  if(perfView==="course"){
+    const ps=perfSeries(p=>p.pace), ms=perfSeries(p=>p.mile);
+    const pv=ps.filter(p=>p.v!=null), mv=ms.filter(p=>p.v!=null);
+    $("#perfStats").innerHTML = stat(pv.length?fmtPaceShort(Math.min(...pv.map(p=>p.v)))+"/km":"–","meilleure allure notée")+stat(pv.length?fmtPaceShort(pv.at(-1).v)+"/km":"–","dernière allure")+stat(mv.length?fmtSec(Math.min(...mv.map(p=>p.v))):"–","meilleur 1,6 km (test)");
+    $("#perfCharts").innerHTML = `<div class="perf-sub">Allure des sorties (plus bas = plus rapide)</div><div class="chart">${lineChart(ps,css("--steps"),"/km",0,{fmt:fmtPaceShort,h:200})}</div>`
+      + (mv.length?`<div class="perf-sub">Tests 1,6 km</div><div class="chart">${lineChart(ms,css("--steps"),"",0,{fmt:v=>fmtSec(v),h:180,connect:false})}</div>`:"")
+      + (!pv.length?`<p class="hint">Note la distance et le temps de tes sorties (ou « 32 min à 6'35 » dans le réalisé) pour suivre ton allure.</p>`:"");
+    return;
+  }
+  const m=MOVES[perfView];
+  const vs=perfSeries(p=>p.moves[perfView].vol), bs=perfSeries(p=>p.moves[perfView].best);
+  const vv=vs.filter(p=>p.v!=null), bv=bs.filter(p=>p.v!=null);
+  const last4 = vv.filter(p=>p.d>=addDays(todayIso(),-27)), prev4 = vv.filter(p=>p.d<addDays(todayIso(),-27)&&p.d>=addDays(todayIso(),-55));
+  const avgL=avg(last4.map(p=>p.v)), avgP=avg(prev4.map(p=>p.v));
+  $("#perfStats").innerHTML = stat(bv.length?Math.max(...bv.map(p=>p.v)):"–","meilleure série"+(perfView==="squats"?"":" (tests compris)"))
+    + stat(vv.length?fmtNum(Math.max(...vv.map(p=>p.v))):"–","plus gros volume en une séance")
+    + stat(avgL!=null?fmtNum(avgL,0):"–","volume moyen / séance (4 sem.)"+(avgL!=null&&avgP!=null?` · ${avgL>=avgP?"+":""}${fmtNum((avgL/avgP-1)*100,0)} % vs 4 sem. d'avant`:""))
+    + stat(`${m.murph}`,"reps dans le Murph");
+  $("#perfCharts").innerHTML = `<div class="perf-sub">Volume par séance (reps)</div><div class="chart">${barChart(vs,col,"reps",0,{min:5})}</div>`
+    + (perfView!=="squats"?`<div class="perf-sub">Meilleure série</div><div class="chart">${lineChart(bs,col,"reps",0,{h:180})}</div>`:"")
+    + (!vv.length?`<p class="hint">Note le réalisé de tes exercices (ex. 2,2,2,2,2,2) pour voir la courbe se construire.</p>`:"");
+}
+
+/* ---------- simulateur Murph ---------- */
+function capacity(){
+  // meilleure capacité récente (60 j) : séries en séance + tests
+  const since=addDays(todayIso(),-60), B=S.baseline||{};
+  const cap={tractions:num(B.pullups), pompes:num(B.pushups), squats2:num(B.squats), mile:parseTime(B.mile), src:{}};
+  Object.keys(days).filter(k=>k>=since).forEach(k=>{ const p=dayPerf(days[k]);
+    ["tractions","pompes"].forEach(m=>{ const b=p.moves[m].best; if(b!=null && (cap[m]==null||b>cap[m])){ cap[m]=b; cap.src[m]=k; } });
+    if(p.squats2!=null && (cap.squats2==null||p.squats2>cap.squats2)){ cap.squats2=p.squats2; cap.src.squats2=k; }
+    if(p.mile!=null && (cap.mile==null||p.mile<cap.mile)){ cap.mile=p.mile; cap.src.mile=k; }
+    if(p.pace!=null){ const est=p.pace*1.6*0.93; if(cap.mile==null||est<cap.mile){ cap.mile=est; cap.src.mile=k+" (allure)"; } }
+  });
+  return cap;
+}
+function simulateMurph(){
+  const c=capacity();
+  const rows=[];
+  const run1 = c.mile? c.mile*1.08 : null, run2 = c.mile? c.mile*1.25 : null;
+  const mv = (k,max)=>{ const m=MOVES[k]; if(!max) return null; const set=Math.max(1,Math.floor(max*0.5)); const sets=Math.ceil(m.murph/set); const t = m.murph*m.sec + (sets-1)*m.rest*(1+Math.max(0,(m.murph/max-10))/20); return {set, sets, t}; };
+  const pu=mv("tractions",c.tractions), ps=mv("pompes",c.pompes), sq=mv("squats", c.squats2? Math.round(c.squats2*0.6) : null);
+  rows.push(["1,6 km (départ)", run1, run1?`un peu plus lent que ton meilleur ${fmtSec(c.mile)}`:"pas de temps de référence"]);
+  rows.push(["100 tractions", pu?.t, pu?`${pu.sets} séries de ${pu.set} (max noté : ${c.tractions})`:"—"]);
+  rows.push(["200 pompes", ps?.t, ps?`${ps.sets} séries de ${ps.set} (max noté : ${c.pompes})`:"—"]);
+  rows.push(["300 squats", sq?.t, sq?`${sq.sets} séries de ${sq.set} (${c.squats2} en 2 min)`:"—"]);
+  rows.push(["1,6 km (arrivée)", run2, run2?"sous fatigue, ~25 % plus lent":"—"]);
+  const ok=rows.every(r=>r[1]!=null), total = ok? rows.reduce((a,r)=>a+r[1],0) : null;
+  const reps=rows.slice(1,4).filter(r=>r[1]!=null), limit = reps.length? reps.reduce((a,b)=>b[1]>a[1]?b:a) : null;
+  return {c, rows, total, limit};
+}
+const fmtMin = s => { if(s==null) return "–"; const h=Math.floor(s/3600), m=Math.round((s%3600)/60); return h? `${h} h ${pad(m)}` : `${m} min`; };
+function renderMurph(){
+  const R=simulateMurph();
+  $("#murphStats").innerHTML = stat(fmtMin(R.total),"temps estimé aujourd'hui (sans gilet)") + (R.limit? stat(cap(R.limit[0].replace(/^\d+ /,"")),"ce qui te coûte le plus de temps") : "") + stat(S.eventDate? fmtShort(S.eventDate)+" "+parseIso(S.eventDate).getFullYear() : "–", "date de l'événement");
+  $("#murphTable").innerHTML = `<thead><tr><th class="l">Partie</th><th>Temps estimé</th><th class="l">Base du calcul</th></tr></thead><tbody>${R.rows.map(r=>`<tr><td class="l"><b>${esc(r[0])}</b></td><td class="${R.limit&&r===R.limit?"limit":""}">${fmtMin(r[1])}</td><td class="l">${esc(r[2])}</td></tr>`).join("")}</tbody>`;
+  $("#murphText").textContent = "Estimation indicative : les séries sont calculées à ~50 % de ton maximum noté (tests ou meilleure série des 60 derniers jours), avec des temps de repos qui augmentent avec le volume. Elle se met à jour toute seule à chaque nouveau test ou record. Le vrai chrono dépendra surtout de ta gestion des séries et de ton cardio : fais une simulation réelle en bloc 4 pour la valider.";
+}
+
+function renderNextBlock(){
+  const N=S.nextBlock; if(!N){ $("#nextBlock").innerHTML=""; return; }
+  const c=capacity();
+  const lastS3 = Object.keys(days).sort().reverse().map(k=>({k,s:(days[k].sessions||[]).find(s=>s.tpl==="s3")})).find(x=>x.s);
+  let s3=null; if(lastS3){ const ex=(lastS3.s.exercises||[]).find(e=>e.done); const ev=ex?evalOcc(ex,lastS3.s.rpe):null; s3 = ev ? {ok: ev.reached && ev.feel!=="hard", date:lastS3.k} : null; }
+  const sore = avg([...Array(7)].map((_,i)=>days[addDays(todayIso(),-i)]?.soreness));
+  const mileT=parseTime(N.mile);
+  const items=[
+    ["Tractions strictes", c.tractions, N.pullups!=null?`${N.pullups}+`:null, c.tractions!=null&&N.pullups!=null?c.tractions>=N.pullups:null, v=>v],
+    ["Pompes strictes", c.pompes, N.pushups!=null?`${N.pushups}+`:null, c.pompes!=null&&N.pushups!=null?c.pompes>=N.pushups:null, v=>v],
+    ["Air squats / 2 min", c.squats2, N.squats2!=null?`${N.squats2}+`:null, c.squats2!=null&&N.squats2!=null?c.squats2>=N.squats2:null, v=>v],
+    ["1,6 km", c.mile, mileT?`≤ ${N.mile}`:null, c.mile!=null&&mileT?c.mile<=mileT:null, v=>fmtSec(v)],
+    ["Séance 3 sans échec", s3?(s3.ok?"oui":"non"):null, "oui", s3?s3.ok:null, v=>v],
+    ["Récupération sous 24–48 h", sore!=null?`courbatures ${fmtNum(sore,1)}/5`:null, "à juger", sore!=null?sore<=2:null, v=>v]
+  ].filter(x=>x[2]!=null);
+  const ok=items.filter(x=>x[3]===true).length;
+  $("#nextBlock").innerHTML = `<div class="perf-sub" style="margin-top:0">Passage au ${esc(N.name||"bloc suivant")} : ${ok}/${items.length} critères remplis</div>
+    <div class="tbl"><table style="min-width:420px"><tbody>${items.map(x=>`<tr><td class="l">${x[3]===true?"✅":x[3]===false?"⬜":"❔"} ${esc(x[0])}</td><td>${x[1]==null?"–":esc(String(x[4](x[1])))}</td><td class="l" style="color:var(--muted)">objectif ${esc(x[2])}</td></tr>`).join("")}</tbody></table></div>
+    <p class="hint" style="margin-top:6px">Valeurs = meilleur test ou meilleure série des 60 derniers jours. La récupération se lit sur tes courbatures moyennes des 7 derniers jours (≤ 2/5 = bonne) : c'est un repère, à toi de juger.</p>`;
+}
+
 /* ---------- programme : vue ---------- */
 function renderProgram(){
+  try{ renderPerf(); renderMurph(); renderNextBlock(); }catch(e){ console.error(e); }
   if(editing.prog) return;
   const all = Object.values(days).filter(d=>d.tests).sort((a,b)=>a.date<b.date?-1:1);
   const best = (k,better) => { let b=null,bd=null; all.forEach(d=>{ const v=d.tests[k]; if(v==null||v==="") return; const n = k==="mile"?parseTime(v):Number(v); if(n==null||isNaN(n)) return; if(b==null||better(n,b)){b=n;bd=d.date;} }); return b==null?null:{v:b,d:bd}; };
@@ -1228,7 +1397,7 @@ function renderProgram(){
   }).join("");
   $("#progCards").innerHTML = S.templates.map(p=>{
     const last = Object.values(days).flatMap(d=>(d.sessions||[]).filter(s=>s.tpl===p.id).map(()=>d.date)).sort().pop();
-    return `<div class="prog-card"><h3>${esc(p.label)}</h3>${p.ex.length?`<ul>${p.ex.map(e=>{ const r=suggestionFor(p.id,e,addDays(todayIso(),1)); return `<li><b>${esc(e.name)}</b>${e.target?` · ${esc(e.target)}`:""}${r.sug&&r.sug.target?`<span class="next"><span class="dir ${r.sug.dir}">${DIRL[r.sug.dir]}</span>Prochaine fois : ${esc(r.sug.target)}</span>`:""}</li>`; }).join("")}</ul>`:'<p class="hint" style="margin:0">Séance libre, sans exercices prévus.</p>'}
+    return `<div class="prog-card"><h3>${esc(p.label)}</h3>${p.note?`<p class="hint" style="margin:0 0 6px">${esc(p.note)}</p>`:""}${p.ex.length?`<ul>${p.ex.map(e=>{ const r=suggestionFor(p.id,e,addDays(todayIso(),1)); return `<li><b>${esc(e.name)}</b>${e.target?` · ${esc(e.target)}`:""}${r.sug&&r.sug.target?`<span class="next"><span class="dir ${r.sug.dir}">${DIRL[r.sug.dir]}</span>Prochaine fois : ${esc(r.sug.target)}</span>`:""}</li>`; }).join("")}</ul>`:'<p class="hint" style="margin:0">Séance libre, sans exercices prévus.</p>'}
       <p class="hint" style="margin:8px 0 0">${last?`Dernière fois : ${fmtShort(last)}`:"Pas encore notée"}</p></div>`;
   }).join("");
   const t=todayIso();
@@ -1293,7 +1462,7 @@ function renderProgEditor(){
     ${E.templates.map((t,ti)=>`<div class="ed-card">
       <div class="ed-head">${I(`templates.${ti}.label`,t.label,"text",'aria-label="Nom de la séance"')}
         <label class="chk">${I(`templates.${ti}.run`,t.run,"bool")} Avec distance</label>${MOVE("templates",ti,n,"la séance")}</div>
-      <label style="margin-bottom:8px">Catégorie${I(`templates.${ti}.type`,t.type)}</label>
+      <div class="grid" style="margin-bottom:8px"><label>Catégorie${I(`templates.${ti}.type`,t.type)}</label><label style="grid-column:span 2">Consigne${I(`templates.${ti}.note`,t.note||"")}</label></div>
       <div class="ed-row ex" style="font-size:.75rem;color:var(--muted);font-weight:600"><span>Exercice</span><span>Prévu (séries, reps, repos…)</span><span></span></div>
       ${t.ex.map((e,ei)=>`<div class="ed-row ex">${I(`templates.${ti}.ex.${ei}.name`,e.name,"text",'aria-label="Exercice"')}${I(`templates.${ti}.ex.${ei}.target`,e.target,"text",'aria-label="Prévu"')}${MOVE(`templates.${ti}.ex`,ei,t.ex.length,"l'exercice")}</div>`).join("")}
       ${ADD(`templates.${ti}.ex`,"ex","Ajouter un exercice")}
@@ -1311,6 +1480,9 @@ function renderProgEditor(){
       ${E.phases.map((p,pi)=>`<div class="ed-row phase">${I(`phases.${pi}.from`,p.from,"num")}${I(`phases.${pi}.to`,p.to,"num")}${I(`phases.${pi}.name`,p.name)}${I(`phases.${pi}.target`,p.target,"num")}${I(`phases.${pi}.detail`,p.detail)}${MOVE("phases",pi,E.phases.length,"la phase")}</div>`).join("")}
     </div>
     ${ADD("phases","phase","Ajouter une phase")}
+  </section>
+  <section class="panel"><h2>Critères de passage au bloc suivant</h2>
+    <div class="grid"><label>Bloc visé${I("nextBlock.name",E.nextBlock?.name)}</label><label>Tractions strictes (min.)${I("nextBlock.pullups",E.nextBlock?.pullups,"num")}</label><label>Pompes strictes (min.)${I("nextBlock.pushups",E.nextBlock?.pushups,"num")}</label><label>Air squats / 2 min (min.)${I("nextBlock.squats2",E.nextBlock?.squats2,"num")}</label><label>1,6 km (max., mm:ss)${I("nextBlock.mile",E.nextBlock?.mile)}</label></div>
   </section>
   <section class="panel"><h2>Blocs de progression</h2>
     <div class="tbl">
@@ -1403,20 +1575,21 @@ function series(field){ const end=todayIso(), out=[]; for(let i=rangeDays-1;i>=0
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 function axisLabels(pts,W,pl,pr,H){ const step=Math.ceil(pts.length/7); let t=""; pts.forEach((p,i)=>{ if(i%step===0||i===pts.length-1){ const x=pl+(i+.5)*(W-pl-pr)/pts.length; t+=`<text x="${x}" y="${H-6}" text-anchor="middle" font-size="11" fill="${css("--muted")}">${fmtShort(p.d)}</text>`; }}); return t; }
 function lineChart(pts,color,unit,dec,opts={}){
-  const W=760,H=240,pl=44,pr=12,pt=14,pb=26;
+  const W=760,H=opts.h||240,pl=44,pr=12,pt=14,pb=26, F = opts.fmt || (v=>fmtNum(v,dec));
   const vals=pts.filter(p=>p.v!=null).map(p=>p.v);
   if(!vals.length) return '<p class="empty">Pas encore de données sur cette période.</p>';
   let all=[...vals]; if(opts.target) all.push(opts.target);
   let mn=Math.min(...all), mx=Math.max(...all); if(mn===mx){mn-=1;mx+=1;} const pv=(mx-mn)*.1; mn-=pv; mx+=pv;
   const X=i=>pl+(i+.5)*(W-pl-pr)/pts.length, Y=v=>pt+(1-(v-mn)/(mx-mn))*(H-pt-pb);
-  let g=""; for(let k=0;k<=3;k++){ const v=mn+(mx-mn)*k/3,y=Y(v); g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${css("--line")}"/><text x="${pl-6}" y="${y+4}" text-anchor="end" font-size="11" fill="${css("--muted")}">${fmtNum(v,dec)}</text>`; }
+  let g=""; for(let k=0;k<=3;k++){ const v=mn+(mx-mn)*k/3,y=Y(v); g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${css("--line")}"/><text x="${pl-6}" y="${y+4}" text-anchor="end" font-size="11" fill="${css("--muted")}">${F(v)}</text>`; }
   if(opts.target){ const y=Y(opts.target); g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${css("--good")}" stroke-dasharray="5 4"/><text x="${W-pr}" y="${y-5}" text-anchor="end" font-size="11" fill="${css("--good")}">objectif ${opts.target} kg</text>`; }
   let ma="";
   if(opts.ma){ const P=pts.map((p,i)=>{ const w=pts.slice(Math.max(0,i-6),i+1).map(x=>x.v).filter(v=>v!=null); return w.length&&p.v!=null?[X(i),Y(avg(w))]:null; }).filter(Boolean);
     ma=`<path d="${P.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ")}" fill="none" stroke="${color}" stroke-width="3.5" stroke-linejoin="round"/>`; }
   const P=pts.map((p,i)=>p.v==null?null:[X(i),Y(p.v)]).filter(Boolean);
   const path=P.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
-  const dots=pts.map((p,i)=>p.v==null?"":`<circle cx="${X(i)}" cy="${Y(p.v)}" r="2.8" fill="${color}"><title>${fmtShort(p.d)} : ${fmtNum(p.v,dec)} ${unit}</title></circle>`).join("");
+  const dots=pts.map((p,i)=>p.v==null?"":`<circle cx="${X(i)}" cy="${Y(p.v)}" r="2.8" fill="${color}"><title>${fmtShort(p.d)} : ${F(p.v)} ${unit}</title></circle>`).join("");
+  if(opts.connect===false) return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Courbe">${g}${dots.replace(/r="2.8"/g,'r="4"')}${axisLabels(pts,W,pl,pr,H)}</svg>`;
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Courbe">${g}<path d="${path}" fill="none" stroke="${color}" stroke-width="1.2" opacity="${opts.ma?.45:1}"/>${ma}${dots}${axisLabels(pts,W,pl,pr,H)}</svg>`;
 }
 function barChart(pts,color,unit,dec,opts={}){
