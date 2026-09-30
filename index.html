@@ -208,6 +208,22 @@ tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
 .tot{font-size:.85rem;color:var(--muted);margin-top:4px}
 .chk{display:flex;flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:.88rem}
 .chk input{width:16px;height:16px;accent-color:var(--accent)}
+.kcal-line{margin:10px 0 0;font-size:.95rem}
+.kcal-line b{font-family:"Barlow Condensed",sans-serif;font-size:1.3rem}
+#goalText p{margin:6px 0 0}
+.exrow{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--surface)}
+.exhead{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.exhead input{flex:1;font-weight:600}
+.exgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.exgrid label{font-size:.78rem}
+.exgrid input{padding:7px 9px;font-size:.92rem}
+.exfeel{margin-top:8px}
+.exfeel button{padding:6px 0;font-size:.85rem}
+.exhint{margin:8px 0 0;font-size:.84rem;color:var(--muted);line-height:1.4}
+.dir{display:inline-block;font-weight:700;border-radius:6px;padding:0 6px;margin-right:4px}
+.dir.up{color:var(--good);border:1px solid var(--good)} .dir.same{color:var(--muted);border:1px solid var(--line)} .dir.down{color:#B26A00;border:1px solid #B26A00}
+.next{font-size:.84rem;color:var(--muted);display:block;margin-top:1px}
+@media (max-width:520px){.exgrid{grid-template-columns:1fr}}
 .sub{font-family:"Barlow Condensed",sans-serif;font-size:1.2rem;margin:14px 0 6px}
 </style>
 </head>
@@ -255,6 +271,7 @@ tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
       <h2>Condition physique</h2>
       <div class="grid">
         <label>Cardio / activité<input type="text" id="cardio" placeholder="ex. 30 min vélo, 60 marche"></label>
+        <label>Calories actives (montre)<input type="number" id="watchKcal" min="0" step="10" inputmode="numeric" placeholder="facultatif"></label>
       </div>
       <div class="grid2" style="margin-top:12px">
         <label>Énergie (0–5)<div class="scale" data-field="energy"></div></label>
@@ -275,7 +292,7 @@ tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
           <label>Intitulé<input type="text" id="s-title"></label>
           <label>Durée (min)<input type="number" id="s-duration" min="0" step="5" inputmode="numeric"></label>
           <div class="full">
-            <div class="ed-row ex3 hd" style="font-size:.8rem;color:var(--muted);font-weight:600"><span>Exercice</span><span>Prévu</span><span>Réalisé</span><span></span></div>
+            <p class="hint" style="margin:0 0 8px">Note le réalisé série par série (ex. <b>12,12,10,10</b> ou <b>1x12, 1x12, 1x10, 1x10</b>) et ton ressenti : la prochaine cible se calcule toute seule.</p>
             <div id="s-exercises"></div>
             <button type="button" class="addlink" id="s-addex">+ Ajouter un exercice</button>
           </div>
@@ -292,7 +309,7 @@ tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
               <button type="button" data-v="regression">Régression</button>
             </div>
           </label>
-          <label class="full">Intensité perçue (RPE 1–10)<div class="scale" data-field="s-rpe" data-min="1" data-max="10"></div></label>
+          <label class="full">Intensité de la séance (RPE 1–10, facultatif)<div class="scale" data-field="s-rpe" data-min="1" data-max="10"></div></label>
           <label class="full">Plaisir sur la séance (0–5)<div class="scale" data-field="s-pleasure"></div></label>
           <label class="full">Mon avis, ressentis<textarea id="s-feeling" placeholder="Forme, douleurs, ce qui a marché, ce que je change la prochaine fois…"></textarea></label>
         </div>
@@ -305,10 +322,15 @@ tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
       <div class="seg" id="dayTypeSeg" style="margin-bottom:12px;flex-wrap:wrap"></div>
       <p class="hint" id="nutriHint"></p>
       <div class="meals" id="mealChecks"></div>
+      <p class="kcal-line" id="kcalLine"></p>
       <div class="grid" style="margin-top:12px">
         <label>Eau (L) <span id="waterHint" style="font-weight:400"></span><input type="number" id="water" step="0.25" min="0" inputmode="decimal"></label>
         <label class="toggle" style="align-self:end;padding-bottom:10px"><input type="checkbox" id="ecart"> Repas plaisir / écart</label>
-        <label class="full" id="ecartWrap" hidden>Détail de l'écart<input type="text" id="ecartNote" placeholder="ex. burger maison + dessert"></label>
+        <div class="full grid" id="ecartWrap" hidden>
+          <label>Détail de l'écart<input type="text" id="ecartNote" placeholder="ex. burger maison + dessert"></label>
+          <label>Calories estimées de l'écart<input type="number" id="ecartKcal" min="0" step="50" inputmode="numeric" placeholder="ex. 900"></label>
+        </div>
+        <label>Corriger : calories réelles du jour<input type="number" id="kcalIn" min="0" step="10" inputmode="numeric" placeholder="si tu as compté toi-même"></label>
       </div>
     </section>
 
@@ -416,6 +438,7 @@ tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
       <button data-days="180" aria-pressed="false">6 mois</button>
     </div>
     <section class="panel pace-panel" id="pacePanel"><h2>Rythme vers l'objectif <small>tendance des 3 dernières semaines</small></h2><div class="stat-row" id="st-pace"></div><div id="paceText"></div></section>
+    <section class="panel" id="goalPanel"><h2>Objectif réaliste <small>d'après ce que tu as déjà perdu, tes apports et ton activité</small></h2><div class="stat-row" id="st-goal"></div><div id="goalText"></div><div class="row" id="goalActions" style="margin-top:12px"></div></section>
     <section class="panel"><h2>Poids <small>trait pointillé : objectif de phase · courbe épaisse : moyenne 7 j</small></h2><div class="stat-row" id="st-weight"></div><div class="chart" id="ch-weight"></div></section>
     <section class="panel"><h2>Pas / NEAT</h2><div class="stat-row" id="st-steps"></div><div class="chart" id="ch-steps"></div></section>
     <section class="panel"><h2>Sommeil</h2><div class="stat-row" id="st-sleep"></div><div class="chart" id="ch-sleep"></div></section>
@@ -662,7 +685,7 @@ function saveLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(days)); r
 const localStore = { mode:"local", async save(day){ days[day.date]=day; if(!saveLocal()) setStatus("Stockage indisponible sur cet appareil : les données de cette session seront perdues à la fermeture."); } };
 store = localStore;
 function setStatus(t){ $("#status").textContent=t; }
-const emptyDay = date => ({date, weight:null, steps:null, sleepHours:null, sleepQuality:null, energy:null, stress:null, soreness:null, cardio:"", dayType:null, meals:{}, water:null, ecart:false, ecartNote:"", note:"", tests:null, sessions:[]});
+const emptyDay = date => ({date, weight:null, steps:null, sleepHours:null, sleepQuality:null, energy:null, stress:null, soreness:null, cardio:"", dayType:null, meals:{}, water:null, ecart:false, ecartNote:"", note:"", tests:null, sessions:[], kcalIn:null, ecartKcal:null, watchKcal:null});
 function normalize(d){ const o=Object.assign(emptyDay(d.date),d); o.sessions=(o.sessions||[]).map(s=>({...s, pleasure: s.pleasure ?? s.rating ?? null})); o.meals=o.meals||{}; return o; }
 
 /* ---------- synchro serveur (routes /api → Supabase) ---------- */
@@ -765,6 +788,7 @@ function loadDay(date){
   $("#sleepHours").value = current.sleepHours ?? "";
   $("#cardio").value = current.cardio || "";
   $("#water").value = current.water ?? "";
+  $("#kcalIn").value = current.kcalIn ?? ""; $("#ecartKcal").value = current.ecartKcal ?? ""; $("#watchKcal").value = current.watchKcal ?? "";
   $("#ecart").checked = !!current.ecart; $("#ecartNote").value = current.ecartNote||""; $("#ecartWrap").hidden = !current.ecart;
   $("#dayNote").value = current.note || "";
   const t = current.tests||{};
@@ -789,6 +813,8 @@ function readForm(){
   current.sleepHours = num($("#sleepHours").value);
   current.cardio = $("#cardio").value.trim();
   current.water = num($("#water").value);
+  current.kcalIn = num($("#kcalIn").value); current.watchKcal = num($("#watchKcal").value);
+  current.ecartKcal = $("#ecart").checked ? num($("#ecartKcal").value) : null;
   current.ecart = $("#ecart").checked; current.ecartNote = current.ecart ? $("#ecartNote").value.trim() : "";
   current.note = $("#dayNote").value.trim();
   ["sleepQuality","energy","stress","soreness","dayType"].forEach(f=>current[f]=draft[f]);
@@ -798,6 +824,8 @@ function readForm(){
   $$("#mealChecks input").forEach(i=>{ current.meals[i.dataset.n]=i.checked; });
   current.updatedAt = new Date().toISOString();
 }
+["#kcalIn","#ecartKcal","#watchKcal"].forEach(s=>$(s).addEventListener("input",()=>{ markDirty(); updateKcalLine(); }));
+$("#ecart").addEventListener("change",()=>updateKcalLine());
 ["#weight","#steps","#sleepHours","#cardio","#water","#dayNote","#ecartNote","#t-pullups","#t-pushups","#t-squats","#t-mile"].forEach(s=>$(s).addEventListener("input",markDirty));
 ["#weight","#steps","#sleepHours"].forEach((s,i,a)=>$(s).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); if(a[i+1]) $(a[i+1]).focus(); else { e.target.blur(); doSave(); } } }));
 $("#ecart").addEventListener("change",e=>{ $("#ecartWrap").hidden=!e.target.checked; markDirty(); });
@@ -810,7 +838,208 @@ function renderMealChecks(){
   const t = planTotals(plan);
   $("#nutriHint").textContent = `${plan.label} : ${fmtNum(t.kcal)} kcal · P ${fmtNum(t.p)} g · G ${fmtNum(t.g)} g · L ${fmtNum(t.l)} g. Coche les repas suivis comme prévu.`;
   $("#mealChecks").innerHTML = plan.meals.map(m=>`<label class="meal-check"><input type="checkbox" data-n="${esc(m.id)}" ${src[m.id]?"checked":""}><span>${esc(m.name)}<small>${m.items.map(i=>esc(i.food)).join(", ")}</small></span></label>`).join("") || '<p class="empty">Ce plan ne contient aucun repas. Ajoute-les dans Nutrition → Modifier les plans.</p>';
-  $$("#mealChecks input").forEach(i=>i.addEventListener("change",markDirty));
+  $$("#mealChecks input").forEach(i=>i.addEventListener("change",()=>{ markDirty(); updateKcalLine(); }));
+  updateKcalLine();
+}
+function updateKcalLine(){
+  if(!$("#kcalLine")) return;
+  const meals={}; $$("#mealChecks input").forEach(i=>meals[i.dataset.n]=i.checked);
+  const it = dayIntake({meals, dayType:draft.dayType, ecart:$("#ecart").checked, ecartKcal:num($("#ecartKcal").value), kcalIn:num($("#kcalIn").value)});
+  $("#kcalLine").innerHTML = !it ? `<span class="hint">Coche tes repas pour estimer tes calories du jour.</span>`
+    : `Calories du jour : <b>≈ ${fmtNum(it.kcal)} kcal</b> <span class="hint">${it.src==="manual"?"(saisies à la main)":it.src==="partial"?"(repas cochés — ajoute les calories de l'écart pour que le calcul soit juste)":"(d'après les repas cochés)"}</span>`;
+}
+
+/* ---------- calories & objectif réaliste ---------- */
+const KCAL_KG = 7700;
+function dayIntake(d){
+  if(!d) return null;
+  if(d.kcalIn!=null) return {kcal:d.kcalIn, src:"manual"};
+  const m=d.meals||{}; if(!Object.values(m).some(Boolean)) return null;
+  const plan=getPlan(d.dayType); let k=0;
+  plan.meals.forEach(x=>{ if(m[x.id]) k+=mealTotals(x).kcal; });
+  if(d.ecart){ if(d.ecartKcal==null) return {kcal:k, src:"partial"}; k+=d.ecartKcal; }
+  return {kcal:k, src:"plan"};
+}
+function slopeOf(pts){ if(pts.length<2) return null; const mx=avg(pts.map(p=>p.x)), my=avg(pts.map(p=>p.y)); let nu=0,de=0; pts.forEach(p=>{nu+=(p.x-mx)*(p.y-my); de+=(p.x-mx)**2;}); return de?nu/de:null; }
+function energyInfo(){
+  const ws=Object.values(days).filter(d=>d.weight!=null).sort((a,b)=>a.date<b.date?-1:1);
+  if(!ws.length) return null;
+  const first=ws[0], last=ws[ws.length-1], end=last.date, start=addDays(end,-27);
+  const win=ws.filter(d=>d.date>=start);
+  const slopeDay = win.length>=6 && diffDays(end,win[0].date)>=14 ? slopeOf(win.map(d=>({x:diffDays(d.date,start), y:d.weight}))) : null;
+  const recent=[...Array(28)].map((_,i)=>days[addDays(start,i)]).filter(Boolean);
+  const intakes=recent.map(dayIntake).filter(it=>it&&it.src!=="partial").map(it=>it.kcal);
+  const avgIn = intakes.length ? avg(intakes) : null;
+  const tdee = slopeDay!=null && intakes.length>=10 ? avgIn - slopeDay*KCAL_KG : null;
+  const onId=planOn().id, offId=planOff().id;
+  const onShare = recent.length ? recent.filter(d=>(d.dayType||(d.sessions?.length?onId:offId))===onId).length/recent.length : 4/7;
+  const planAvg = onShare*planTotals(planOn()).kcal + (1-onShare)*planTotals(planOff()).kcal;
+  const totalWeeks = diffDays(last.date, first.date)/7;
+  return { first, last, start, end, slopeDay, avgIn, nIn:intakes.length, tdee, planAvg, onShare,
+    histRate: totalWeeks>=2 ? (last.weight-first.weight)/totalWeeks : null,
+    recentRate: slopeDay!=null ? slopeDay*7 : null,
+    planRate: tdee!=null ? -(tdee-planAvg)*7/KCAL_KG : null,
+    watch: avg(recent.map(d=>d.watchKcal)), nWatch: recent.filter(d=>d.watchKcal!=null).length, totalWeeks };
+}
+function currentPhaseIndex(){ const w=weekNum(todayIso()); return S.phases.findIndex(p=>w>=Number(p.from)&&w<=Number(p.to)); }
+function realisticGoal(){
+  const E=energyInfo(); if(!E) return null;
+  const idx=currentPhaseIndex(), ph = idx>=0 ? S.phases[idx] : null;
+  const target = ph && ph.target!=null && ph.target!=="" ? Number(ph.target) : null;
+  let rate=null, basis=null;
+  if(E.planRate!=null && E.recentRate!=null){ rate=Math.max(E.planRate,E.recentRate); basis = rate===E.planRate?"plan":"recentVsPlan"; }
+  else if(E.planRate!=null){ rate=E.planRate; basis="plan"; }
+  else if(E.recentRate!=null){ rate=E.recentRate; basis="recent"; }
+  else if(E.histRate!=null){ rate=E.histRate; basis="hist"; }
+  const w=E.last.weight;
+  const R = {E, ph, idx, target, rate, basis, capped:false};
+  if(rate==null) return R;
+  if(rate < -0.01*w){ rate = -0.01*w; R.capped=true; R.rate=rate; }
+  R.losing = rate < -0.05;
+  R.end = ph && ph.to ? addDays(S.programStart, Number(ph.to)*7-1) : null;
+  R.weeksLeft = R.end ? Math.max(0, diffDays(R.end, E.last.date)/7) : null;
+  R.atEnd = R.losing && R.weeksLeft!=null ? w + rate*R.weeksLeft : null;
+  R.remaining = target!=null ? target - w : null;
+  R.reached = R.remaining!=null && R.remaining>=0;
+  R.weeksToTarget = R.losing && R.remaining!=null && R.remaining<0 ? R.remaining/rate : null;
+  R.reachDate = R.weeksToTarget!=null ? addDays(E.last.date, Math.ceil(R.weeksToTarget*7)) : null;
+  R.reachWeek = R.reachDate ? weekNum(R.reachDate) : null;
+  return R;
+}
+const half = v => Math.round(v*2)/2;
+function renderGoal(){
+  const R = realisticGoal(), panel=$("#goalPanel");
+  panel.hidden = !R;
+  if(!R) return;
+  const E=R.E, lost=E.first.weight-E.last.weight;
+  $("#st-goal").innerHTML =
+      stat(`${lost>=0?"−":"+"}${fmtNum(Math.abs(lost),1)} kg`, `depuis le ${fmtShort(E.first.date)} (${fmtNum(E.totalWeeks,0)} sem., moy. ${E.histRate!=null?kgw(E.histRate):"–"})`)
+    + stat(E.recentRate!=null?kgw(E.recentRate):"–", "tendance des 4 dernières semaines")
+    + stat(E.tdee!=null?`${fmtNum(Math.round(E.tdee/10)*10)} kcal`:"–", `dépense réelle estimée / jour`)
+    + stat(E.avgIn!=null?`${fmtNum(Math.round(E.avgIn/10)*10)} kcal`:"–", `apport moyen (${E.nIn}/28 j renseignés)`);
+  const s=[];
+  if(E.tdee!=null) s.push(`Sur les 4 dernières semaines, tu as mangé en moyenne ${fmtNum(Math.round(E.avgIn/10)*10)} kcal par jour et ton poids a évolué de ${kgw(E.recentRate)} : ta dépense réelle est donc d'environ ${fmtNum(Math.round(E.tdee/10)*10)} kcal par jour, séances, pas et NEAT compris. Ton plan actuel apporte en moyenne ${fmtNum(Math.round(E.planAvg/10)*10)} kcal par jour (${fmtNum(E.onShare*7,0)} jours ON par semaine) : suivi à 100 %, il donnerait ${kgw(E.planRate)}.`);
+  else s.push(`Pour estimer ta dépense réelle, il faut au moins 10 jours avec les repas cochés (ou les calories saisies) et des pesées sur 2 semaines ou plus. Pour l'instant : ${E.nIn} jour(s) renseigné(s) sur les 4 dernières semaines. En attendant, le calcul se base sur ${R.basis==="recent"?"ta tendance récente":"ta perte moyenne depuis le début"}.`);
+  if(R.rate==null) s.push(`Pas encore assez de pesées pour proposer un objectif.`);
+  else if(!R.losing) s.push(`À ce rythme, ton poids ne baisse pas ou presque : l'objectif ne sera pas atteint sans ajuster quelque chose (suivi du plan, écarts, activité). C'est un bon sujet pour ton prochain bilan avec ton coach.`);
+  else {
+    if(R.capped) s.push(`Le rythme calculé dépasse 1 % de ton poids par semaine : je le plafonne à ${kgw(R.rate)}, ce qui reste tenable sans perdre de muscle.`);
+    s.push(`Rythme retenu : ${kgw(R.rate)} (${R.basis==="plan"?"d'après ta dépense réelle et ton plan, plus prudent que ta tendance":R.basis==="recentVsPlan"?"ta tendance réelle, plus prudente que le plan suivi à 100 %":R.basis==="recent"?"d'après ta tendance récente":"d'après ta perte moyenne depuis le début"}).`);
+    if(R.target!=null && R.reached) s.push(`Tu es déjà sous ton objectif de ${fmtNum(R.target,1)} kg.`);
+    else if(R.target!=null && R.reachDate) s.push(`À ce rythme, ~${fmtNum(R.target,1)} kg serait atteint vers le ${fmtShort(R.reachDate)}${parseIso(R.reachDate).getFullYear()!==new Date().getFullYear()?" "+parseIso(R.reachDate).getFullYear():""} (semaine ${R.reachWeek}). ${R.ph&&R.ph.to&&R.reachWeek>Number(R.ph.to)?`Ta phase se termine en semaine ${R.ph.to}.`:"C'est dans les temps de ta phase."}`);
+    if(R.atEnd!=null && R.ph) s.push(`À la fin de la phase (semaine ${R.ph.to}, ${fmtShort(R.end)}), tu serais vers ${fmtNum(R.atEnd,1)} kg.`);
+  }
+  if(E.watch!=null) s.push(`Montre : ~${fmtNum(Math.round(E.watch/10)*10)} kcal actives par jour en moyenne (${E.nWatch} jours). Indicatif seulement, non utilisé dans le calcul.`);
+  $("#goalText").innerHTML = s.map(x=>`<p>${esc(x)}</p>`).join("");
+  const acts=[];
+  if(R.ph && R.losing && R.target!=null && !R.reached && R.reachWeek && R.reachWeek!==Number(R.ph.to)) acts.push(`<button class="btn ghost small" data-goal="shift" data-v="${R.reachWeek}">Garder ~${fmtNum(R.target,1)} kg → fin de phase en semaine ${R.reachWeek}</button>`);
+  if(R.ph && R.atEnd!=null && (R.target==null || Math.abs(half(R.atEnd)-R.target)>=0.5)) acts.push(`<button class="btn ghost small" data-goal="target" data-v="${half(R.atEnd)}">Garder la semaine ${R.ph.to} → viser ~${fmtNum(half(R.atEnd),1)} kg</button>`);
+  $("#goalActions").innerHTML = acts.join("");
+  $$("#goalActions [data-goal]").forEach(b=>b.onclick=async()=>{
+    const i=currentPhaseIndex(); if(i<0) return; const ph=S.phases[i], v=Number(b.dataset.v);
+    if(b.dataset.goal==="shift"){
+      const delta=v-Number(ph.to), later=S.phases.slice(i+1);
+      if(!confirm(`Fin de « ${ph.name} » en semaine ${v} au lieu de ${ph.to}.${later.length?` Les phases suivantes (${later.map(p=>p.name).join(", ")}) seront décalées de ${delta>0?"+":""}${delta} semaine(s).`:""} Confirmer ?`)) return;
+      ph.to=v; later.forEach(p=>{ if(p.from!==""&&p.from!=null) p.from=Number(p.from)+delta; if(p.to!==""&&p.to!=null) p.to=Number(p.to)+delta; });
+    } else {
+      if(!confirm(`Objectif de « ${ph.name} » : ~${fmtNum(v,1)} kg au lieu de ${ph.target!=null&&ph.target!==""?"~"+fmtNum(Number(ph.target),1)+" kg":"aucun"}. Confirmer ?`)) return;
+      ph.target=v;
+    }
+    try{ await saveSettings(); setStatus("Objectif mis à jour."); }catch(e){ setStatus("Enregistrement impossible pour l'instant — réessaie."); }
+    applySettings();
+  });
+}
+
+/* ---------- progression automatique ---------- */
+function expandDone(s){ return String(s||"").replace(/(\d+)\s*[x×]\s*(\d+)/gi,(m,a,b)=>Array(Math.min(+a,30)).fill(b).join(",")); }
+function doneNums(s){ return (expandDone(s).match(/\d+(?:\.\d+)?/g)||[]).map(Number); }
+function splitTarget(t){ const s=String(t||""), i=s.indexOf("·"); return i<0?[s.trim(),""]:[s.slice(0,i).trim(), s.slice(i).trim()]; }
+function parseTarget(target, name){
+  const [head, tail] = splitTarget(target);
+  let m;
+  if((m=head.match(/(\d+)\s*reps?\s*en\s*(\d+)\s*s[ée]ries?/i))){
+    const r = head.match(/(\d+)\s*[–-]\s*(\d+)\s*par\s*s[ée]rie/i);
+    return r ? {kind:"range", total:+m[1], sets:+m[2], lo:+r[1], hi:+r[2], tail} : {kind:"total", total:+m[1], sets:+m[2], tail};
+  }
+  if((m=head.match(/^(\d+)\s*[×x]\s*(\d+)(?:\s*[–-]\s*(\d+))?\s*(s|sec|min|m|km)?\b/i))){
+    const sets=+m[1], lo=+m[2], hi=m[3]?+m[3]:null, u=(m[4]||"").toLowerCase();
+    if(u==="s"||u==="sec") return {kind:"time", sets, secs:lo, tail};
+    if(u) return null;
+    return hi ? {kind:"range", sets, lo, hi, total:sets*lo, tail} : {kind:"total", sets, total:sets*lo, tail};
+  }
+  if((m=head.match(/^(\d+)\s*rounds?/i))) return {kind:"rounds", rounds:+m[1], tail};
+  if((m=head.match(/^(\d+)(?:\s*[–-]\s*\d+)?\s*min\b/i))) return {kind:"duration", mins:+m[1], tail: head.replace(/^(\d+)(?:\s*[–-]\s*\d+)?\s*min\b/i,"").trim() ? " "+head.replace(/^(\d+)(?:\s*[–-]\s*\d+)?\s*min\b/i,"").trim()+(tail?" "+tail:"") : tail};
+  if((m=String(name||"").match(/(\d+)\s*rounds?/i))) return {kind:"rounds", rounds:+m[1], tail:[head,tail].filter(Boolean).join(" "), fromName:true};
+  return null;
+}
+function spread(total, sets){ const b=Math.floor(total/sets), x=total%sets; return Array.from({length:sets},(_,i)=>b+(i<x?1:0)).join(","); }
+const join = (h,t) => t ? (t.startsWith("·")? `${h} ${t}` : `${h} · ${t}`) : h;
+// résultat d'une occurrence : atteint ? dépassé ? ressenti effectif
+function evalOcc(ex, sessionRpe){
+  const p = parseTarget(ex.target, ex.name); if(!p || !ex.done) return null;
+  let feel = ex.feel || (sessionRpe!=null ? (sessionRpe<=7?"easy":sessionRpe>=9?"hard":"ok") : "ok");
+  const n = doneNums(ex.done);
+  let reached=false, over=false, value=null;
+  if(p.kind==="total"||p.kind==="range"){ value=n.reduce((a,b)=>a+b,0); const sets=n.length; reached = value>=p.total && sets>=p.sets; over = value>p.total; }
+  else if(p.kind==="time"){ value=Math.min(...n); reached = n.length>=p.sets && value>=p.secs; over = value>p.secs; }
+  else if(p.kind==="rounds"){ const r=String(ex.done).match(/(\d+)\s*rounds?/i); value = r?+r[1]:(n[0]??null); reached = value!=null && value>=p.rounds; over = value>p.rounds; }
+  else if(p.kind==="duration"){ value=n[0]??null; reached = value!=null && value>=p.mins; over = value>p.mins; }
+  return {p, feel, reached, over, value, n, miss: !reached || feel==="hard"};
+}
+function suggestNext(last, prev, sessionRpe, prevRpe, tplTarget){
+  const e = evalOcc(last, sessionRpe); if(!e) return null;
+  const pe = prev ? evalOcc(prev, prevRpe) : null;
+  const {p, feel} = e;
+  let dir;
+  if(e.miss) dir = (pe && pe.miss) ? "down" : "same";
+  else if(feel==="easy" || e.over) dir="up";
+  else dir="same";
+  let t = null, note = "";
+  const base = tplTarget ? parseTarget(tplTarget, last.name) : null;
+  if(p.kind==="total"||p.kind==="range"){
+    let total = p.total, sets = p.sets;
+    if(dir==="up") total = Math.max(p.total, e.value) + (feel==="easy"?2:1);
+    if(dir==="down"){ const floor = base && base.total ? base.total : sets; total = Math.max(floor, p.total - sets); if(total===p.total) dir="same"; }
+    if(p.kind==="range" && total >= sets*p.hi){ sets+=1; t = join(`${sets} × ${p.lo}–${p.hi}`, p.tail); note="Haut de la fourchette atteint : une série de plus."; }
+    else if(p.kind==="range" && total > sets*p.lo) t = join(`${total} reps en ${sets} séries (${p.lo}–${p.hi} par série, ex. ${spread(total,sets)})`, p.tail);
+    else if(p.kind==="range") t = join(`${sets} × ${p.lo}–${p.hi}`, p.tail);
+    else t = join(`${total} reps en ${sets} séries (ex. ${spread(total,sets)})`, p.tail);
+  } else if(p.kind==="time"){
+    let s = p.secs; if(dir==="up") s = Math.max(p.secs, e.value)+5; if(dir==="down") s=Math.max(10,p.secs-5);
+    t = join(`${p.sets} × ${s} s`, p.tail);
+  } else if(p.kind==="rounds"){
+    let r = p.rounds; if(dir==="up" && feel==="easy") r+=1; else if(dir==="up") dir="same"; if(dir==="down") r=Math.max(1,r-1);
+    if(e.miss) note = "Rappel : si 3 tractions par round deviennent dures, passe à 2. Aucun échec.";
+    t = p.fromName ? join(`${r} rounds`, p.tail) : join(`${r} rounds`, p.tail);
+  } else if(p.kind==="duration"){
+    let m = p.mins; if(dir==="up") m = Math.max(p.mins, e.value) + (feel==="easy"?3:2); if(dir==="down") m=Math.max(10,p.mins-2);
+    t = `${m} min${p.tail? (p.tail.startsWith(" ")?p.tail:" "+p.tail):""}`.replace(/\s+/g," ").trim();
+    if(dir!=="down") note = note || "Garde une allure facile : tu dois pouvoir parler.";
+  }
+  if(dir==="down" && !note) note = "Deux séances difficiles de suite : on allège un peu pour repartir.";
+  return {dir, target:t, note, e};
+}
+
+const FEEL = {easy:"Facile", ok:"Bien", hard:"Très dur"};
+const DIRL = {up:"↑", same:"=", down:"↓"};
+const normName = s => String(s||"").toLowerCase().replace(/\s+/g," ").trim();
+function exerciseHistory(tplId, exName, beforeDate){
+  const out=[], nn=normName(exName);
+  Object.keys(days).filter(k=>k<beforeDate).sort().reverse().forEach(k=>{
+    (days[k].sessions||[]).forEach(s=>{ if(s.tpl!==tplId) return; const e=(s.exercises||[]).find(x=>normName(x.name)===nn && x.done); if(e) out.push({date:k, ex:e, rpe:s.rpe??null}); });
+  });
+  return out;
+}
+function suggestionFor(tplId, tplEx, beforeDate){
+  const h = exerciseHistory(tplId, tplEx.name, beforeDate);
+  if(!h.length) return {first:true};
+  const s = suggestNext(h[0].ex, h[1]?.ex, h[0].rpe, h[1]?.rpe, tplEx.target);
+  return {last:h[0], sug:s};
+}
+function hintHtml(r){
+  if(!r || r.first) return `<p class="exhint">Première fois : cible du programme.</p>`;
+  const l=r.last, s=r.sug;
+  return `<p class="exhint">Dernière fois (${fmtShort(l.date)}) : <b>${esc(l.ex.done)}</b>${l.ex.feel?` · ${FEEL[l.ex.feel]}`:""}${s?`<br><span class="dir ${s.dir}">${DIRL[s.dir]}</span>${s.dir==="up"?"On progresse":s.dir==="down"?"On allège":"On consolide"}${s.note?` — ${esc(s.note)}`:""}`:""}</p>`;
 }
 
 /* séances : formulaire */
@@ -826,17 +1055,18 @@ function applyTpl(){
   if(!t){ $("#s-exercises").innerHTML=""; return; }
   $("#s-title").value = t.label.replace(/^Séance \d+ — /,"");
   $("#s-isrun").checked = !!t.run; $("#s-run").hidden = !t.run;
-  renderExRows(t.ex.map(e=>({name:e.name,target:e.target,done:""})));
+  renderExRows(t.ex.map(e=>{ const r=suggestionFor(t.id, e, current?current.date:todayIso()); return {name:e.name, target:r.sug?.target || e.target, done:"", feel:null, hint:hintHtml(r)}; }));
 }
 function renderExRows(list){
-  $("#s-exercises").innerHTML = list.map((e,i)=>`<div class="ed-row ex3" data-row>
-    <input type="text" data-k="name" value="${esc(e.name)}" aria-label="Exercice">
-    <input type="text" data-k="target" value="${esc(e.target)}" aria-label="Prévu">
-    <input type="text" data-k="done" value="${esc(e.done)}" placeholder="${esc(exampleFor(e.name))}" aria-label="Réalisé">
-    <button type="button" class="icon del" data-rm aria-label="Retirer l'exercice">✕</button></div>`).join("");
+  $("#s-exercises").innerHTML = list.map(e=>`<div class="exrow" data-row>
+    <div class="exhead"><input type="text" data-k="name" value="${esc(e.name)}" placeholder="Exercice" aria-label="Exercice"><button type="button" class="icon del" data-rm aria-label="Retirer l'exercice">✕</button></div>
+    <div class="exgrid"><label>Prévu<input type="text" data-k="target" value="${esc(e.target)}"></label><label>Réalisé<input type="text" data-k="done" value="${esc(e.done)}" placeholder="ex. ${esc(exampleFor(e.name))}"></label></div>
+    <div class="seg exfeel" data-k="feel" role="group" aria-label="Ressenti">${Object.entries(FEEL).map(([v,l])=>`<button type="button" data-v="${v}" aria-pressed="${e.feel===v}">${l}</button>`).join("")}</div>
+    ${e.hint||""}</div>`).join("");
   $$("#s-exercises [data-rm]").forEach(b=>b.onclick=()=>b.closest("[data-row]").remove());
+  $$("#s-exercises .exfeel button").forEach(b=>b.onclick=()=>{ const on=b.getAttribute("aria-pressed")!=="true"; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed","false")); b.setAttribute("aria-pressed",String(on)); });
 }
-function readExRows(){ return $$("#s-exercises [data-row]").map(r=>({name:r.querySelector('[data-k=name]').value.trim(), target:r.querySelector('[data-k=target]').value.trim(), done:r.querySelector('[data-k=done]').value.trim()})).filter(e=>e.name||e.done); }
+function readExRows(){ return $$("#s-exercises [data-row]").map(r=>({name:r.querySelector('[data-k=name]').value.trim(), target:r.querySelector('[data-k=target]').value.trim(), done:r.querySelector('[data-k=done]').value.trim(), feel:r.querySelector('.exfeel [aria-pressed="true"]')?.dataset.v||null})).filter(e=>e.name||e.done); }
 $("#s-addex").onclick=()=>{ const cur=readExRows(); cur.push({name:"",target:"",done:""}); renderExRows(cur); $$("#s-exercises [data-k=name]").pop().focus(); };
 $("#s-isrun").onchange=e=>{ $("#s-run").hidden=!e.target.checked; };
 function exampleFor(n){ if(/Tractions/i.test(n)) return "2,2,2,2,2,1"; if(/Pompes/i.test(n)) return "10,10,9,8"; if(/rounds/i.test(n)) return "5 rounds complets"; if(/Gainage/i.test(n)) return "45 s, 40 s, 35 s"; if(/Endurance/i.test(n)) return "32 min à 6'35"; return "fait / détail"; }
@@ -860,7 +1090,7 @@ function startEdit(i){
   const isRun = s.distance!=null || !!s.time || !!getTpl(s.tpl)?.run;
   $("#s-isrun").checked=isRun; $("#s-run").hidden=!isRun;
   $("#s-dist").value = s.distance??""; $("#s-time").value = s.time||""; updatePace();
-  renderExRows((s.exercises||[]).map(e=>({name:e.name||"",target:e.target||"",done:e.done||""})));
+  renderExRows((s.exercises||[]).map(e=>({name:e.name||"",target:e.target||"",done:e.done||"",feel:e.feel||null})));
   draft["s-perf"]=s.performance||null; draft["s-rpe"]=s.rpe??null; draft["s-pleasure"]=s.pleasure??null;
   ["s-rpe","s-pleasure","s-perf"].forEach(paint);
   $("#s-feeling").value = [s.perfNote, s.feeling].filter(Boolean).join(s.perfNote&&s.feeling?"\n":"");
@@ -882,7 +1112,7 @@ function renderSessions(){
         <div class="row" style="gap:6px"><button class="btn ghost small" data-edit="${i}">Modifier</button><button class="btn danger" data-del="${i}">Supprimer</button></div>
       </div>
       <div class="meta">${esc(meta)}</div>
-      ${ex.length?`<ul class="exlist">${ex.map(e=>`<li><b>${esc(e.name)}</b> — ${esc(e.done||"non renseigné")}${e.target?` <span class="t">(prévu ${esc(e.target)})</span>`:""}</li>`).join("")}</ul>`:""}
+      ${ex.length?`<ul class="exlist">${ex.map(e=>`<li><b>${esc(e.name)}</b> — ${esc(e.done||"non renseigné")}${e.feel?` · ${FEEL[e.feel]}`:""}${e.target?` <span class="t">(prévu ${esc(e.target)})</span>`:""}</li>`).join("")}</ul>`:""}
       ${s.perfNote?`<div class="lbl">Performance</div><p>${esc(s.perfNote)}</p>`:""}
       ${s.feeling?`<div class="lbl">Ressenti</div><p>${esc(s.feeling)}</p>`:""}
     </article>`;}).join("");
@@ -969,6 +1199,7 @@ function renderSemainier(){
     `Séances : ${W.sessions}${W.pleasure!=null?` · plaisir moyen ${fmtNum(W.pleasure,1)}/5`:""}`,
     ...W.sess.map(s=>`  · ${s.title||s.type}${s.performance?` — ${perfL[s.performance]}`:""}${s.perfNote?` — ${s.perfNote}`:""}`),
     `Pas / NEAT moyens : ${fmtNum(W.steps)}`,
+    ...(()=>{ const its=W.ds.map(dayIntake).filter(it=>it&&it.src!=="partial"); const wa=avg(W.ds.map(d=>d.watchKcal)); return its.length||wa!=null?[`Calories : ${its.length?`apport moyen ${fmtNum(Math.round(avg(its.map(i=>i.kcal))/10)*10)} kcal/j (${its.length} j renseignés)`:"apports non renseignés"}${wa!=null?` · montre ${fmtNum(Math.round(wa/10)*10)} kcal actives/j`:""}`]:[]; })(),
     `Sommeil : ${fmtH(W.sleep)} / nuit · qualité ${fmtNum(W.sq,1)}/5`,
     `Énergie ${fmtNum(W.energy,1)}/5 · Stress ${fmtNum(W.stress,1)}/5 · Courbatures ${fmtNum(W.soreness,1)}/5`,
     `Écarts : ${W.ecarts}${ecarts.length?` — ${ecarts.join(", ")}`:""}`,
@@ -997,7 +1228,7 @@ function renderProgram(){
   }).join("");
   $("#progCards").innerHTML = S.templates.map(p=>{
     const last = Object.values(days).flatMap(d=>(d.sessions||[]).filter(s=>s.tpl===p.id).map(()=>d.date)).sort().pop();
-    return `<div class="prog-card"><h3>${esc(p.label)}</h3>${p.ex.length?`<ul>${p.ex.map(e=>`<li><b>${esc(e.name)}</b>${e.target?` · ${esc(e.target)}`:""}</li>`).join("")}</ul>`:'<p class="hint" style="margin:0">Séance libre, sans exercices prévus.</p>'}
+    return `<div class="prog-card"><h3>${esc(p.label)}</h3>${p.ex.length?`<ul>${p.ex.map(e=>{ const r=suggestionFor(p.id,e,addDays(todayIso(),1)); return `<li><b>${esc(e.name)}</b>${e.target?` · ${esc(e.target)}`:""}${r.sug&&r.sug.target?`<span class="next"><span class="dir ${r.sug.dir}">${DIRL[r.sug.dir]}</span>Prochaine fois : ${esc(r.sug.target)}</span>`:""}</li>`; }).join("")}</ul>`:'<p class="hint" style="margin:0">Séance libre, sans exercices prévus.</p>'}
       <p class="hint" style="margin:8px 0 0">${last?`Dernière fois : ${fmtShort(last)}`:"Pas encore notée"}</p></div>`;
   }).join("");
   const t=todayIso();
@@ -1202,6 +1433,7 @@ function barChart(pts,color,unit,dec,opts={}){
 const stat = (v,l) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`;
 function renderTrends(){
   if($("#tab-tend").hidden) return;
+  renderGoal();
   const r = paceInfo();
   $("#pacePanel").hidden = !r;
   if(r){
