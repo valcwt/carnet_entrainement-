@@ -484,7 +484,7 @@ tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
     <section class="panel">
       <h2>Sauvegarde <small>export / import de toutes tes données</small></h2>
       <p class="hint">L'export contient toutes tes journées, ton programme et tes plans alimentaires. Garde-le de côté de temps en temps, ou utilise-le pour transférer tes données vers une autre version du carnet.</p>
-      <div class="row"><button class="btn" id="exportBtn">Exporter mes données</button><button class="btn ghost" id="importJsonBtn">Importer une sauvegarde</button></div>
+      <div class="row"><button class="btn" id="exportBtn">Exporter mes données</button><button class="btn ghost" id="importJsonBtn">Importer une sauvegarde</button><label class="btn ghost" style="cursor:pointer">Importer un fichier<input type="file" id="importFile" accept=".json,application/json" hidden></label></div>
       <textarea id="xfer" class="bilan" hidden style="margin-top:12px;width:100%"></textarea>
       <div class="row" id="xferActions" hidden style="margin-top:8px"><button class="btn small" id="xferCopy">Copier</button><button class="btn small" id="xferApply">Importer ce contenu</button><span class="save-msg" id="xferMsg"></span></div>
     </section>
@@ -1689,17 +1689,44 @@ $("#xferCopy").onclick=async()=>{
   try{ await navigator.clipboard.writeText(ta.value); $("#xferMsg").textContent="Copié"; }
   catch(e){ ta.focus(); ta.select(); try{ document.execCommand("copy"); $("#xferMsg").textContent="Copié"; }catch(_){ $("#xferMsg").textContent="Texte sélectionné — copie-le avec Ctrl+C"; } }
 };
+$("#importFile").onchange=async e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  $("#importJsonBtn").click(); $("#xfer").value = await f.text(); e.target.value="";
+  $("#xferMsg").textContent=`Fichier « ${f.name} » chargé — clique sur « Importer ce contenu ».`;
+};
+// Fusion « compléter sans écraser » : une case déjà remplie dans le carnet n'est jamais modifiée.
+const isEmptyVal = v => v==null || v==="" || (Array.isArray(v)&&!v.length) || (typeof v==="object"&&!Array.isArray(v)&&!Object.keys(v).length);
+function fillMerge(cur, inc){
+  if(!cur) return inc;
+  const out = clone(cur);
+  for(const k of Object.keys(inc)){
+    if(k==="sessions"){ const have=new Set((out.sessions||[]).map(s=>s.tpl)); (inc.sessions||[]).forEach(s=>{ if(!have.has(s.tpl)) (out.sessions=out.sessions||[]).push(s); }); continue; }
+    if(k==="note"){ if(inc.note && !String(out.note||"").includes(inc.note)) out.note = out.note ? out.note+" · "+inc.note : inc.note; continue; }
+    if(k==="dayType"){ if(!out.dayType) out.dayType = inc.dayType; continue; }
+    if(k==="ecart"){ if(!out.ecart && inc.ecart){ out.ecart=true; if(!out.ecartNote) out.ecartNote=inc.ecartNote||""; } continue; }
+    if(isEmptyVal(out[k]) && !isEmptyVal(inc[k])) out[k]=inc[k];
+  }
+  if((out.sessions||[]).length && !cur.dayType) out.dayType = planOn().id;
+  return out;
+}
 $("#xferApply").onclick=async()=>{
   let o; try{ o=JSON.parse($("#xfer").value); }catch(e){ $("#xferMsg").textContent="Contenu invalide : colle l'export complet."; return; }
   if(!o || typeof o.days!=="object"){ $("#xferMsg").textContent="Ce contenu ne ressemble pas à un export du carnet."; return; }
-  const list=Object.values(o.days).filter(d=>d&&/^\d{4}-\d{2}-\d{2}$/.test(d.date)).map(d=>normalize(d));
-  if(!confirm(`Importer ${list.length} journées${o.settings?" et tes réglages (programme, plans)":""} ? Les journées aux mêmes dates seront remplacées.`)) return;
+  const fill = o.mode==="fill";
+  if(fill && typeof pullRemote==="function"){ try{ $("#xferMsg").textContent="Lecture des journées existantes…"; await pullRemote(false); }catch(e){ $("#xferMsg").textContent="Impossible de lire tes journées actuelles : vérifie ta connexion et réessaie."; return; } }
+  let list=Object.values(o.days).filter(d=>d&&/^\d{4}-\d{2}-\d{2}$/.test(d.date)).map(d=>normalize(d));
+  let existing=0;
+  if(fill){ list = list.map(d=>{ if(days[d.date]) existing++; return normalize(fillMerge(days[d.date]?clone(days[d.date]):null, d)); }); }
+  const msg = fill
+    ? `Compléter ${list.length} journées (${existing} existent déjà dans le carnet : leurs cases remplies ne seront pas modifiées, seules les cases vides seront complétées) ?`
+    : `Importer ${list.length} journées${o.settings?" et tes réglages (programme, plans)":""} ? Les journées aux mêmes dates seront remplacées.`;
+  if(!confirm(msg)) return;
   const btn=$("#xferApply"); btn.disabled=true;
   try{
     if(o.settings){ S=normalizeSettings(o.settings); await saveSettings(); }
     if(store.bulk) { $("#xferMsg").textContent="Import…"; await store.bulk(list); }
     else { let n=0; for(const d of list){ await store.save(d); n++; if(n%10===0) $("#xferMsg").textContent=`${n} / ${list.length}…`; } }
-    $("#xferMsg").textContent=`${list.length} journées importées.`;
+    $("#xferMsg").textContent = fill ? `${list.length} journées complétées (${existing} déjà présentes, rien d'écrasé).` : `${list.length} journées importées.`;
   }catch(e){ $("#xferMsg").textContent="Import interrompu. Relance-le pour terminer."; }
   btn.disabled=false; applySettings(); renderAll(true);
 };
