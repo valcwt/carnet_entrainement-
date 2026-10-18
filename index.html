@@ -236,14 +236,91 @@ tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
 .next{font-size:.84rem;color:var(--muted);display:block;margin-top:1px}
 @media (max-width:520px){.exgrid{grid-template-columns:1fr}}
 .sub{font-family:"Barlow Condensed",sans-serif;font-size:1.2rem;margin:14px 0 6px}
+/* ---------- comptes ---------- */
+.account{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.85rem;color:var(--muted);margin-top:2px}
+.account .role{border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-size:.75rem;font-weight:600;color:var(--ink)}
+.linkbtn{border:0;background:none;color:var(--accent);font-weight:600;cursor:pointer;padding:0;font-size:inherit}
+.auth{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:max(48px,env(safe-area-inset-top)) 16px 40px}
+.auth[hidden]{display:none!important}
+.auth-card{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px}
+.auth-card h1{font-size:2.2rem;margin-bottom:4px}
+.auth-card .sub{color:var(--muted);margin:0 0 18px;font-size:.95rem}
+.auth-card form{display:grid;gap:12px}
+.auth-card .btn{width:100%}
+.auth-msg{font-size:.9rem;margin:2px 0 0;min-height:1.2em}
+.auth-msg.err{color:var(--warn)} .auth-msg.ok{color:var(--good)}
+.auth-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:14px;font-size:.9rem}
+.auth-tabs{display:flex;gap:4px;background:var(--bg);border-radius:999px;padding:4px;margin-bottom:16px}
+.auth-tabs button{flex:1;border:0;background:none;padding:8px;border-radius:999px;font-weight:600;color:var(--muted);cursor:pointer}
+.auth-tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
 </style>
 </head>
 <body>
+<div class="auth" id="auth">
+  <div class="auth-card">
+    <h1>Carnet d'entraînement</h1>
+    <p class="sub" id="authSub">Chargement…</p>
+
+    <div id="authLoginView" hidden>
+      <div class="auth-tabs" role="tablist">
+        <button type="button" role="tab" data-auth-tab="login" aria-selected="true">Connexion</button>
+        <button type="button" role="tab" data-auth-tab="signup" aria-selected="false">Créer un compte</button>
+      </div>
+      <form id="authForm" novalidate>
+        <label id="nameWrap" hidden>Prénom (vu par ton coach ou tes challengers)<input type="text" id="authName" autocomplete="given-name" maxlength="60"></label>
+        <label>E-mail<input type="email" id="authEmail" autocomplete="email" required></label>
+        <label>Mot de passe<input type="password" id="authPassword" autocomplete="current-password" minlength="8" required></label>
+        <button class="btn" type="submit" id="authSubmit">Se connecter</button>
+        <p class="auth-msg" id="authMsg" role="status"></p>
+      </form>
+      <div class="auth-links"><button type="button" class="linkbtn" id="forgotBtn">Mot de passe oublié ?</button></div>
+    </div>
+
+    <div id="authForgotView" hidden>
+      <form id="forgotForm" novalidate>
+        <label>E-mail du compte<input type="email" id="forgotEmail" autocomplete="email" required></label>
+        <button class="btn" type="submit">Recevoir le lien</button>
+        <p class="auth-msg" id="forgotMsg" role="status"></p>
+      </form>
+      <div class="auth-links"><button type="button" class="linkbtn" data-auth-back>Retour à la connexion</button></div>
+    </div>
+
+    <div id="authResetView" hidden>
+      <form id="resetForm" novalidate>
+        <label>Nouveau mot de passe<input type="password" id="resetPassword" autocomplete="new-password" minlength="8" required></label>
+        <button class="btn" type="submit">Enregistrer le mot de passe</button>
+        <p class="auth-msg" id="resetMsg" role="status"></p>
+      </form>
+    </div>
+
+    <div id="authCheckView" hidden>
+      <p>Un e-mail de confirmation vient d'être envoyé à <b id="checkEmail"></b>. Clique sur le lien qu'il contient : tu reviendras ici, connecté.</p>
+      <p class="hint">Rien reçu après quelques minutes ? Regarde dans les spams.</p>
+      <div class="auth-links"><button type="button" class="linkbtn" data-auth-back>Retour à la connexion</button></div>
+    </div>
+
+    <div id="authPaywallView" hidden>
+      <p>Ton compte <b id="paywallEmail"></b> n'a pas d'accès actif.</p>
+      <form id="codeForm" novalidate>
+        <label>Tu as un code de parrainage ?<input type="text" id="codeInput" autocomplete="off" autocapitalize="characters" placeholder="FIT-XXXXXX" required></label>
+        <button class="btn" type="submit">Utiliser le code</button>
+        <p class="auth-msg" id="codeMsg" role="status"></p>
+      </form>
+      <div class="panel" style="margin:16px 0 0;padding:14px">
+        <b>S'abonner</b>
+        <p class="hint" style="margin:4px 0 0">Le paiement arrive à l'étape Stripe.</p>
+      </div>
+      <div class="auth-links"><button type="button" class="linkbtn" id="paywallRecheck">J'ai déjà un accès : vérifier</button><button type="button" class="linkbtn" data-auth-logout>Se déconnecter</button></div>
+    </div>
+  </div>
+</div>
+
 <div class="wrap">
   <header class="top">
     <div>
       <h1>Carnet d'entraînement</h1>
       <div class="status" id="status">Chargement…</div>
+      <div class="account" id="account" hidden><span id="accountEmail"></span><span class="role" id="accountRole" hidden></span><button type="button" class="linkbtn" id="logoutBtn">Se déconnecter</button></div>
     </div>
   </header>
   <div class="phase" id="phase"></div>
@@ -492,7 +569,13 @@ tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
   </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
+// Clé publique (« publishable ») : faite pour être dans le navigateur. La sécurité vient des règles RLS de la base.
+window.CARNET_CONFIG = {
+  supabaseUrl: "https://ssevnpiluybnmvujcgjj.supabase.co",
+  supabaseKey: "sb_publishable_oKxuQr0Z6gd5GlghMknHWw_ypvKeB2_"
+};
 window.CARNET_CAN_DOWNLOAD = true;
 if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));
 const HISTORY_SEED = {"2026-06-22": {"date": "2026-06-22", "weight": 111.1, "steps": 11100, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 7.42, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-06-22", "type": "Musculation", "title": "PEC / DELTO LAT", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "20 min"}, "2026-06-23": {"date": "2026-06-23", "weight": 110.0, "steps": 13100, "soreness": 3, "stress": 0, "energy": 5, "sleepHours": 7.15, "sleepQuality": 4, "note": "", "sessions": [], "cardio": ""}, "2026-06-24": {"date": "2026-06-24", "weight": 109.7, "steps": 11000, "soreness": 4, "stress": 0, "energy": 3, "sleepHours": 5.8, "sleepQuality": 3, "note": "", "sessions": [{"id": "imp2026-06-24", "type": "Musculation", "title": "Dos / Delto Post", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "25 min"}, "2026-06-25": {"date": "2026-06-25", "weight": 108.8, "steps": 13800, "soreness": 1, "stress": 1, "energy": 4, "sleepHours": 6.75, "sleepQuality": 4, "note": "", "sessions": [], "cardio": ""}, "2026-06-26": {"date": "2026-06-26", "weight": 109.4, "steps": 10200, "soreness": 0, "stress": 2, "energy": 3, "sleepHours": 7.77, "sleepQuality": 4, "note": "", "sessions": [], "cardio": ""}, "2026-06-27": {"date": "2026-06-27", "weight": 108.8, "steps": 14200, "soreness": 1, "stress": 0, "energy": 2, "sleepHours": 5.67, "sleepQuality": 2, "note": "", "sessions": [{"id": "imp2026-06-27", "type": "Musculation", "title": "Épaule / Bras", "performance": "", "perfNote": "", "pleasure": 3, "duration": null, "exercises": [], "feeling": ""}], "cardio": "25 min"}, "2026-06-28": {"date": "2026-06-28", "weight": 109.4, "steps": 10000, "soreness": 0, "stress": 0, "energy": 4, "sleepHours": 7.67, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-06-28", "type": "Musculation", "title": "Jambes", "performance": "", "perfNote": "", "pleasure": 4, "duration": null, "exercises": [], "feeling": ""}], "cardio": "25 min"}, "2026-06-29": {"date": "2026-06-29", "weight": 109.0, "steps": 14200, "soreness": 3, "stress": 0, "energy": 5, "sleepHours": 7.63, "sleepQuality": 5, "note": "# 🍔 Repas plaisir 30/06/2026\n\n## Plat\n\n* ½ avocat\n* Burger maison :\n\n  * 175 g de viande hachée à 5 % de matières grasses\n  * 1 œuf\n  * 1 pain à burger complet\n  * Sauce maison : moutarde, ketchup et skyr\n* Brocolis\n\n## Dessert\n\n* Skyr\n* Whey\n* Fruits rouges\n* Beurre de cacahuète", "sessions": [], "cardio": ""}, "2026-06-30": {"date": "2026-06-30", "weight": 109.3, "steps": 12000, "soreness": 0, "stress": 3, "energy": 5, "sleepHours": 8.02, "sleepQuality": 5, "note": "", "sessions": [{"id": "imp2026-06-30", "type": "Musculation", "title": "PEC / DELTO LAT", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "25 min"}, "2026-07-01": {"date": "2026-07-01", "weight": 110.4, "steps": 11125, "soreness": 3, "stress": 3, "energy": 2, "sleepHours": 7.03, "sleepQuality": 3, "note": "", "sessions": [{"id": "imp2026-07-01", "type": "Musculation", "title": "Dos / Delto Post", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "25 min"}, "2026-07-02": {"date": "2026-07-02", "weight": 109.4, "steps": 10350, "soreness": 0, "stress": 2, "energy": 3, "sleepHours": 5.63, "sleepQuality": 1, "note": "", "sessions": [], "cardio": ""}, "2026-07-03": {"date": "2026-07-03", "weight": 109.0, "steps": 14300, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 7.95, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-07-03", "type": "Musculation", "title": "Épaule / Bras", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-04": {"date": "2026-07-04", "weight": 108.8, "steps": 12050, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 6.4, "sleepQuality": 3, "note": "", "sessions": [{"id": "imp2026-07-04", "type": "Musculation", "title": "Jambes", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-05": {"date": "2026-07-05", "weight": 109.1, "steps": 12800, "soreness": 5, "stress": 0, "energy": 3, "sleepHours": 7.4, "sleepQuality": 4, "note": "", "sessions": [], "cardio": ""}, "2026-07-06": {"date": "2026-07-06", "weight": 108.9, "steps": 12000, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 6.67, "sleepQuality": 4, "note": "Progression générale ( poids, rep et exécution des mouvements); Cette semaine je peux définir avec précision les répétitions et les charges pour chaque mouvement de chaque séance / Run extérieur 07/07/26 : 5km / 33 minutes / 6'37", "sessions": [{"id": "imp2026-07-06", "type": "Musculation", "title": "PEC /DELTO LAT", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-07": {"date": "2026-07-07", "weight": 108.8, "steps": 18500, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 6.07, "sleepQuality": 3, "note": "", "sessions": [], "cardio": "33-run-extérieur"}, "2026-07-08": {"date": "2026-07-08", "weight": 108.5, "steps": 11200, "soreness": 2, "stress": 0, "energy": 5, "sleepHours": 7.05, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-07-08", "type": "Musculation", "title": "Dos / Delto Post", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": ""}, "2026-07-09": {"date": "2026-07-09", "weight": 108.4, "steps": 10100, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 6.48, "sleepQuality": 3, "note": "", "sessions": [], "cardio": ""}, "2026-07-10": {"date": "2026-07-10", "weight": 108.3, "steps": 12300, "soreness": 3, "stress": 2, "energy": 4, "sleepHours": 6.33, "sleepQuality": 3, "note": "", "sessions": [{"id": "imp2026-07-10", "type": "Musculation", "title": "ÉPAULES / BRAS", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-11": {"date": "2026-07-11", "weight": 109.5, "steps": 14000, "soreness": 0, "stress": 0, "energy": 4, "sleepHours": 7.32, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "34 run ext"}, "2026-07-12": {"date": "2026-07-12", "weight": 108.5, "steps": 11200, "soreness": 2, "stress": 0, "energy": 4, "sleepHours": 7.17, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-07-12", "type": "Musculation", "title": "Jambes", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-13": {"date": "2026-07-13", "weight": 108.3, "steps": 11000, "soreness": 3, "stress": 1, "energy": 4, "sleepHours": 6.55, "sleepQuality": 4, "note": "Dessert plaisir le jeudi midi : 1 cookie + fondant au chocolat   (boulangerie ) ;", "sessions": [{"id": "imp2026-07-13", "type": "Musculation", "title": "PEC / DELTO LAT", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-14": {"date": "2026-07-14", "weight": 108.0, "steps": 13500, "soreness": 2, "stress": 0, "energy": 4, "sleepHours": 7.77, "sleepQuality": 5, "note": "", "sessions": [], "cardio": "30 min run ext"}, "2026-07-15": {"date": "2026-07-15", "weight": 108.2, "steps": 11500, "soreness": 2, "stress": 1, "energy": 4, "sleepHours": 6.67, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-07-15", "type": "Musculation", "title": "Dos / Delto post", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-16": {"date": "2026-07-16", "weight": 108.8, "steps": 14000, "soreness": 4, "stress": 1, "energy": 2, "sleepHours": 7.42, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "1h20 marche"}, "2026-07-17": {"date": "2026-07-17", "weight": 108.3, "steps": 11600, "soreness": 4, "stress": 2, "energy": 2, "sleepHours": 8.52, "sleepQuality": 3, "note": "", "sessions": [], "cardio": "30 min Run"}, "2026-07-18": {"date": "2026-07-18", "weight": 108.3, "steps": 10500, "soreness": 1, "stress": 1, "energy": 4, "sleepHours": 6.5, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-07-18", "type": "Musculation", "title": "Épaules / Bras", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-19": {"date": "2026-07-19", "weight": 108.2, "steps": 11500, "soreness": 0, "stress": 2, "energy": 5, "sleepHours": 8.17, "sleepQuality": 5, "note": "", "sessions": [], "cardio": ""}, "2026-07-20": {"date": "2026-07-20", "weight": 109.1, "steps": 16130, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 6.68, "sleepQuality": 4, "note": "imprévu dimanche , je dois reporter la séance jambes à lundi. J'ai commencé la journée de dimanche en on jusqu'à midi et termine en off ce qui explique peut être cette remonté de poids, hydratation plus faible .", "sessions": [{"id": "imp2026-07-20", "type": "Musculation", "title": "Jambes", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-21": {"date": "2026-07-21", "weight": 109.1, "steps": 18200, "soreness": 0, "stress": 0, "energy": 4, "sleepHours": 6.5, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-07-21", "type": "Musculation", "title": "Pecs / Delto Lat", "performance": "", "perfNote": "", "pleasure": 4, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-22": {"date": "2026-07-22", "weight": 108.3, "steps": 13000, "soreness": 2, "stress": 0, "energy": 5, "sleepHours": 8.97, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "60 min"}, "2026-07-23": {"date": "2026-07-23", "weight": 109.0, "steps": 10500, "soreness": 0, "stress": 3, "energy": 3, "sleepHours": 6.42, "sleepQuality": 3, "note": "", "sessions": [{"id": "imp2026-07-23", "type": "Musculation", "title": "Dos / Delto post", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-24": {"date": "2026-07-24", "weight": 108.4, "steps": 16200, "soreness": 2, "stress": 3, "energy": 4, "sleepHours": 6.5, "sleepQuality": 5, "note": "", "sessions": [{"id": "imp2026-07-24", "type": "Musculation", "title": "Full body 1", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "60 min"}, "2026-07-25": {"date": "2026-07-25", "weight": 109.0, "steps": 14000, "soreness": 3, "stress": 1, "energy": 4, "sleepHours": 7.98, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-07-25", "type": "Circuit", "title": "Circuit 1", "performance": "", "perfNote": "3 tours complets + 4 eme tours thruster", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 run ext"}, "2026-07-26": {"date": "2026-07-26", "weight": 108.5, "steps": 10674, "soreness": 4, "stress": 2, "energy": 3, "sleepHours": 7.33, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "60 marche"}, "2026-07-27": {"date": "2026-07-27", "weight": 109.4, "steps": 11350, "soreness": 3, "stress": 0, "energy": 5, "sleepHours": 7.05, "sleepQuality": 5, "note": "Repas plaisir jeudi soir : melon + jambon cru ( 2 tranches ) un croque monsieur maison + fondant au chocolat boulangerie.", "sessions": [{"id": "imp2026-07-27", "type": "Musculation", "title": "Full body 1", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 run ext"}, "2026-07-28": {"date": "2026-07-28", "weight": 108.4, "steps": 10000, "soreness": 5, "stress": 0, "energy": 3, "sleepHours": 7.97, "sleepQuality": 5, "note": "", "sessions": [{"id": "imp2026-07-28", "type": "Circuit", "title": "Circuit 1", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-07-29": {"date": "2026-07-29", "weight": 108.4, "steps": 17500, "soreness": 4, "stress": 0, "energy": 5, "sleepHours": 7.6, "sleepQuality": 5, "note": "", "sessions": [{"id": "imp2026-07-29", "type": "Musculation", "title": "Full body 2", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "50 run ext"}, "2026-07-30": {"date": "2026-07-30", "weight": 107.9, "steps": 10500, "soreness": 3, "stress": 2, "energy": 3, "sleepHours": 7.55, "sleepQuality": 5, "note": "", "sessions": [], "cardio": "30 marche"}, "2026-07-31": {"date": "2026-07-31", "weight": 109.2, "steps": 10000, "soreness": 2, "stress": 2, "energy": 3, "sleepHours": 7.0, "sleepQuality": 5, "note": "", "sessions": [], "cardio": ""}, "2026-08-01": {"date": "2026-08-01", "weight": 108.5, "steps": 10500, "soreness": 0, "stress": 0, "energy": 4, "sleepHours": 6.75, "sleepQuality": 5, "note": "", "sessions": [], "cardio": "40 marche"}, "2026-08-02": {"date": "2026-08-02", "weight": 108.6, "steps": 19600, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 8.22, "sleepQuality": 5, "note": "", "sessions": [], "cardio": "68 min run"}, "2026-08-03": {"date": "2026-08-03", "weight": 107.9, "steps": 11500, "soreness": 0, "stress": 3, "energy": 5, "sleepHours": 7.5, "sleepQuality": 5, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-04": {"date": "2026-08-04", "weight": 107.9, "steps": 16600, "soreness": 2, "stress": 0, "energy": 3, "sleepHours": 6.5, "sleepQuality": 3, "note": "", "sessions": [], "cardio": "60 run"}, "2026-08-05": {"date": "2026-08-05", "weight": 108.5, "steps": 12600, "soreness": 3, "stress": 0, "energy": 2, "sleepHours": 6.67, "sleepQuality": 2, "note": "", "sessions": [], "cardio": "40 run"}, "2026-08-06": {"date": "2026-08-06", "weight": 108.1, "steps": null, "soreness": null, "stress": null, "energy": null, "sleepHours": 6.33, "sleepQuality": 3, "note": "", "sessions": [], "cardio": ""}, "2026-08-07": {"date": "2026-08-07", "weight": 108.5, "steps": 15000, "soreness": 1, "stress": 3, "energy": 5, "sleepHours": 9.68, "sleepQuality": 5, "note": "", "sessions": [{"id": "imp2026-08-07", "type": "Musculation", "title": "Full body 1", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 run"}, "2026-08-08": {"date": "2026-08-08", "weight": 107.9, "steps": 10000, "soreness": 2, "stress": 0, "energy": 3, "sleepHours": 6.77, "sleepQuality": 3, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-09": {"date": "2026-08-09", "weight": 107.5, "steps": null, "soreness": null, "stress": null, "energy": null, "sleepHours": null, "sleepQuality": null, "note": "", "sessions": [], "cardio": ""}, "2026-08-10": {"date": "2026-08-10", "weight": 107.9, "steps": 10000, "soreness": 0, "stress": 3, "energy": 3, "sleepHours": 7.97, "sleepQuality": 3, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-11": {"date": "2026-08-11", "weight": 108.5, "steps": 51570, "soreness": 0, "stress": 1, "energy": 4, "sleepHours": 5.4, "sleepQuality": 2, "note": "", "sessions": [{"id": "imp2026-08-11", "type": "Marche", "title": "Rando 35km", "performance": "", "perfNote": "", "pleasure": null, "duration": null, "exercises": [], "feeling": ""}], "cardio": "8h"}, "2026-08-12": {"date": "2026-08-12", "weight": 107.7, "steps": 10500, "soreness": 2, "stress": 0, "energy": 3, "sleepHours": 8, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-13": {"date": "2026-08-13", "weight": 108.3, "steps": 10100, "soreness": 0, "stress": 0, "energy": 2, "sleepHours": 6.5, "sleepQuality": 2, "note": "", "sessions": [{"id": "imp2026-08-13", "type": "Musculation", "title": "Full body 1", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-08-14": {"date": "2026-08-14", "weight": 107.3, "steps": 6000, "soreness": 2, "stress": 0, "energy": 4, "sleepHours": 8.5, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-15": {"date": "2026-08-15", "weight": 108.0, "steps": 52000, "soreness": 2, "stress": 0, "energy": 5, "sleepHours": 6, "sleepQuality": 3, "note": "", "sessions": [{"id": "imp2026-08-15", "type": "Marche", "title": "Rando 38km", "performance": "", "perfNote": "", "pleasure": null, "duration": null, "exercises": [], "feeling": ""}], "cardio": "8h"}, "2026-08-16": {"date": "2026-08-16", "weight": 107.3, "steps": 8000, "soreness": 4, "stress": 0, "energy": 4, "sleepHours": 9.67, "sleepQuality": 5, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-17": {"date": "2026-08-17", "weight": 108.3, "steps": 23000, "soreness": 2, "stress": 0, "energy": 3, "sleepHours": 4, "sleepQuality": 2, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-18": {"date": "2026-08-18", "weight": 107.2, "steps": 6000, "soreness": 4, "stress": 0, "energy": 4, "sleepHours": 8.83, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-08-18", "type": "Musculation", "title": "Full body 1", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-08-19": {"date": "2026-08-19", "weight": 106.7, "steps": 19000, "soreness": 3, "stress": 0, "energy": 4, "sleepHours": 5.25, "sleepQuality": 3, "note": "", "sessions": [{"id": "imp2026-08-19", "type": "Musculation", "title": "Full body 2", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "30 min"}, "2026-08-20": {"date": "2026-08-20", "weight": 106.2, "steps": 20880, "soreness": 3, "stress": 0, "energy": 3, "sleepHours": 7.25, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-21": {"date": "2026-08-21", "weight": 106.9, "steps": 23000, "soreness": 3, "stress": 0, "energy": 3, "sleepHours": 6, "sleepQuality": 2, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-22": {"date": "2026-08-22", "weight": 106.2, "steps": 20000, "soreness": 3, "stress": 0, "energy": 2, "sleepHours": 9, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "30 min"}, "2026-08-23": {"date": "2026-08-23", "weight": 106.3, "steps": 8000, "soreness": null, "stress": null, "energy": null, "sleepHours": 7.67, "sleepQuality": 5, "note": "", "sessions": [], "cardio": ""}, "2026-08-24": {"date": "2026-08-24", "weight": 107.2, "steps": 26550, "soreness": 4, "stress": 0, "energy": 4, "sleepHours": 5.75, "sleepQuality": 4, "note": "Repas plaisir vendredi soir", "sessions": [{"id": "imp2026-08-24", "type": "Musculation", "title": "Full body", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "20 min"}, "2026-08-25": {"date": "2026-08-25", "weight": 106.1, "steps": 6000, "soreness": 4, "stress": 0, "energy": 3, "sleepHours": 8.83, "sleepQuality": 5, "note": "", "sessions": [], "cardio": "20 min"}, "2026-08-26": {"date": "2026-08-26", "weight": 106.9, "steps": 20000, "soreness": 3, "stress": 0, "energy": 4, "sleepHours": 6.58, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-08-26", "type": "Musculation", "title": "Full body", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "20 min"}, "2026-08-27": {"date": "2026-08-27", "weight": 106.1, "steps": 7000, "soreness": 3, "stress": 0, "energy": 3, "sleepHours": 7, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "20 min"}, "2026-08-28": {"date": "2026-08-28", "weight": 106.2, "steps": 24500, "soreness": 4, "stress": 0, "energy": 4, "sleepHours": 6.17, "sleepQuality": 4, "note": "", "sessions": [], "cardio": "20 min"}, "2026-08-29": {"date": "2026-08-29", "weight": 106.9, "steps": 23000, "soreness": null, "stress": null, "energy": null, "sleepHours": null, "sleepQuality": null, "note": "", "sessions": [], "cardio": "20 min"}, "2026-08-30": {"date": "2026-08-30", "weight": 106.6, "steps": 18000, "soreness": null, "stress": null, "energy": null, "sleepHours": null, "sleepQuality": null, "note": "", "sessions": [{"id": "imp2026-08-30", "type": "Musculation", "title": "Full body", "performance": "", "perfNote": "", "pleasure": 5, "duration": null, "exercises": [], "feeling": ""}], "cardio": "20 min"}, "2026-08-31": {"date": "2026-08-31", "weight": 106.5, "steps": 17000, "soreness": 2, "stress": 0, "energy": 4, "sleepHours": 5, "sleepQuality": 3, "note": "", "sessions": [], "cardio": "20 min"}, "2026-09-01": {"date": "2026-09-01", "weight": 106.6, "steps": 11000, "soreness": 0, "stress": 0, "energy": 5, "sleepHours": 8.2, "sleepQuality": 5, "note": "", "sessions": [{"id": "imp2026-09-01", "type": "Musculation", "title": "Full body 1", "performance": "", "perfNote": "", "pleasure": null, "duration": null, "exercises": [], "feeling": ""}], "cardio": "20 min"}, "2026-09-02": {"date": "2026-09-02", "weight": 106.9, "steps": 20000, "soreness": null, "stress": null, "energy": 4, "sleepHours": 5, "sleepQuality": 3, "note": "", "sessions": [], "cardio": "20 min"}, "2026-09-03": {"date": "2026-09-03", "weight": 106.5, "steps": 20100, "soreness": null, "stress": null, "energy": 4, "sleepHours": 5.33, "sleepQuality": 4, "note": "", "sessions": [{"id": "imp2026-09-03", "type": "Musculation", "title": "Full body", "performance": "", "perfNote": "", "pleasure": null, "duration": null, "exercises": [], "feeling": ""}], "cardio": "20 min"}, "2026-09-04": {"date": "2026-09-04", "weight": 106.9, "steps": 17000, "soreness": null, "stress": null, "energy": 4, "sleepHours": 5.83, "sleepQuality": 5, "note": "", "sessions": [], "cardio": ""}, "2026-09-05": {"date": "2026-09-05", "weight": 107.5, "steps": 20000, "soreness": null, "stress": null, "energy": 4, "sleepHours": 5.83, "sleepQuality": 5, "note": "", "sessions": [], "cardio": ""}, "2026-09-06": {"date": "2026-09-06", "weight": 107.5, "steps": 25000, "soreness": null, "stress": null, "energy": 5, "sleepHours": 9.0, "sleepQuality": 5, "note": "", "sessions": [{"id": "imp2026-09-06", "type": "Musculation", "title": "Full body 2", "performance": "", "perfNote": "", "pleasure": null, "duration": null, "exercises": [], "feeling": ""}], "cardio": ""}, "2026-09-07": {"date": "2026-09-07", "weight": 105.8, "steps": 20000, "soreness": 5, "stress": 0, "energy": 5, "sleepHours": 9, "sleepQuality": 5, "note": "Blessure adducteur tendinite", "sessions": [], "cardio": ""}, "2026-09-08": {"date": "2026-09-08", "weight": 106.2, "steps": 11000, "soreness": null, "stress": null, "energy": null, "sleepHours": 6, "sleepQuality": 5, "note": "", "sessions": [], "cardio": ""}, "2026-09-09": {"date": "2026-09-09", "weight": 105.9, "steps": 17000, "soreness": null, "stress": null, "energy": null, "sleepHours": 5.83, "sleepQuality": null, "note": "", "sessions": [], "cardio": ""}, "2026-09-10": {"date": "2026-09-10", "weight": 105.3, "steps": 20000, "soreness": null, "stress": null, "energy": null, "sleepHours": 8.83, "sleepQuality": null, "note": "", "sessions": [], "cardio": ""}, "2026-09-11": {"date": "2026-09-11", "weight": 106.0, "steps": 11000, "soreness": null, "stress": null, "energy": null, "sleepHours": null, "sleepQuality": null, "note": "", "sessions": [], "cardio": ""}, "2026-09-12": {"date": "2026-09-12", "weight": 106.5, "steps": 10500, "soreness": null, "stress": null, "energy": null, "sleepHours": null, "sleepQuality": null, "note": "", "sessions": [], "cardio": ""}};
@@ -502,7 +585,9 @@ const NUTRITION_SEED = {"on": {"meals": [{"n": 1, "name": "Matin", "items": [{"f
 (function(){
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
-const LS_KEY = "carnet-sport.days.v1", SET_KEY = "carnet-sport.settings.v1";
+// Cache local séparé par compte : sur un appareil partagé, les données de deux personnes ne se mélangent jamais.
+let LS_KEY = "carnet-sport.days.v1", SET_KEY = "carnet-sport.settings.v1", PENDING_KEY = "carnet-sport.pending";
+function useAccountKeys(uid){ LS_KEY = "carnet-sport.days.v2:"+uid; SET_KEY = "carnet-sport.settings.v2:"+uid; PENDING_KEY = "carnet-sport.pending.v2:"+uid; }
 const days = {};
 let S = null;                      // réglages : programme + nutrition
 let lastMealType = null, store = null, current = null, dirty = false, rangeDays = 90, weekOffset = 0, nutriView = null;
@@ -596,7 +681,7 @@ function normalizeSettings(s){
 function loadSettings(){ try{ const r=localStorage.getItem(SET_KEY); S = normalizeSettings(r?JSON.parse(r):null); }catch(e){ S = defaultSettings(); } }
 async function saveSettings(){
   try{ localStorage.setItem(SET_KEY, JSON.stringify(S)); }catch(e){}
-  await api("PUT","settings",S);
+  await sbPutSettings(S);
 }
 const getPlan = id => S.plans.find(p=>p.id===id) || S.plans[0];
 const planOn = () => S.plans.find(p=>p.id==="on") || S.plans[0];
@@ -728,48 +813,77 @@ function setStatus(t){ $("#status").textContent=t; }
 const emptyDay = date => ({date, weight:null, steps:null, sleepHours:null, sleepQuality:null, energy:null, stress:null, soreness:null, cardio:"", dayType:null, meals:{}, water:null, ecart:false, ecartNote:"", note:"", tests:null, sessions:[], kcalIn:null, ecartKcal:null, watchKcal:null});
 function normalize(d){ const o=Object.assign(emptyDay(d.date),d); o.sessions=(o.sessions||[]).map(s=>({...s, pleasure: s.pleasure ?? s.rating ?? null})); o.meals=o.meals||{}; return o; }
 
-/* ---------- synchro serveur (routes /api → Supabase) ---------- */
-const PW_KEY="carnet-sport.pw", PENDING_KEY="carnet-sport.pending";
-let apiOk=false;
-async function api(method, path, body, retry=true){
-  let pw=null; try{ pw=localStorage.getItem(PW_KEY); }catch(e){}
-  const r = await fetch("/api/"+path, {method, headers:{"content-type":"application/json", ...(pw?{"x-app-password":pw}:{})}, body: body!==undefined?JSON.stringify(body):undefined});
-  if(r.status===401 && retry){
-    const p=prompt("Mot de passe du carnet :"); if(!p) throw new Error("auth");
-    try{ localStorage.setItem(PW_KEY,p); }catch(e){}
-    return api(method,path,body,false);
+/* ---------- synchro avec Supabase (lecture/écriture directes, protégées par RLS) ---------- */
+const CFG = window.CARNET_CONFIG || {};
+const sb = (window.supabase && CFG.supabaseUrl) ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+}) : null;
+let user = null, profile = null, apiOk = false;
+const SYNC_OK = "Synchronisé — accessible depuis tous tes appareils.";
+const isRlsError = e => e && (e.code === "42501" || /row-level security|permission denied/i.test(e.message||""));
+
+async function sbPutDays(list){
+  const now = new Date().toISOString();
+  for(let i=0;i<list.length;i+=200){
+    const rows = list.slice(i,i+200).map(d=>({ user_id:user.id, date:d.date, data:d, updated_at:now }));
+    const { error } = await sb.from("user_days").upsert(rows, { onConflict:"user_id,date" });
+    if(error) throw error;
   }
-  if(!r.ok) throw new Error("http "+r.status);
-  return r.status===204 ? null : r.json();
+}
+async function sbGetDays(){
+  const all=[];
+  for(let from=0;;from+=1000){
+    const { data, error } = await sb.from("user_days").select("data").order("date",{ascending:true}).range(from, from+999);
+    if(error) throw error;
+    all.push(...data.map(r=>r.data));
+    if(data.length<1000) break;
+  }
+  return all;
+}
+async function sbGetSettings(){
+  const { data, error } = await sb.from("user_settings").select("data").maybeSingle();
+  if(error) throw error;
+  return data ? data.data : null;
+}
+async function sbPutSettings(s){
+  if(!user) return;
+  const { error } = await sb.from("user_settings").upsert({ user_id:user.id, data:s, updated_at:new Date().toISOString() }, { onConflict:"user_id" });
+  if(error) throw error;
 }
 function getPending(){ try{ return JSON.parse(localStorage.getItem(PENDING_KEY)||"[]"); }catch(e){ return []; } }
 function setPending(a){ try{ localStorage.setItem(PENDING_KEY, JSON.stringify([...new Set(a)])); }catch(e){} }
 async function flushPending(){
   const p=getPending(); if(!p.length) return;
-  const list=p.map(k=>days[k]).filter(Boolean);
-  for(let i=0;i<list.length;i+=200) await api("PUT","days",list.slice(i,i+200));
+  await sbPutDays(p.map(k=>days[k]).filter(Boolean));
   setPending([]);
 }
+async function onSyncError(e){
+  if(isRlsError(e)){ // l'accès a été retiré (abonnement terminé, coach parti) : on revérifie
+    const ok = await checkAccess().catch(()=>null);
+    if(ok===false){ showPaywall(); return; }
+  }
+  apiOk=false; setStatus("Hors ligne — enregistré sur cet appareil, synchronisation au retour de la connexion.");
+}
 const apiStore = {
-  mode:"api",
+  mode:"supabase",
   async save(day){
     days[day.date]=day; saveLocal();
-    try{ await api("PUT","days",day); if(!apiOk){ apiOk=true; setStatus("Synchronisé — accessible depuis tous tes appareils."); } }
-    catch(e){ setPending([...getPending(), day.date]); apiOk=false; setStatus("Hors ligne — enregistré sur cet appareil, synchronisation au retour de la connexion."); }
+    try{ await sbPutDays([day]); if(!apiOk){ apiOk=true; setStatus(SYNC_OK); } }
+    catch(e){ setPending([...getPending(), day.date]); await onSyncError(e); }
   },
   async bulk(list){
     list.forEach(d=>days[d.date]=d); saveLocal();
-    for(let i=0;i<list.length;i+=200) await api("PUT","days",list.slice(i,i+200));
+    await sbPutDays(list);
   }
 };
 async function pullRemote(first){
-  const [st, dd] = await Promise.all([api("GET","settings"), api("GET","days")]);
-  if(st && st.settings){ S=normalizeSettings(st.settings); try{ localStorage.setItem(SET_KEY, JSON.stringify(S)); }catch(e){} if(settingsMigrated){ settingsMigrated=false; await api("PUT","settings",S); } }
-  else if(first){ await api("PUT","settings",S); }
-  const remote={}; (dd.days||[]).forEach(d=>{ if(d&&d.date) remote[d.date]=normalize(d); });
-  if(first){ // pousse ce qui n'existe que sur cet appareil
+  const [st, dd] = await Promise.all([sbGetSettings(), sbGetDays()]);
+  if(st){ S=normalizeSettings(st); try{ localStorage.setItem(SET_KEY, JSON.stringify(S)); }catch(e){} if(settingsMigrated){ settingsMigrated=false; await sbPutSettings(S); } }
+  else if(first){ await sbPutSettings(S); }
+  const remote={}; (dd||[]).forEach(d=>{ if(d&&d.date) remote[d.date]=normalize(d); });
+  if(first){ // pousse ce qui n'existe que sur cet appareil (saisi hors ligne)
     const onlyLocal=Object.keys(days).filter(k=>!remote[k]).map(k=>days[k]);
-    for(let i=0;i<onlyLocal.length;i+=200) await api("PUT","days",onlyLocal.slice(i,i+200));
+    if(onlyLocal.length) await sbPutDays(onlyLocal);
     onlyLocal.forEach(d=>remote[d.date]=d);
   }
   for(const k of Object.keys(days)) if(!remote[k]) delete days[k];
@@ -780,14 +894,15 @@ async function initDb(){
   try{
     await flushPending();
     await pullRemote(true);
-    apiOk=true; setStatus("Synchronisé — accessible depuis tous tes appareils.");
+    apiOk=true; setStatus(SYNC_OK);
   }catch(e){
-    setStatus(e.message==="auth" ? "Mot de passe requis pour synchroniser — recharge la page." : "Hors ligne — données gardées sur cet appareil, synchronisation au retour de la connexion.");
+    if(isRlsError(e) && (await checkAccess().catch(()=>null))===false){ showPaywall(); return; }
+    setStatus("Hors ligne — données gardées sur cet appareil, synchronisation au retour de la connexion.");
   }
   applySettings(); renderAll(false);
   const refresh = async()=>{
     if(dirty || editing.prog || editing.nutri) return;
-    try{ await flushPending(); await pullRemote(false); apiOk=true; setStatus("Synchronisé — accessible depuis tous tes appareils."); applySettings(); renderAll(false); }catch(e){}
+    try{ await flushPending(); await pullRemote(false); apiOk=true; setStatus(SYNC_OK); applySettings(); renderAll(false); }catch(e){ if(isRlsError(e)) onSyncError(e); }
   };
   document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") refresh(); });
   window.addEventListener("online", refresh);
@@ -1755,13 +1870,164 @@ function renderAll(reloadForm){
   renderOthers();
 }
 
-/* ---------- init ---------- */
-loadSettings();
-buildScales(); renderTplSelect(); renderDayTypeSeg(); renderPhase();
-loadLocal();
-setStatus("Données enregistrées sur cet appareil.");
-renderAll(true);
-initDb();
+/* ---------- comptes : connexion, inscription, mot de passe, accès ---------- */
+const AUTH_VIEWS = ["authLoginView","authForgotView","authResetView","authCheckView","authPaywallView"];
+let authMode = "login", booted = false;
+function showAuthView(id, sub){
+  $("#auth").hidden = false;
+  AUTH_VIEWS.forEach(v=>$("#"+v).hidden = v!==id);
+  if(sub!=null) $("#authSub").textContent = sub;
+}
+function hideAuth(){ $("#auth").hidden = true; }
+function setMsg(id, text, kind){ const m=$("#"+id); m.textContent=text||""; m.className="auth-msg"+(kind?" "+kind:""); }
+function frError(e){
+  const m = String((e && (e.message||e.error_description)) || e || "");
+  if(/invalid login credentials/i.test(m)) return "E-mail ou mot de passe incorrect.";
+  if(/email not confirmed/i.test(m)) return "Confirme d'abord ton e-mail : clique sur le lien reçu à l'inscription.";
+  if(/already registered|already been registered|already exists/i.test(m)) return "Un compte existe déjà avec cet e-mail. Connecte-toi, ou utilise « Mot de passe oublié ».";
+  if(/password.*(at least|least).*\d+/i.test(m)) return "Le mot de passe est trop court (8 caractères minimum).";
+  if(/weak|pwned|compromised/i.test(m)) return "Ce mot de passe est trop faible ou connu : choisis-en un autre.";
+  if(/rate limit|too many|security purposes/i.test(m)) return "Trop de tentatives ou d'e-mails envoyés. Réessaie dans quelques minutes.";
+  if(/invalid.*email|email.*invalid/i.test(m)) return "Cette adresse e-mail n'est pas valide.";
+  if(/failed to fetch|network|load failed/i.test(m)) return "Pas de connexion au serveur. Vérifie ton réseau.";
+  return m || "Une erreur est survenue.";
+}
+function setAuthTab(mode){
+  authMode = mode;
+  $$("[data-auth-tab]").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.authTab===mode)));
+  $("#nameWrap").hidden = mode!=="signup";
+  $("#authPassword").autocomplete = mode==="signup" ? "new-password" : "current-password";
+  $("#authSubmit").textContent = mode==="signup" ? "Créer mon compte" : "Se connecter";
+  $("#authSub").textContent = mode==="signup" ? "Crée ton compte en quelques secondes." : "Connecte-toi pour retrouver ton carnet.";
+  setMsg("authMsg","");
+}
+$$("[data-auth-tab]").forEach(b=>b.onclick=()=>setAuthTab(b.dataset.authTab));
+$$("[data-auth-back]").forEach(b=>b.onclick=()=>{ showAuthView("authLoginView"); setAuthTab("login"); });
+$$("[data-auth-logout]").forEach(b=>b.onclick=logout);
+$("#logoutBtn").onclick = logout;
+$("#forgotBtn").onclick = ()=>{ $("#forgotEmail").value = $("#authEmail").value; setMsg("forgotMsg",""); showAuthView("authForgotView","Reçois un lien pour choisir un nouveau mot de passe."); };
+
+const redirectUrl = () => location.origin + location.pathname;
+$("#authForm").onsubmit = async e=>{
+  e.preventDefault();
+  const email=$("#authEmail").value.trim(), password=$("#authPassword").value, btn=$("#authSubmit");
+  if(!email || !password){ setMsg("authMsg","Renseigne ton e-mail et ton mot de passe.","err"); return; }
+  if(authMode==="signup" && password.length<8){ setMsg("authMsg","Le mot de passe doit faire au moins 8 caractères.","err"); return; }
+  btn.disabled=true; setMsg("authMsg", authMode==="signup" ? "Création du compte…" : "Connexion…");
+  try{
+    if(authMode==="signup"){
+      const name=$("#authName").value.trim();
+      const { data, error } = await sb.auth.signUp({ email, password, options:{ emailRedirectTo: redirectUrl(), data: name ? { display_name:name } : {} } });
+      if(error) throw error;
+      if(data.session){ await enter(data.session.user); }
+      else { $("#checkEmail").textContent = email; showAuthView("authCheckView","Plus qu'une étape."); }
+    } else {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if(error) throw error;
+      await enter(data.user);
+    }
+  }catch(err){ setMsg("authMsg", frError(err), "err"); }
+  btn.disabled=false;
+};
+$("#forgotForm").onsubmit = async e=>{
+  e.preventDefault();
+  const email=$("#forgotEmail").value.trim();
+  if(!email){ setMsg("forgotMsg","Renseigne ton e-mail.","err"); return; }
+  setMsg("forgotMsg","Envoi…");
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl() });
+  // Même message que le compte existe ou non : on ne révèle pas quelles adresses sont inscrites.
+  if(error && !/not found|no user/i.test(error.message||"")) setMsg("forgotMsg", frError(error), "err");
+  else setMsg("forgotMsg","Si un compte existe pour cette adresse, un lien vient d'être envoyé. Pense à regarder dans les spams.","ok");
+};
+$("#resetForm").onsubmit = async e=>{
+  e.preventDefault();
+  const password=$("#resetPassword").value;
+  if(password.length<8){ setMsg("resetMsg","Le mot de passe doit faire au moins 8 caractères.","err"); return; }
+  setMsg("resetMsg","Enregistrement…");
+  const { data, error } = await sb.auth.updateUser({ password });
+  if(error){ setMsg("resetMsg", frError(error), "err"); return; }
+  setMsg("resetMsg","Mot de passe modifié.","ok");
+  await enter(data.user);
+};
+$("#codeForm").onsubmit = async e=>{
+  e.preventDefault();
+  const code=$("#codeInput").value.trim();
+  if(!code){ setMsg("codeMsg","Entre le code que t'a donné ton coach.","err"); return; }
+  setMsg("codeMsg","Vérification…");
+  const { data, error } = await sb.rpc("redeem_referral_code", { code });
+  if(error){ setMsg("codeMsg", frError(error), "err"); return; }
+  setMsg("codeMsg", `C'est bon : tu fais partie de l'équipe de ${data}.`, "ok");
+  await enter(user);
+};
+$("#paywallRecheck").onclick = ()=>enter(user);
+
+async function checkAccess(){
+  const { data, error } = await sb.rpc("has_access");
+  if(error) throw error;
+  return data === true;
+}
+async function loadProfile(){
+  const { data, error } = await sb.from("profiles").select("email, display_name, role, sponsor_id").maybeSingle();
+  if(error) throw error;
+  profile = data;
+  // Prénom saisi à l'inscription : on l'enregistre une fois, côté serveur.
+  const wanted = user && user.user_metadata && user.user_metadata.display_name;
+  if(profile && !profile.display_name && wanted){ await sb.rpc("set_display_name", { name: wanted }).catch(()=>{}); profile.display_name = wanted; }
+}
+function showAccount(){
+  $("#account").hidden = false;
+  $("#accountEmail").textContent = (profile && profile.display_name) ? `${profile.display_name} · ${user.email}` : user.email;
+  const r = $("#accountRole");
+  r.hidden = !(profile && profile.role==="fitmotivator");
+  r.textContent = "FitMotivator";
+}
+function showPaywall(){
+  $("#paywallEmail").textContent = user ? user.email : "";
+  setMsg("codeMsg","");
+  showAuthView("authPaywallView","Il te faut un abonnement ou un code de parrainage.");
+}
+async function enter(u){
+  user = u; useAccountKeys(u.id);
+  let ok;
+  try{ await loadProfile(); ok = await checkAccess(); }
+  catch(e){
+    // Hors ligne : on ouvre le carnet si ce compte a déjà des données sur cet appareil.
+    let cached=false; try{ cached = !!localStorage.getItem(LS_KEY); }catch(_){}
+    if(!cached){ showAuthView("authLoginView"); setMsg("authMsg", frError(e), "err"); return; }
+    ok = true;
+  }
+  if(!ok){ showPaywall(); return; }
+  hideAuth(); showAccount();
+  if(booted) return;
+  booted = true;
+  loadSettings();
+  buildScales(); renderTplSelect(); renderDayTypeSeg(); renderPhase();
+  loadLocal();
+  setStatus("Données enregistrées sur cet appareil.");
+  renderAll(true);
+  initDb();
+}
+async function logout(){
+  try{ await sb.auth.signOut(); }catch(e){}
+  location.reload();
+}
+
+/* ---------- démarrage ---------- */
+(async function start(){
+  if(!sb){ showAuthView("authLoginView"); setMsg("authMsg","Impossible de charger le module de connexion. Vérifie ta connexion et recharge la page.","err"); return; }
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const recovery = hash.get("type")==="recovery";
+  const linkError = hash.get("error_description");
+  sb.auth.onAuthStateChange((event)=>{
+    if(event==="PASSWORD_RECOVERY") showAuthView("authResetView","Choisis ton nouveau mot de passe.");
+  });
+  const { data:{ session } } = await sb.auth.getSession();
+  if(location.hash) history.replaceState(null, "", location.pathname + location.search);
+  if(linkError){ showAuthView("authLoginView"); setAuthTab("login"); setMsg("authMsg", /expired|invalid/i.test(linkError) ? "Ce lien a expiré ou a déjà servi. Demande-en un nouveau." : linkError, "err"); return; }
+  if(session && recovery){ user = session.user; useAccountKeys(user.id); showAuthView("authResetView","Choisis ton nouveau mot de passe."); return; }
+  if(session){ await enter(session.user); return; }
+  showAuthView("authLoginView"); setAuthTab("login");
+})();
 })();
 </script>
 </body>

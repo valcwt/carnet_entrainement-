@@ -40,11 +40,12 @@ Légende : ✅ fait · 🔄 en cours · 🔲 à faire · ⏸️ plus tard
 - ✅ Tables multi-utilisateurs + RLS (`supabase/migrations/001_multi_utilisateurs.sql`)
 - ✅ Parrainage FitMotivator : codes, challengers, partage en lecture (`002_parrainage_fitmotivator.sql`)
 - ✅ Tests de sécurité sur Postgres local (`supabase/tests/`)
-- 🔲 Lancer 001 puis 002 dans le SQL Editor de Supabase
-- 🔲 Authentification : inscription, connexion, mot de passe oublié (Supabase Auth)
-- 🔲 Front : écran de connexion, lecture/écriture directe dans Supabase, cache local par utilisateur
+- ✅ Lancer 001 puis 002 dans le SQL Editor de Supabase (17 oct.)
+- ✅ Authentification : inscription, connexion, mot de passe oublié (Supabase Auth)
+- 🔲 Réglages Supabase Auth : URL du site et URL de redirection (aperçus Vercel)
+- ✅ Front : écran de connexion, lecture/écriture directe dans Supabase, cache local par utilisateur (27 scénarios testés : `tests/front/`)
 - 🔲 Premier lancement : assistant de départ + modèles génériques ; retirer les données perso du code
-- 🔲 Écrans parrainage : saisir un code, liste des challengers, vue coach, accord de partage
+- 🟡 Écrans parrainage : saisir un code ✅ · liste des challengers, vue coach, accord de partage 🔲
 
 ### 2. Stripe (mode test)
 - 🔲 Offres et prix semaine / mois / an, chaque offre accorde son rôle (migration 003)

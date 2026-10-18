@@ -1,6 +1,6 @@
 // Service worker : l'app s'ouvre même sans réseau. Les données passent toujours par /api (jamais mises en cache ici) :
 // hors connexion, le carnet garde tes saisies sur l'appareil et les envoie au retour du réseau.
-const VERSION = "carnet-v1";
+const VERSION = "carnet-v2";
 const SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
@@ -17,8 +17,9 @@ self.addEventListener("fetch", (e) => {
     e.respondWith(fetch(req).then((r) => { const copy = r.clone(); caches.open(VERSION).then((c) => c.put("/", copy)); return r; }).catch(() => caches.match("/")));
     return;
   }
-  // Polices et icônes : cache d'abord
-  if (url.origin === location.origin || url.hostname.endsWith("gstatic.com") || url.hostname.endsWith("googleapis.com")) {
+  // Polices, icônes et bibliothèque de connexion (version figée) : cache d'abord.
+  // Les appels à Supabase (autre domaine) ne sont jamais mis en cache.
+  if (url.origin === location.origin || url.hostname.endsWith("gstatic.com") || url.hostname.endsWith("googleapis.com") || url.hostname === "cdn.jsdelivr.net") {
     e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((r) => { if (r.ok || r.type === "opaque") { const copy = r.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); } return r; })));
   }
 });
