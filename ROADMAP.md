@@ -76,6 +76,7 @@ Légende : ✅ fait · 🔄 en cours · 🔲 à faire · ⏸️ plus tard
 ---
 
 ## TODO — plus tard
+- 🔲 **Réveil quotidien de la base** : l'offre gratuite de Supabase met le projet en pause après 7 jours sans activité (arrivé le 17 oct.). Une tâche planifiée qui fait une petite requête chaque jour l'en empêche.
 - ⏸️ **E-mails transactionnels** : confirmation de paiement, échec de paiement, fin d'abonnement, bienvenue (service d'envoi type Resend)
 - ⏸️ Écran de lecture des **Tips** (conseils)
 - ⏸️ Analyse de la semaine par IA (bilan du vendredi)
