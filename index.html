@@ -1972,7 +1972,10 @@ async function loadProfile(){
   profile = data;
   // Prénom saisi à l'inscription : on l'enregistre une fois, côté serveur.
   const wanted = user && user.user_metadata && user.user_metadata.display_name;
-  if(profile && !profile.display_name && wanted){ await sb.rpc("set_display_name", { name: wanted }).catch(()=>{}); profile.display_name = wanted; }
+  // Attention : une requête Supabase n'est pas une vraie Promise (pas de .catch) : on utilise try / await.
+  if(profile && !profile.display_name && wanted){
+    try{ const { error } = await sb.rpc("set_display_name", { name: wanted }); if(!error) profile.display_name = wanted; }catch(e){}
+  }
 }
 function showAccount(){
   $("#account").hidden = false;

@@ -1,4 +1,8 @@
 // Faux client Supabase en mémoire, avec les mêmes règles d'accès que la base (RLS simplifié).
+// Comme le vrai client, les requêtes (rpc, from…) renvoient un objet « thenable » : on peut faire await,
+// mais il n'a PAS de .catch ni de .finally. Le premier faux client renvoyait de vraies Promises et
+// laissait passer un bug (sb.rpc(...).catch is not a function).
+const thenable = p => ({ then:(res, rej)=>p.then(res, rej) });
 module.exports = function makeFake(){
   const db = { users:{}, profiles:{}, user_days:{}, user_settings:{} };
   let session = null, listeners = [], nextId = 1;
@@ -24,9 +28,10 @@ module.exports = function makeFake(){
     };
     const b = {
       select(){ return b; }, order(){ return b; }, range(a,z){ st.range=[a,z]; return b; },
-      maybeSingle(){ st.single=true; return run(); },
+      maybeSingle(){ st.single=true; return thenable(run()); },
       then(res, rej){ return run().then(res, rej); },
-      async upsert(rows, opts){
+      upsert(rows, opts){ return thenable(b._upsert(rows, opts)); },
+      async _upsert(rows, opts){
         rows = Array.isArray(rows) ? rows : [rows];
         log.push(["upsert", table, rows.length, opts && opts.onConflict]);
         if(!uid() || !hasAccess() || rows.some(r=>r.user_id!==uid())) return { error: err('new row violates row-level security policy for table "'+table+'"', "42501") };
@@ -47,7 +52,8 @@ module.exports = function makeFake(){
       async signOut(){ session=null; log.push(["signOut"]); emit("SIGNED_OUT"); return {error:null}; }
     },
     from: builder,
-    async rpc(name, args){
+    rpc(name, args){ return thenable(this._rpc(name, args)); },
+    async _rpc(name, args){
       log.push(["rpc",name,args]);
       if(!uid()) return {data:null,error:err("permission denied for function "+name,"42501")};
       if(name==="has_access") return {data:hasAccess(),error:null};
