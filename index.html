@@ -516,6 +516,11 @@ nav.bottom-nav{display:none}
       <div class="row" id="xferActions" hidden style="margin-top:8px"><button class="btn small" id="xferCopy">Copier</button><button class="btn small" id="xferApply">Importer ce contenu</button><span class="save-msg" id="xferMsg"></span></div>
     </section>
     <section class="panel"><h2>Historique</h2><div id="history"></div></section>
+    <section class="panel">
+      <h2>Repartir à zéro</h2>
+      <p class="hint">Efface toutes les journées (poids, pas, sommeil, ressentis, séances, tests) sur tous tes appareils. Ton programme et tes réglages sont gardés, et la semaine 1 repart au prochain lundi. Une sauvegarde est copiée juste avant, au cas où.</p>
+      <div class="row"><button class="btn ghost" id="resetAllBtn" style="color:var(--warn);border-color:var(--warn)">Tout effacer et repartir à zéro</button><span class="save-msg" id="resetMsg"></span></div>
+    </section>
   </main>
 </div>
 
@@ -1639,6 +1644,23 @@ $("#exportBtn").onclick=()=>{
   ta.hidden=false; ta.readOnly=true; ta.value=json; $("#xferActions").hidden=false; $("#xferApply").hidden=true; $("#xferCopy").hidden=false;
   $("#xferMsg").textContent=`${Object.keys(days).length} journées + réglages`;
   if(window.CARNET_CAN_DOWNLOAD){ try{ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([json],{type:"application/json"})); a.download=`carnet-sport-${todayIso()}.json`; document.body.appendChild(a); a.click(); a.remove(); $("#xferMsg").textContent+=" · fichier téléchargé"; }catch(e){} }
+};
+$("#resetAllBtn").onclick=async()=>{
+  const n=Object.keys(days).length, t=todayIso(), start = (parseIso(t).getDay()===1) ? t : addDays(mondayOf(t),7);
+  if(!confirm(`Effacer les ${n} journées enregistrées et repartir à zéro ? La semaine 1 commencera le ${fmtShort(start).replace(/\.$/,"")}. Une sauvegarde va être affichée juste avant.`)) return;
+  const btn=$("#resetAllBtn"); btn.disabled=true;
+  $("#exportBtn").click(); // sauvegarde visible (et téléchargée si possible) avant d'effacer
+  const backup=exportData(); try{ localStorage.setItem("carnet-sport.backup-avant-reset", backup); }catch(e){}
+  for(const k of Object.keys(days)) delete days[k];
+  setPending([]); saveLocal(); dirty=false;
+  S.programStart=start; S.resetAt=new Date().toISOString(); S.testSnooze="";
+  try{ localStorage.setItem("carnet-reset", S.resetAt); }catch(e){}
+  let online=true;
+  try{ await api("DELETE","days"); }catch(e){ online=false; }
+  try{ await saveSettings(); }catch(e){ online=false; }
+  loadDay(t); applySettings(); renderAll(false); renderHistory();
+  $("#resetMsg").textContent = online ? "C'est fait : tout est vide, sur tous tes appareils." : "Effacé sur cet appareil. Pas de connexion au serveur : refais-le une fois en ligne pour les autres appareils.";
+  btn.disabled=false;
 };
 $("#importJsonBtn").onclick=()=>{
   const ta=$("#xfer"); ta.hidden=false; ta.readOnly=false; ta.value=""; ta.placeholder="Colle ici le contenu exporté…";

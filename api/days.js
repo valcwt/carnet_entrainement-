@@ -36,7 +36,13 @@ export default async function handler(req, res) {
       return res.status(204).end();
     }
 
-    res.setHeader("Allow", "GET, PUT");
+    if (req.method === "DELETE") {
+      // remise à zéro : efface toutes les journées
+      await sb("days?date=not.is.null", { method: "DELETE", headers: { Prefer: "return=minimal" } });
+      return res.status(204).end();
+    }
+
+    res.setHeader("Allow", "GET, PUT, DELETE");
     return res.status(405).json({ error: "Méthode non autorisée." });
   } catch (e) {
     console.error(e);
