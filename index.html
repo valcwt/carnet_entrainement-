@@ -48,6 +48,10 @@ header.top h1{font-size:clamp(2.2rem,7vw,3.4rem);letter-spacing:-.01em}
 .phase{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:10px 14px;margin:8px 0 16px;font-size:.95rem}
 .phase b{font-family:"Barlow Condensed",sans-serif;font-size:1.25rem}
 .phase span{color:var(--muted)}
+.test-alert{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:10px;padding:10px 14px;margin:-6px 0 16px}
+.test-alert b{font-family:"Barlow Condensed",sans-serif;font-size:1.25rem;color:var(--warn)}
+.test-alert p{margin:4px 0 10px;color:var(--muted);font-size:.95rem}
+.test-alert .row{gap:8px}
 nav.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px;max-width:100%;overflow-x:auto;margin-bottom:6px}
 nav.tabs button{border:0;background:none;padding:8px 14px;border-radius:999px;cursor:pointer;font-weight:600;color:var(--muted);white-space:nowrap}
 nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
@@ -308,6 +312,7 @@ nav.bottom-nav{display:none}
     </div>
   </header>
   <div class="phase" id="phase"></div>
+  <div class="test-alert" id="testAlert" role="status" hidden></div>
   <nav class="tabs top-nav" role="tablist">
     <button role="tab" aria-selected="true" data-tab="jour">Journée</button>
     <button role="tab" aria-selected="false" data-tab="sem">Semainier</button>
@@ -400,7 +405,7 @@ nav.bottom-nav{display:none}
     <section class="panel">
       <h2>Sommaire journalier</h2>
       <textarea id="dayNote" placeholder="Chaque détail ou information qui te semble important : imprévu, douleur, hydratation…"></textarea>
-      <details class="more" style="margin-top:10px">
+      <details class="more" id="testDetails" style="margin-top:10px">
         <summary>+ Test Murph ce jour-là</summary>
         <div class="grid" style="margin-top:8px">
           <label>Tractions strictes<input type="number" id="t-pullups" min="0" inputmode="numeric"></label>
@@ -442,6 +447,7 @@ nav.bottom-nav{display:none}
         <h2>Tests <small>départ → meilleur résultat noté</small></h2>
         <div class="tests" id="tests"></div>
         <div id="nextBlock" style="margin-top:16px"></div>
+        <p id="nextTest" style="margin:12px 0 0"></p>
         <p class="hint" style="margin-top:10px">Pour noter un nouveau test, ouvre « Test Murph ce jour-là » en bas de la journée.</p>
       </section>
       <section class="panel">
@@ -566,7 +572,7 @@ function defaultSettings(){
     water: cap(plan.water||""), salt: cap(plan.salt||""), supps: [...plan.supps]
   });
   return {
-    programStart:"2026-06-22", eventName:"Murph", eventDate:"2027-05-01",
+    programStart:"2026-06-22", eventName:"Murph", eventDate:"2027-05-01", testEvery:4, testSnooze:"",
     phases:[
       {from:1,to:16,name:"Phase 1 — perte de poids",target:97,detail:"1 écart autorisé par semaine"},
       {from:17,to:20,name:"Diet break",target:null,detail:"Reprise d'énergie"},
@@ -597,7 +603,7 @@ function defaultSettings(){
     ]
   };
 }
-const PROG_KEYS = ["programStart","eventName","eventDate","phases","baseline","templates","blocks","nextBlock"];
+const PROG_KEYS = ["programStart","eventName","eventDate","phases","baseline","templates","blocks","nextBlock","testEvery"];
 let settingsMigrated = false;
 function normalizeSettings(s){
   const ver = s ? (s.programVersion||1) : 2;
@@ -702,6 +708,33 @@ function paceAdvice(r){
   return s.join(" ");
 }
 function remainingTxt(w,target){ const r=w-target; return r>0 ? `reste ${fmtNum(r,1)} kg à perdre jusqu'à ~${fmtNum(target,1)} kg` : r<0 ? `encore ${fmtNum(-r,1)} kg à prendre jusqu'à ~${fmtNum(target,1)} kg` : `objectif de ${fmtNum(target,1)} kg atteint`; }
+/* ---------- rappel du test Murph ---------- */
+function testInfo(){
+  const every = Math.max(1, Math.round(Number(S.testEvery)||4));
+  const last = Object.values(days).filter(d=>d.tests && Object.values(d.tests).some(v=>v!=null&&v!=="")).map(d=>d.date).sort().pop() || null;
+  let due = addDays(last || S.programStart, every*7);
+  const snoozed = !!(S.testSnooze && S.testSnooze>due);
+  if(snoozed) due = S.testSnooze;
+  return {every, last, due, left: diffDays(due, todayIso()), snoozed};
+}
+function testWhen(T){ return T.left<0 ? `en retard de ${-T.left} jour${T.left<-1?"s":""}` : T.left===0 ? "aujourd'hui" : T.left===1 ? "demain" : `dans ${T.left} jours`; }
+function renderTestAlert(){
+  const el=$("#testAlert"); if(!el) return;
+  const T=testInfo();
+  if(T.left>2){ el.hidden=true; return; }
+  el.hidden=false;
+  el.innerHTML = `<b>Test Murph ${T.left<=0?"à faire":"bientôt"}</b> <span style="color:var(--muted)">· ${esc(testWhen(T))}</span>
+    <p>${T.last?`Dernier test le ${fmtShort(T.last).replace(/\.$/,"")}.`:"Aucun test noté pour l'instant."} Refais tractions strictes, pompes strictes, air squats en 2 min et 1,6 km pour mesurer ton avancement (un test toutes les ${T.every} semaines).</p>
+    <div class="row"><button class="btn small" id="testGo">Noter le test aujourd'hui</button><button class="btn ghost small" id="testSnooze">Reporter d'une semaine</button></div>`;
+  $("#testGo").onclick=async()=>{
+    showTab("jour"); if(current.date!==todayIso()) await switchDay(todayIso());
+    const d=$("#testDetails"); d.open=true; d.scrollIntoView?.({behavior:"smooth",block:"center"}); setTimeout(()=>$("#t-pullups").focus({preventScroll:true}),350);
+  };
+  $("#testSnooze").onclick=async()=>{
+    S.testSnooze = addDays(todayIso(),7); renderTestAlert(); renderOthers();
+    try{ await saveSettings(); setStatus("Test Murph reporté au "+fmtShort(S.testSnooze)+"."); }catch(e){ setStatus("Report non enregistré — réessaie."); }
+  };
+}
 function renderPhase(){
   const t = todayIso(), p = phaseFor(t);
   const ev = S.eventDate ? diffDays(S.eventDate, t) : null;
@@ -710,6 +743,7 @@ function renderPhase(){
   $("#phase").innerHTML = `<b>Semaine ${p.w}</b><span>${esc(p.name)}</span>${obj?`<span><b style="font-size:1.05rem">${esc(obj)}</b>${last&&p.target!=null&&p.target!==""?` · ${esc(remainingTxt(last.weight,Number(p.target)))}`:""}</span>`:""}${p.detail?`<span>${esc(p.detail)}</span>`:""}${ev!=null&&ev>=0?`<span>${esc(S.eventName||"Objectif")} : dans ~${ev>60?Math.round(ev/30)+" mois":ev+" jours"}</span>`:""}<span>Bilan chaque vendredi</span>${(()=>{ const r=paceInfo(); return r?`<span class="pace-line"><span class="badge ${r.status}">${esc(r.label)}</span><span>${esc(paceShort(r))}</span><a href="#" id="paceMore" style="color:var(--accent);font-weight:600">Détail</a></span>`:""; })()}<button type="button" class="btn ghost small" id="editGoal" style="margin-left:auto">Modifier l'objectif</button>`;
   $("#paceMore") && ($("#paceMore").onclick=e=>{ e.preventDefault(); showTab("tend"); $("#pacePanel").scrollIntoView?.({behavior:"smooth",block:"start"}); });
   $("#editGoal").onclick=()=>{ showTab("prog"); if(!editing.prog) openProgEdit(); const s=$("#ed-objectifs"); s&&s.scrollIntoView?.({behavior:"smooth",block:"start"}); const f=s&&s.querySelector('[data-p$=".target"]'); f&&f.focus({preventScroll:true}); };
+  renderTestAlert();
 }
 
 /* ---------- échelles & segments ---------- */
@@ -1213,6 +1247,7 @@ function renderSemainier(){
     ...W.sess.map(s=>`  · ${s.title||s.type}${s.performance?` — ${perfL[s.performance]}`:""}${s.perfNote?` — ${s.perfNote}`:""}`),
     `Pas / NEAT moyens : ${fmtNum(W.steps)}`,
     ...(()=>{ const wa=avg(W.ds.map(d=>d.watchKcal)); return wa!=null?[`Montre : ${fmtNum(Math.round(wa/10)*10)} kcal actives/j`]:[]; })(),
+    ...(()=>{ const NT=testInfo(), tw=W.ds.find(d=>d.tests&&Object.values(d.tests).some(v=>v!=null&&v!=="")); return [tw?`Test Murph fait (${dn(tw)}) : ${[tw.tests.pullups!=null?tw.tests.pullups+" tractions":"",tw.tests.pushups!=null?tw.tests.pushups+" pompes":"",tw.tests.squats!=null?tw.tests.squats+" squats/2 min":"",tw.tests.mile?"1,6 km en "+tw.tests.mile:""].filter(Boolean).join(" · ")}`:`Prochain test Murph : ${fmtShort(NT.due)} (${testWhen(NT)})`]; })(),
     `Sommeil : ${fmtH(W.sleep)} / nuit · qualité ${fmtNum(W.sq,1)}/5`,
     `Énergie ${fmtNum(W.energy,1)}/5 · Stress ${fmtNum(W.stress,1)}/5 · Courbatures ${fmtNum(W.soreness,1)}/5`,
     ...(notes.length?[``,`Notes :`,...notes]:[])
@@ -1359,6 +1394,7 @@ function renderProgram(){
   const best = (k,better) => { let b=null,bd=null; all.forEach(d=>{ const v=d.tests[k]; if(v==null||v==="") return; const n = k==="mile"?parseTime(v):Number(v); if(n==null||isNaN(n)) return; if(b==null||better(n,b)){b=n;bd=d.date;} }); return b==null?null:{v:b,d:bd}; };
   const B=S.baseline;
   const T = [["pullups","Tractions strictes",num(B.pullups),(a,b)=>a>b,v=>v],["pushups","Pompes strictes",num(B.pushups),(a,b)=>a>b,v=>v],["squats","Air squats / 2 min",num(B.squats),(a,b)=>a>b,v=>v],["mile","1,6 km",parseTime(B.mile),(a,b)=>a<b,v=>fmtSec(v)]];
+  { const NT=testInfo(); $("#nextTest").innerHTML = `<b>Prochain test :</b> ${fmtShort(NT.due)} <span style="color:${NT.left<=0?"var(--warn)":"var(--muted)"}">(${esc(testWhen(NT))})</span> · un test toutes les ${NT.every} semaines${NT.snoozed?" · reporté":""}`; }
   $("#tests").innerHTML = T.map(([k,l,base,better,f])=>{
     const b = best(k,better); const v = b ? b.v : base;
     const diff = b && base!=null ? (k==="mile" ? base-v : v-base) : null;
@@ -1448,6 +1484,10 @@ function renderProgEditor(){
       ${E.phases.map((p,pi)=>`<div class="ed-row phase">${I(`phases.${pi}.from`,p.from,"num")}${I(`phases.${pi}.to`,p.to,"num")}${I(`phases.${pi}.name`,p.name)}${I(`phases.${pi}.target`,p.target,"num")}${I(`phases.${pi}.detail`,p.detail)}${MOVE("phases",pi,E.phases.length,"la phase")}</div>`).join("")}
     </div>
     ${ADD("phases","phase","Ajouter une phase")}
+  </section>
+  <section class="panel"><h2>Test Murph</h2>
+    <div class="grid"><label>Refaire le test toutes les (semaines)${I("testEvery",E.testEvery,"num")}</label></div>
+    <p class="hint">Un rappel s'affiche en haut de l'app 2 jours avant la date, jusqu'à ce que tu notes le test.</p>
   </section>
   <section class="panel"><h2>Critères de passage au bloc suivant</h2>
     <div class="grid"><label>Bloc visé${I("nextBlock.name",E.nextBlock?.name)}</label><label>Tractions strictes (min.)${I("nextBlock.pullups",E.nextBlock?.pullups,"num")}</label><label>Pompes strictes (min.)${I("nextBlock.pushups",E.nextBlock?.pushups,"num")}</label><label>Air squats / 2 min (min.)${I("nextBlock.squats2",E.nextBlock?.squats2,"num")}</label><label>1,6 km (max., mm:ss)${I("nextBlock.mile",E.nextBlock?.mile)}</label></div>
