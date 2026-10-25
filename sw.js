@@ -1,6 +1,6 @@
 // Service worker : l'app s'ouvre même sans réseau. Les données passent toujours par /api (jamais mises en cache ici) :
 // hors connexion, le carnet garde tes saisies sur l'appareil et les envoie au retour du réseau.
-const VERSION = "carnet-v3";
+const VERSION = "carnet-v4";
 const SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {

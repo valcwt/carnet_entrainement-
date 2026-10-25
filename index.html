@@ -48,8 +48,8 @@ header.top h1{font-size:clamp(2.2rem,7vw,3.4rem);letter-spacing:-.01em}
 .phase{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:10px 14px;margin:8px 0 16px;font-size:.95rem}
 .phase b{font-family:"Barlow Condensed",sans-serif;font-size:1.25rem}
 .phase span{color:var(--muted)}
-.test-alert{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:10px;padding:10px 14px;margin:-6px 0 16px}
-.test-alert b{font-family:"Barlow Condensed",sans-serif;font-size:1.25rem;color:var(--warn)}
+.test-alert{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:10px 14px;margin:-6px 0 16px}
+.test-alert b{font-family:"Barlow Condensed",sans-serif;font-size:1.25rem}
 .test-alert p{margin:4px 0 10px;color:var(--muted);font-size:.95rem}
 .test-alert .row{gap:8px}
 nav.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px;max-width:100%;overflow-x:auto;margin-bottom:6px}
@@ -717,14 +717,14 @@ function testInfo(){
   if(snoozed) due = S.testSnooze;
   return {every, last, due, left: diffDays(due, todayIso()), snoozed};
 }
-function testWhen(T){ return T.left<0 ? `en retard de ${-T.left} jour${T.left<-1?"s":""}` : T.left===0 ? "aujourd'hui" : T.left===1 ? "demain" : `dans ${T.left} jours`; }
+function testWhen(T){ return T.left<=0 ? "c'est le moment" : T.left===1 ? "demain" : `dans ${T.left} jours`; }
 function renderTestAlert(){
   const el=$("#testAlert"); if(!el) return;
   const T=testInfo();
   if(T.left>2){ el.hidden=true; return; }
   el.hidden=false;
-  el.innerHTML = `<b>Test Murph ${T.left<=0?"à faire":"bientôt"}</b> <span style="color:var(--muted)">· ${esc(testWhen(T))}</span>
-    <p>${T.last?`Dernier test le ${fmtShort(T.last).replace(/\.$/,"")}.`:"Aucun test noté pour l'instant."} Refais tractions strictes, pompes strictes, air squats en 2 min et 1,6 km pour mesurer ton avancement (un test toutes les ${T.every} semaines).</p>
+  el.innerHTML = `<b>Nouveau test Murph</b> <span style="color:var(--muted)">· ${esc(testWhen(T))}</span>
+    <p>${T.last?`Dernier test le ${fmtShort(T.last).replace(/\.$/,"")}, il y a ${Math.round(diffDays(todayIso(),T.last)/7)} semaines.`:"Aucun test noté pour l'instant."} Refais tractions strictes, pompes strictes, air squats en 2 min et 1,6 km pour mesurer ton avancement (un test toutes les ${T.every} semaines).</p>
     <div class="row"><button class="btn small" id="testGo">Noter le test aujourd'hui</button><button class="btn ghost small" id="testSnooze">Reporter d'une semaine</button></div>`;
   $("#testGo").onclick=async()=>{
     showTab("jour"); if(current.date!==todayIso()) await switchDay(todayIso());
@@ -1394,7 +1394,7 @@ function renderProgram(){
   const best = (k,better) => { let b=null,bd=null; all.forEach(d=>{ const v=d.tests[k]; if(v==null||v==="") return; const n = k==="mile"?parseTime(v):Number(v); if(n==null||isNaN(n)) return; if(b==null||better(n,b)){b=n;bd=d.date;} }); return b==null?null:{v:b,d:bd}; };
   const B=S.baseline;
   const T = [["pullups","Tractions strictes",num(B.pullups),(a,b)=>a>b,v=>v],["pushups","Pompes strictes",num(B.pushups),(a,b)=>a>b,v=>v],["squats","Air squats / 2 min",num(B.squats),(a,b)=>a>b,v=>v],["mile","1,6 km",parseTime(B.mile),(a,b)=>a<b,v=>fmtSec(v)]];
-  { const NT=testInfo(); $("#nextTest").innerHTML = `<b>Prochain test :</b> ${fmtShort(NT.due)} <span style="color:${NT.left<=0?"var(--warn)":"var(--muted)"}">(${esc(testWhen(NT))})</span> · un test toutes les ${NT.every} semaines${NT.snoozed?" · reporté":""}`; }
+  { const NT=testInfo(); $("#nextTest").innerHTML = `<b>Prochain test :</b> ${fmtShort(NT.due)} <span style="color:var(--muted)">(${esc(testWhen(NT))})</span> · un test toutes les ${NT.every} semaines${NT.snoozed?" · reporté":""}`; }
   $("#tests").innerHTML = T.map(([k,l,base,better,f])=>{
     const b = best(k,better); const v = b ? b.v : base;
     const diff = b && base!=null ? (k==="mile" ? base-v : v-base) : null;
