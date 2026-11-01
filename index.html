@@ -351,11 +351,35 @@ section.panel h2.b7-title::before{display:none}
 .b7-pace b{color:var(--steps);font-family:"Barlow Condensed",sans-serif;font-size:1.3rem}
 .b7-feel{margin-top:14px;display:flex;flex-direction:column;gap:4px;font-size:.88rem;color:var(--muted);font-weight:500}
 .b7-rules{margin:0;padding-left:18px}
+.rec-msg{color:var(--gold)!important;font-weight:600}
+.howto{margin:10px 0 0;padding-left:20px;font-size:.92rem}
+.howto li{margin:0 0 10px;line-height:1.5}
+.howto code,#healthPanel code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem;background:var(--field);border:1px solid var(--line);border-radius:6px;padding:1px 6px;word-break:break-all}
+.health-tag{display:inline-block;font-size:.72rem;font-weight:700;color:var(--steps);border:1px solid rgba(34,227,160,.4);border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:middle}
 .b7-rules li{margin:4px 0}
 .b7-warn{margin:12px 0 0;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,201,61,.35);background:rgba(255,201,61,.07);font-size:.9rem}
 #b7Hist td,#b7Hist th{white-space:nowrap}
 #b7Hist .ok{color:var(--good);font-weight:700}
 @media (max-width:420px){.b7-week{grid-template-columns:repeat(2,1fr)}}
+
+/* minuteur de repos */
+.rest{position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:45;max-width:520px;margin:0 auto;display:flex;align-items:center;gap:10px;
+  background:rgba(20,24,29,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:18px;padding:10px 12px;box-shadow:0 12px 30px -10px rgba(0,0,0,.7)}
+.rest-ring{width:44px;height:44px;flex:none}
+.rest-ring svg{width:44px;height:44px;transform:rotate(-90deg)}
+.rest-ring circle{fill:none;stroke-width:4}
+.rest-ring .bg{stroke:var(--line)} .rest-ring .fg{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .25s linear}
+.rest-txt{flex:1;display:flex;flex-direction:column;line-height:1.1;min-width:0}
+.rest-txt span{font-size:.75rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rest-txt b{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:1.9rem;font-variant-numeric:tabular-nums}
+.rest-btn{border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:12px;min-width:46px;height:44px;font-weight:700;cursor:pointer}
+.rest-btn.x{min-width:44px;color:var(--muted)}
+.rest.done{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent),0 12px 30px -10px var(--accent);animation:pulse 1s ease-in-out 3}
+.rest.done .rest-txt b{color:var(--accent)}
+@keyframes pulse{50%{transform:scale(1.03)}}
+.b7-restbtn{border:0;background:none;color:var(--accent);font-weight:700;font-size:.82rem;cursor:pointer;padding:4px 0}
+@media (max-width:700px){.rest{bottom:calc(74px + env(safe-area-inset-bottom,0px))}}
+@media (prefers-reduced-motion:reduce){.rest.done{animation:none}}
 
 /* ---------- Mobile (iPhone) ---------- */
 nav.bottom-nav{display:none}
@@ -440,6 +464,13 @@ nav.bottom-nav{display:none}
     </div>
   </div>
 </div>
+<div class="rest" id="rest" hidden role="timer" aria-live="off">
+  <div class="rest-ring"><svg viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="19" class="bg"/><circle cx="22" cy="22" r="19" class="fg" id="restArc"/></svg></div>
+  <div class="rest-txt"><span id="restLbl">Repos</span><b id="restTime">2:30</b></div>
+  <button type="button" class="rest-btn" id="restMinus" aria-label="Moins 15 secondes">−15</button>
+  <button type="button" class="rest-btn" id="restPlus" aria-label="Plus 30 secondes">+30</button>
+  <button type="button" class="rest-btn x" id="restStop" aria-label="Arrêter le minuteur">✕</button>
+</div>
 <div class="wrap">
   <header class="top">
     <div>
@@ -477,7 +508,7 @@ nav.bottom-nav{display:none}
     </div>
 
     <section class="panel express">
-      <h2>Saisie express <small>enregistrée automatiquement</small></h2>
+      <h2>Saisie express <small>enregistrée automatiquement</small><span class="health-tag" id="healthTag" hidden>Santé ✓</span></h2>
       <div class="xgrid">
         <label>Poids (kg)<input type="number" id="weight" step="0.1" min="0" inputmode="decimal" enterkeyhint="next"></label>
         <label>Pas / NEAT<input type="number" id="steps" step="100" min="0" inputmode="numeric" enterkeyhint="next"></label>
@@ -658,6 +689,14 @@ nav.bottom-nav{display:none}
     </section>
 
     <section class="panel">
+      <h2>Progression de force <small id="b7StrHint"></small></h2>
+      <div class="seg b7-kinds" id="b7StrSeg"></div>
+      <div class="stat-row" id="b7StrStats" style="margin-top:12px"></div>
+      <div class="chart" id="b7StrChart"></div>
+      <div class="records" id="b7StrRecs" style="margin-top:12px"></div>
+    </section>
+
+    <section class="panel">
       <h2>Historique <small>8 dernières semaines</small></h2>
       <div class="tbl"><table id="b7Hist" style="min-width:0"></table></div>
     </section>
@@ -716,6 +755,24 @@ nav.bottom-nav{display:none}
       <div class="row"><button class="btn" id="exportBtn">Exporter mes données</button><button class="btn ghost" id="importJsonBtn">Importer une sauvegarde</button><label class="btn ghost" style="cursor:pointer">Importer un fichier<input type="file" id="importFile" accept=".json,application/json" hidden></label></div>
       <textarea id="xfer" class="bilan" hidden style="margin-top:12px;width:100%"></textarea>
       <div class="row" id="xferActions" hidden style="margin-top:8px"><button class="btn small" id="xferCopy">Copier</button><button class="btn small" id="xferApply">Importer ce contenu</button><span class="save-msg" id="xferMsg"></span></div>
+    </section>
+    <section class="panel" id="healthPanel">
+      <h2>Santé automatique <small>pas et sommeil depuis l'iPhone</small></h2>
+      <p class="hint" style="margin-bottom:6px">Un Raccourci iOS envoie chaque soir tes pas et ton sommeil d'Apple Santé. Tu n'as plus que le poids et l'eau à taper.</p>
+      <p id="healthStatus" style="margin:0 0 10px;font-weight:600"></p>
+      <details class="more"><summary>Créer le Raccourci (5 min, une seule fois)</summary>
+        <ol class="howto">
+          <li>Ouvre l'app <b>Raccourcis</b> → onglet <b>Automatisation</b> → <b>+</b> → <b>Heure de la journée</b> : <b>21:30</b>, <b>Quotidiennement</b>, choisis <b>Exécuter immédiatement</b>, puis <b>Suivant</b> → <b>Nouveau raccourci vide</b>.</li>
+          <li><b>Pas</b> : ajoute <b>Rechercher des échantillons de santé</b> → Type <b>Pas</b>, filtre <b>Date de début</b> <b>est aujourd'hui</b>. Ajoute ensuite <b>Calculer des statistiques</b> → <b>Somme</b>.</li>
+          <li><b>Sommeil</b> : ajoute <b>Rechercher des échantillons de santé</b> → Type <b>Analyse du sommeil</b>, filtres <b>Date de début</b> <b>dans les 1 derniers jours</b> et <b>Valeur</b> <b>n'est pas</b> <b>Au lit</b> (ajoute aussi <b>n'est pas Éveillé</b> si proposé). Ajoute <b>Obtenir les détails des échantillons de santé</b> → <b>Durée</b>, puis <b>Calculer des statistiques</b> → <b>Somme</b>.</li>
+          <li><b>Date</b> : ajoute <b>Date actuelle</b>, puis <b>Formater la date</b> → format <b>Personnalisé</b> : <code>yyyy-MM-dd</code>.</li>
+          <li><b>Envoi</b> : ajoute <b>Obtenir le contenu de l'URL</b> avec l'adresse <code id="healthUrl"></code> <button type="button" class="btn ghost small" id="healthCopy">Copier</button><br>
+            Touche <b>Afficher plus</b> : Méthode <b>POST</b> · En-têtes : <code>x-app-password</code> = ton code à 6 chiffres · Corps de la requête <b>JSON</b> avec 3 champs :<br>
+            <code>date</code> = la date formatée · <code>steps</code> = la somme des pas · <code>sleep</code> = la somme des durées de sommeil.</li>
+          <li>Touche <b>▶︎</b> pour tester : la réponse doit contenir <code>"ok":true</code>, et les valeurs apparaissent ici et dans ta journée.</li>
+        </ol>
+        <p class="hint" style="margin:8px 0 0">Les heures, minutes ou secondes de sommeil sont reconnues automatiquement. Le Raccourci ne touche jamais au poids, à l'eau ni aux séances. Si tu tapes toi-même les pas après 21 h 30, ta saisie reste prioritaire jusqu'au lendemain soir.</p>
+      </details>
     </section>
     <section class="panel"><h2>Historique</h2><div id="history"></div></section>
     <section class="panel">
@@ -1172,6 +1229,7 @@ function loadDay(date){
   $("#cardio").value = current.cardio || "";
   $("#watchKcal").value = current.watchKcal ?? "";
   $("#water").value = current.water ?? "";
+  $("#healthTag").hidden = !current.healthAt;
   $("#dayNote").value = current.note || "";
   const t = current.tests||{};
   $("#t-pullups").value=t.pullups??""; $("#t-pushups").value=t.pushups??""; $("#t-squats").value=t.squats??""; $("#t-mile").value=t.mile??"";
@@ -1892,7 +1950,17 @@ function renderTrends(){
 $$("#range button").forEach(b=>b.onclick=()=>{ rangeDays=Number(b.dataset.days); $$("#range button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); renderTrends(); });
 
 /* ---------- historique + import ---------- */
+function renderHealth(){
+  if(!$("#healthPanel")) return;
+  $("#healthUrl").textContent = location.origin + "/api/health";
+  const last = Object.values(days).filter(d=>d.healthAt).sort((a,b)=>a.healthAt<b.healthAt?-1:1).pop();
+  $("#healthStatus").innerHTML = last
+    ? `<span style="color:var(--good)">● Actif</span> · dernier envoi le ${fmtShort(last.healthAt.slice(0,10))} à ${new Date(last.healthAt).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}${last.steps!=null?` · ${fmtNum(last.steps)} pas`:""}${last.sleepHours!=null?` · ${fmtH(last.sleepHours)} de sommeil`:""}`
+    : `<span style="color:var(--muted)">○ Pas encore configuré</span>`;
+}
+$("#healthCopy").onclick=async()=>{ try{ await navigator.clipboard.writeText($("#healthUrl").textContent); $("#healthCopy").textContent="Copié ✓"; }catch(e){ $("#healthCopy").textContent="Sélectionne l'adresse"; } setTimeout(()=>$("#healthCopy").textContent="Copier",2000); };
 function renderHistory(){
+  renderHealth();
   const missing = Object.keys(HISTORY_SEED).filter(k=>!days[k]);
   $("#importPanel").hidden = !missing.length;
   $("#importText").textContent = `Ton semainier Excel contient ${Object.keys(HISTORY_SEED).length} journées (22 juin → 12 sept. 2026). ${missing.length} ne sont pas encore dans le carnet. L'import n'écrase aucune journée déjà saisie.`;
@@ -2006,18 +2074,55 @@ $("#xferApply").onclick=async()=>{
   btn.disabled=false; applySettings(); renderAll(true);
 };
 
+/* ---------- minuteur de repos ---------- */
+// Basé sur l'heure de fin : reste juste même si l'écran se met en veille. Son + vibration (si le téléphone le permet) à la fin.
+let restEnd=0, restTotal=0, restTick=null, restLock=null, audioCtx=null;
+const RC = 2*Math.PI*19;
+function beep(){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    [0,0.25,0.5].forEach((t,i)=>{ const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type="sine"; o.frequency.value=i===2?1320:880;
+      g.gain.setValueAtTime(0.0001,audioCtx.currentTime+t); g.gain.exponentialRampToValueAtTime(0.35,audioCtx.currentTime+t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+t+0.2);
+      o.connect(g).connect(audioCtx.destination); o.start(audioCtx.currentTime+t); o.stop(audioCtx.currentTime+t+0.22); });
+  }catch(e){}
+  navigator.vibrate?.([200,100,200]);
+}
+function unlockAudio(){ try{ audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==="suspended") audioCtx.resume(); }catch(e){} }
+async function keepAwake(on){
+  try{ if(on && "wakeLock" in navigator && !restLock){ restLock = await navigator.wakeLock.request("screen"); restLock.addEventListener?.("release",()=>{ restLock=null; }); }
+       if(!on && restLock){ await restLock.release(); restLock=null; } }catch(e){}
+}
+function paintRest(){
+  const left=Math.max(0, Math.round((restEnd-Date.now())/1000));
+  $("#restTime").textContent = `${Math.floor(left/60)}:${String(left%60).padStart(2,"0")}`;
+  $("#restArc").style.strokeDasharray = RC; $("#restArc").style.strokeDashoffset = RC*(1 - (restTotal? left/restTotal : 0));
+  if(left<=0 && !$("#rest").classList.contains("done")){ $("#rest").classList.add("done"); $("#restLbl").textContent="C'est reparti !"; beep(); keepAwake(false); clearInterval(restTick); restTick=setTimeout(()=>stopRest(),8000); }
+}
+function startRest(sec, label){
+  unlockAudio();
+  clearInterval(restTick); clearTimeout(restTick);
+  restTotal=sec; restEnd=Date.now()+sec*1000;
+  $("#rest").hidden=false; $("#rest").classList.remove("done"); $("#restLbl").textContent = label || "Repos";
+  paintRest(); restTick=setInterval(paintRest,250); keepAwake(true);
+}
+function stopRest(){ clearInterval(restTick); clearTimeout(restTick); $("#rest").hidden=true; $("#rest").classList.remove("done"); keepAwake(false); }
+$("#restPlus").onclick=()=>{ if($("#rest").classList.contains("done")) return startRest(30, $("#restLbl").textContent); restEnd+=30000; restTotal+=30; paintRest(); };
+$("#restMinus").onclick=()=>{ restEnd=Math.max(Date.now()+1000, restEnd-15000); paintRest(); };
+$("#restStop").onclick=stopRest;
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && !$("#rest").hidden){ paintRest(); if(Date.now()<restEnd) keepAwake(true); } });
+
 /* ---------- Programme Big Seven Athletic ---------- */
 // Séances enregistrées dans days[date].sessions avec { b7: "A"|"B"|"Q"|"E"|"TA"|"TB", sets:{exId:[{c,r}]}, run:{km,dur}, feel, note }
 const B7 = {
   A:{label:"Renforcement A", short:"Renfo A", kind:"renfo", note:"Échauffement 5–8 min + séries progressives sur le squat.", ex:[
-    {id:"squat", name:"Squat", sets:3, lo:6, hi:10, tip:"Amplitude maîtrisée, gainage solide."},
-    {id:"bench", name:"Développé couché / pompes lestées", sets:3, lo:6, hi:10, tip:"Garde 1–3 répétitions en réserve."},
-    {id:"pullup", name:"Tractions", sets:3, lo:5, hi:10, tip:"Charge = lest (0 au poids du corps). Élastique d'assistance si besoin."},
+    {id:"squat", rest:150, name:"Squat", sets:3, lo:6, hi:10, tip:"Amplitude maîtrisée, gainage solide."},
+    {id:"bench", rest:150, name:"Développé couché / pompes lestées", sets:3, lo:6, hi:10, tip:"Garde 1–3 répétitions en réserve."},
+    {id:"pullup", rest:150, name:"Tractions", sets:3, lo:5, hi:10, tip:"Charge = lest (0 au poids du corps). Élastique d'assistance si besoin."},
     {id:"row", name:"Rowing barre / haltères", sets:3, min:2, lo:8, hi:12, tip:"Contrôle le mouvement, sans à-coup."},
     {id:"plank", name:"Planche", sets:3, min:2, lo:30, hi:45, time:true}]},
   B:{label:"Renforcement B", short:"Renfo B", kind:"renfo", note:"Garde les fentes modérées pour préserver la qualité de tes sorties.", ex:[
-    {id:"rdl", name:"Soulevé de terre roumain", sets:3, lo:6, hi:10, tip:"Hanches en arrière, dos neutre."},
-    {id:"ohp", name:"Développé militaire", sets:3, lo:6, hi:10, tip:"Évite de compenser en cambrant."},
+    {id:"rdl", rest:150, name:"Soulevé de terre roumain", sets:3, lo:6, hi:10, tip:"Hanches en arrière, dos neutre."},
+    {id:"ohp", rest:150, name:"Développé militaire", sets:3, lo:6, hi:10, tip:"Évite de compenser en cambrant."},
     {id:"dips", name:"Dips / pompes serrées", sets:3, min:2, lo:6, hi:12, tip:"Amplitude confortable pour les épaules."},
     {id:"lunge", name:"Fentes arrière (par jambe)", sets:2, lo:8, hi:10},
     {id:"facepull", name:"Face pull / oiseau", sets:2, lo:12, hi:20},
@@ -2064,6 +2169,7 @@ function b7Suggest(e, last){
   return {up:false, txt:`Même charge, vise +1 rep${c?` (${fmtNum(c,1)} kg)`:""}`};
 }
 const setsTxt = (e,sets) => sets.filter(z=>z.r!=null||z.c!=null).map(z=> e.time ? `${z.r??"–"} s` : e.bw ? `${z.r??"–"}` : `${z.c!=null?fmtNum(z.c,1)+" kg × ":""}${z.r??"–"}`).join(" · ");
+const fmtRest = s => s>=60 ? `${Math.floor(s/60)} min${s%60?" "+String(s%60).padStart(2,"0"):""}` : `${s} s`;
 function b7DefaultKind(date){ const dow=(parseIso(date).getDay()+6)%7, p=B7_PLAN.find(x=>x.dow===dow); return p ? p.k : "A"; }
 
 function renderB7(){
@@ -2082,7 +2188,7 @@ function renderB7(){
   const nX=wk.filter(x=>B7[x.b7]?.kind==="other").length;
   $("#b7WeekHint").textContent = `Cette semaine : ${nR}/2 renfo · ${nC} course${nC>1?"s":""} (2 minimum)${km?` · ${fmtNum(km,1)} km`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}.${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}`;
   if(!b7Kind) b7Open($("#b7Date").value || t, null, true);
-  renderB7Hist();
+  renderB7Hist(); renderStrength();
 }
 function b7Open(date, k, keep, id){
   $("#b7Date").value = date; b7EditId = id || null;
@@ -2122,9 +2228,18 @@ function renderB7Form(){
         ${e.tip?`<p class="tip">${esc(e.tip)}</p>`:""}
         ${last?`<p class="last">Dernière fois (${fmtShort(last.date)}) : ${esc(setsTxt(e,last.sets))}</p>`:""}
         ${sug?`<span class="sug${sug.up?" up":""}">${sug.up?"▲ ":""}${esc(sug.txt)}</span>`:""}
-        <div class="b7-sets">${rows}</div></div>`;
+        <div class="b7-sets">${rows}</div>
+        <button type="button" class="b7-restbtn" data-rest="${e.rest||(e.time?60:75)}" data-name="${esc(e.name)}">⏱ Repos ${fmtRest(e.rest||(e.time?60:75))}</button></div>`;
     }).join("");
   }
+  $$("#b7Form .b7-restbtn").forEach(b=>b.onclick=()=>startRest(Number(b.dataset.rest), "Repos · "+b.dataset.name));
+  // série validée (reps notées, champ quitté) → le repos démarre tout seul
+  $$('#b7Form [data-f="r"]').forEach(i=>i.addEventListener("change",()=>{
+    if(num(i.value)==null) return;
+    const e=P.ex.find(x=>x.id===i.dataset.ex), k=Number(i.dataset.i);
+    if(!e || k>=e.sets-1 && e===P.ex.at(-1)) return; // dernière série de la séance : pas de repos
+    startRest(e.rest||(e.time?60:75), `Repos · ${e.name}${k<e.sets-1?` · série ${k+2} ensuite`:""}`);
+  }));
   b7Feel = prev?.feel ?? null; paintB7Feel();
   $("#b7Notes").value = prev?.note || "";
   $("#b7Del").hidden = !prev; $("#b7Msg").textContent = ""; $("#b7Msg").className="save-msg";
@@ -2153,12 +2268,13 @@ $("#b7Save").onclick=async()=>{
     Object.keys(s.sets).forEach(e=>{ s.sets[e]=[...s.sets[e]].map(z=>z||{c:null,r:null}); });
     if(!Object.values(s.sets).some(a=>a.some(z=>z.r!=null||z.c!=null))){ $("#b7Msg").textContent="Note au moins une série."; $("#b7Msg").className="save-msg err"; return; }
   }
+  const recs = P.kind==="renfo" ? newRecords(s, date) : [];
   const btn=$("#b7Save"); btn.disabled=true;
   try{ await b7Write(date, list=>{ const i=list.findIndex(x=>x.id===s.id); if(i>=0) list[i]=s; else list.push(s); return list; });
     b7EditId = s.id;
-    $("#b7Msg").textContent="✓ Séance enregistrée"; $("#b7Msg").className="save-msg ok"; $("#b7Del").hidden=false; renderB7Form(); $("#b7Msg").textContent="✓ Séance enregistrée"; $("#b7Msg").className="save-msg ok"; }
+    $("#b7Msg").textContent="✓ Séance enregistrée"; $("#b7Msg").className="save-msg ok"; $("#b7Del").hidden=false; renderB7Form(); $("#b7Msg").innerHTML = recs.length ? `🏆 <b>Record !</b> ${esc(recs.join(" · "))}` : "✓ Séance enregistrée"; $("#b7Msg").className="save-msg ok"+(recs.length?" rec-msg":""); }
   catch(e){ $("#b7Msg").textContent="Enregistrée sur l'appareil, synchronisation plus tard."; }
-  btn.disabled=false; renderB7Week(); renderB7Hist(); renderWeek();
+  btn.disabled=false; renderB7Week(); renderB7Hist(); renderStrength(); renderWeek();
 };
 $("#b7Del").onclick=async()=>{
   const date=$("#b7Date").value, prev=b7Find(date,b7Kind); if(!prev) return;
@@ -2181,6 +2297,55 @@ function renderB7Hist(){
   if(!rows) rows=`<tr><td colspan="6" class="l" style="color:var(--muted)">Le programme commence le lundi ${fmtShort(B7_START).replace(/\.$/,"")}. Tes semaines apparaîtront ici.</td></tr>`;
   $("#b7Hist").innerHTML = `<thead><tr><th class="l">Semaine du</th><th>Renfo</th><th>Course</th><th>km</th><th>Durée</th><th>Sensations</th></tr></thead><tbody>${rows}</tbody>`;
   $$("#b7Hist tbody tr").forEach(tr=>tr.onclick=null);
+}
+
+/* ---------- progression de force ---------- */
+// Force maximale estimée (formule d'Epley) : charge × (1 + reps / 30). Sans charge : meilleure série en reps.
+const e1rm = (c,r) => c>0 && r>0 ? c*(1+Math.min(r,15)/30) : null;
+let b7StrEx = null;
+function exInfo(id){ for(const k of ["A","B","TA","TB"]){ const e=B7[k].ex.find(x=>x.id===id); if(e) return e; } return null; }
+// meilleure valeur de chaque séance pour un exercice : {d, v, top:{c,r}, mode}
+function strSeries(id, until){
+  const out=[]; let loaded=false;
+  b7Sessions().filter(x=>x.sets?.[id] && (!until || x.date<until)).forEach(x=>{ if(x.sets[id].some(z=>z.c>0&&z.r>0)) loaded=true; });
+  b7Sessions().filter(x=>x.sets?.[id] && (!until || x.date<until)).forEach(x=>{
+    let best=null, top=null;
+    x.sets[id].forEach(z=>{ if(z.r==null) return; const v = loaded ? e1rm(z.c,z.r) : z.r; if(v!=null && (best==null||v>best)){ best=v; top=z; } });
+    if(best!=null) out.push({d:x.date, v:Math.round(best*10)/10, top});
+  });
+  return {pts:out, loaded};
+}
+function newRecords(sess, date){
+  const recs=[];
+  Object.entries(sess.sets||{}).forEach(([id,sets])=>{
+    const e=exInfo(id); if(!e || e.time) return;
+    const prev=strSeries(id, date), loaded = prev.loaded || sets.some(z=>z.c>0&&z.r>0);
+    const now = Math.max(...sets.map(z=> loaded ? (e1rm(z.c,z.r)||0) : (z.r||0)));
+    const before = prev.pts.length ? Math.max(...prev.pts.map(p=>p.v)) : null;
+    if(now>0 && before!=null && now>before+0.05) recs.push(`${e.name.split(" (")[0]} ${loaded?fmtNum(now,1)+" kg (max estimé)":now+" reps"}`);
+  });
+  return recs;
+}
+function renderStrength(){
+  const ids=[...new Set(b7Sessions().flatMap(x=>Object.keys(x.sets||{})))].filter(id=>{ const e=exInfo(id); return e && !e.time && strSeries(id).pts.length; });
+  if(!ids.length){
+    $("#b7StrSeg").innerHTML=""; $("#b7StrStats").innerHTML=""; $("#b7StrRecs").innerHTML="";
+    $("#b7StrChart").innerHTML='<p class="empty">Tes courbes apparaîtront dès ta première séance de renfo notée.</p>'; $("#b7StrHint").textContent=""; return;
+  }
+  if(!ids.includes(b7StrEx)) b7StrEx = ids.includes("squat") ? "squat" : ids[0];
+  $("#b7StrSeg").innerHTML = ids.map(id=>`<button type="button" data-id="${id}" aria-pressed="${id===b7StrEx}">${esc(exInfo(id).name.split(/ [\/(]/)[0])}</button>`).join("");
+  $$("#b7StrSeg button").forEach(b=>b.onclick=()=>{ b7StrEx=b.dataset.id; renderStrength(); });
+  const {pts, loaded}=strSeries(b7StrEx), first=pts[0], last=pts.at(-1), best=pts.reduce((a,p)=>p.v>a.v?p:a,pts[0]);
+  $("#b7StrHint").textContent = loaded ? "max estimé sur 1 rép. (charge × reps)" : "meilleure série, en répétitions";
+  const unit = loaded ? " kg" : " reps", dec = loaded ? 1 : 0;
+  const gain = pts.length>1 && first.v ? (last.v-first.v)/first.v*100 : null;
+  $("#b7StrStats").innerHTML = stat(fmtNum(best.v,dec)+unit, `record · ${fmtShort(best.d)}`)
+    + stat(last.top ? (loaded ? `${fmtNum(last.top.c,1)} × ${last.top.r}` : `${last.top.r} reps`) : "–", `meilleure série · ${fmtShort(last.d)}`)
+    + stat(gain!=null ? `${gain>=0?"+":""}${fmtNum(gain,0)} %` : "–", pts.length>1 ? `depuis le ${fmtShort(first.d)}` : "1re séance notée");
+  $("#b7StrChart").innerHTML = pts.length>1 ? lineChart(pts, css("--accent"), unit.trim(), dec, {best:"max", h:210}) : '<p class="empty">Encore une séance et la courbe s\'affiche.</p>';
+  const main=["squat","bench","pullup","rdl","ohp"].filter(id=>strSeries(id).pts.length);
+  $("#b7StrRecs").innerHTML = main.map(id=>{ const S=strSeries(id), b=S.pts.reduce((a,p)=>p.v>a.v?p:a,S.pts[0]);
+    return `<div class="rec" style="--c:var(--accent)"><span>${esc(exInfo(id).name.split(/ [\/(]/)[0])}</span><b>${fmtNum(b.v,S.loaded?1:0)}${S.loaded?" kg":" reps"}</b><em>${S.loaded?"max estimé · ":""}le ${fmtShort(b.d)}</em></div>`; }).join("");
 }
 
 /* ---------- onglets ---------- */
