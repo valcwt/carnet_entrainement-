@@ -328,7 +328,11 @@ section.panel h2.b7-title::before{display:none}
 .b7-day.done{background:linear-gradient(180deg,rgba(34,227,160,.14),var(--field))}
 .b7-day.done::after{content:"✓";position:absolute;top:8px;right:9px;width:20px;height:20px;border-radius:50%;background:var(--good);color:#0B0D10;font-weight:800;font-size:.8rem;display:grid;place-items:center}
 .b7-kinds{flex-wrap:wrap}
+.b7-daylist{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}
+.b7-chip{cursor:pointer;color:var(--ink);font:inherit;font-size:.82rem}
+.b7-chip.on{border-color:var(--accent);color:var(--accent)}
 .b7-kinds button{flex:1 1 30%}
+.b7-kinds button[data-k="R"],.b7-kinds button[data-k="X"]{border-style:dashed}
 .b7-ex{border:1px solid var(--line);border-radius:12px;background:var(--field);padding:10px 12px;margin-bottom:10px}
 .b7-ex header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
 .b7-ex h3{font-size:1.15rem}
@@ -626,7 +630,7 @@ nav.bottom-nav{display:none}
     <section class="panel b7-hero">
       <span class="b7-tag">Plan hybride</span>
       <h2 class="b7-title">Big Seven Athletic</h2>
-      <p class="hint" style="margin:0">2 séances de renforcement + 2 sorties course minimum. Force, muscle et endurance, sans fatigue inutile. Le plan Kilo Run prime pour la course.</p>
+      <p class="hint" style="margin:0">2 séances de renforcement + 2 sorties course minimum. Force, muscle et endurance, sans fatigue inutile. Le plan Kiprun prime pour la course.</p>
     </section>
 
     <section class="panel">
@@ -641,6 +645,7 @@ nav.bottom-nav{display:none}
       <div class="row" style="margin:12px 0 4px">
         <label style="flex-direction:row;align-items:center;gap:8px">Date<input type="date" id="b7Date" style="width:auto"></label>
       </div>
+      <div class="b7-daylist" id="b7DayList"></div>
       <p class="hint" id="b7Note" style="margin:6px 0 10px"></p>
       <div id="b7Form"></div>
       <div class="b7-feel"><span>Sensations (1 = dur · 5 = top)</span><div class="scale" id="b7Feel" role="group" aria-label="Sensations"></div></div>
@@ -2017,8 +2022,10 @@ const B7 = {
     {id:"lunge", name:"Fentes arrière (par jambe)", sets:2, lo:8, hi:10},
     {id:"facepull", name:"Face pull / oiseau", sets:2, lo:12, hi:20},
     {id:"deadbug", name:"Dead bug / relevés de genoux", sets:3, min:2, lo:8, hi:12, bw:true}]},
-  Q:{label:"Course qualité", short:"Qualité", kind:"run", note:"Suis Kilo Run. À défaut : échauffement 10–15 min, 6 × 2 min soutenues / 2 min faciles, retour au calme 8–10 min. Pas de sprint."},
-  E:{label:"Endurance facile", short:"Endurance", kind:"run", note:"Allure conversationnelle, durée selon Kilo Run. Une 3e sortie facile seulement si la récupération suit."},
+  Q:{label:"Fractionné", short:"Fractionné", kind:"run", note:"La séance « de qualité » de la semaine : du rythme. Suis Kiprun. À défaut : échauffement 10–15 min, 6 × 2 min soutenues / 2 min faciles, retour au calme 8–10 min. Pas de sprint."},
+  E:{label:"Endurance facile", short:"Endurance", kind:"run", note:"Allure conversationnelle, durée selon Kiprun. Une 3e sortie facile seulement si la récupération suit."},
+  R:{label:"Autre course", short:"+ Course", kind:"run", multi:true, free:true, note:"Une sortie en plus (3e sortie Kiprun, footing, trail…). Donne-lui un nom si tu veux."},
+  X:{label:"Autre séance", short:"+ Séance", kind:"other", multi:true, free:true, note:"Toute autre activité : vélo, natation, sport co, mobilité…"},
   TA:{label:"Déplacement A (sans matériel)", short:"Dépl. A", kind:"renfo", note:"Version sans matériel de la séance A.", ex:[
     {id:"t_pushup", name:"Pompes", sets:3, lo:8, hi:20, bw:true},
     {id:"t_lunge", name:"Fentes arrière (par jambe)", sets:3, lo:10, hi:10, bw:true},
@@ -2035,10 +2042,13 @@ const B7 = {
     {id:"t_pallof", name:"Pallof press (par côté)", sets:2, lo:10, hi:12, bw:true}]}
 };
 const B7_PLAN = [{dow:0, k:"A", d:"Lundi"},{dow:2, k:"Q", d:"Mercredi"},{dow:4, k:"B", d:"Vendredi"},{dow:6, k:"E", d:"Dimanche"}]; // dow : 0 = lundi
-let b7Kind = null, b7Feel = null;
+let b7Kind = null, b7Feel = null, b7EditId = null;
+const B7_START = "2026-11-02"; // lundi 2 novembre 2026 : semaine 1 du programme
+const b7WeekNo = d => Math.floor(diffDays(mondayOf(d), B7_START)/7)+1;
 const rx = e => `${e.min&&e.min<e.sets?e.min+"–":""}${e.sets} × ${e.lo===e.hi?e.lo:e.lo+"–"+e.hi}${e.time?" s":""}`;
 const b7Sessions = () => Object.values(days).flatMap(d=>(d.sessions||[]).filter(x=>x.b7).map(x=>({...x, date:d.date}))).sort((a,b)=>a.date<b.date?-1:1);
-function b7Find(date,k){ const d = date===current?.date ? current : days[date]; return (d?.sessions||[]).find(x=>x.b7===k) || null; }
+function b7DaySessions(date){ const d = date===current?.date ? current : days[date]; return (d?.sessions||[]).filter(x=>x.b7); }
+function b7Find(date,k){ const l=b7DaySessions(date); if(b7EditId) return l.find(x=>x.id===b7EditId) || null; return B7[k]?.multi ? null : (l.find(x=>x.b7===k) || null); }
 function b7Last(exId, before){ // dernière fois que l'exercice a été fait (toutes séances confondues)
   const all=b7Sessions().filter(x=>x.date<before && x.sets && (x.sets[exId]||[]).some(z=>z.r!=null||z.c!=null));
   const s=all.at(-1); return s ? {date:s.date, sets:s.sets[exId]} : null;
@@ -2058,34 +2068,43 @@ function b7DefaultKind(date){ const dow=(parseIso(date).getDay()+6)%7, p=B7_PLAN
 
 function renderB7(){
   if($("#tab-b7").hidden) return;
-  const mon=mondayOf(todayIso()), t=todayIso();
-  $("#b7WeekLbl").textContent = `${fmtShort(mon)} – ${fmtShort(addDays(mon,6))}`;
+  const t=todayIso(), mon = t<B7_START ? B7_START : mondayOf(t);
+  const wn=b7WeekNo(t);
+  $("#b7WeekLbl").textContent = wn>=1 ? `semaine ${wn} · ${fmtShort(mon)} – ${fmtShort(addDays(mon,6))}` : `début le lundi ${fmtShort(B7_START).replace(/\.$/,"")}`;
   const wk=b7Sessions().filter(x=>x.date>=mon && x.date<=addDays(mon,6));
   $("#b7Week").innerHTML = B7_PLAN.map(p=>{
     const d=addDays(mon,p.dow), P=B7[p.k];
     const done = wk.find(x=>x.b7===p.k || (P.kind==="renfo" && x.b7===("T"+p.k)));
     return `<button type="button" class="b7-day ${P.kind}${d===t?" today":""}${done?" done":""}" data-k="${p.k}" data-d="${d}"><span class="d">${p.d}</span><span class="t">${P.short}</span><span class="s">${done?(done.run?.km?fmtNum(done.run.km,1)+" km":"fait"):d<t?"pas notée":d===t?"aujourd'hui":fmtShort(d)}</span></button>`;
   }).join("");
-  $$("#b7Week .b7-day").forEach(b=>b.onclick=()=>{ b7Open(b.dataset.d, b.dataset.k); $("#b7Log").scrollIntoView?.({behavior:"smooth",block:"start"}); });
+  $$("#b7Week .b7-day").forEach(b=>b.onclick=()=>{ b7Open(b.dataset.d, b.dataset.k, false, (b7DaySessions(b.dataset.d).find(x=>x.b7===b.dataset.k)||{}).id); $("#b7Log").scrollIntoView?.({behavior:"smooth",block:"start"}); });
   const nR=wk.filter(x=>B7[x.b7]?.kind==="renfo").length, nC=wk.filter(x=>B7[x.b7]?.kind==="run").length, km=wk.reduce((a,x)=>a+(x.run?.km||0),0);
-  $("#b7WeekHint").textContent = `Cette semaine : ${nR}/2 renfo · ${nC}/2 course${km?` · ${fmtNum(km,1)} km`:""}.`;
+  const nX=wk.filter(x=>B7[x.b7]?.kind==="other").length;
+  $("#b7WeekHint").textContent = `Cette semaine : ${nR}/2 renfo · ${nC} course${nC>1?"s":""} (2 minimum)${km?` · ${fmtNum(km,1)} km`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}.${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}`;
   if(!b7Kind) b7Open($("#b7Date").value || t, null, true);
   renderB7Hist();
 }
-function b7Open(date, k, keep){
-  $("#b7Date").value = date;
+function b7Open(date, k, keep, id){
+  $("#b7Date").value = date; b7EditId = id || null;
   b7Kind = k || (keep && b7Kind) || (b7Find(date, b7DefaultKind(date)) ? b7DefaultKind(date) : (b7Sessions().filter(x=>x.date===date)[0]?.b7 || b7DefaultKind(date)));
   renderB7Form();
 }
 function renderB7Form(){
   const date=$("#b7Date").value || todayIso(), P=B7[b7Kind], prev=b7Find(date,b7Kind);
   $("#b7Kinds").innerHTML = Object.entries(B7).map(([k,v])=>`<button type="button" data-k="${k}" aria-pressed="${k===b7Kind}">${v.short}</button>`).join("");
-  $$("#b7Kinds button").forEach(b=>b.onclick=()=>{ b7Kind=b.dataset.k; renderB7Form(); });
+  $$("#b7Kinds button").forEach(b=>b.onclick=()=>{ b7Kind=b.dataset.k; b7EditId=null; renderB7Form(); });
+  const dl=b7DaySessions(date);
+  $("#b7DayList").innerHTML = dl.length ? `<span class="hint" style="margin:0">Déjà noté ce jour-là :</span>`+dl.map(x=>`<button type="button" class="chip b7-chip${(b7EditId===x.id||(!b7EditId&&!B7[b7Kind].multi&&x.b7===b7Kind))?" on":""}" data-id="${x.id}" data-k="${x.b7}">${esc(x.title||B7[x.b7]?.label||"Séance")}${x.run?.km?` · ${fmtNum(x.run.km,1)} km`:""}</button>`).join("") : "";
+  $$("#b7DayList [data-id]").forEach(b=>b.onclick=()=>b7Open(date, b.dataset.k, false, b.dataset.id));
   $("#b7LogTitle").innerHTML = `${esc(P.label)}${prev?" <small>déjà notée · tu peux la modifier</small>":""}`;
   $("#b7Note").textContent = P.note;
-  if(P.kind==="run"){
+  const nameField = P.free ? `<label style="margin-bottom:10px">Nom<input type="text" id="b7Title" value="${esc(prev?.title&&prev.title!==P.label?prev.title:"")}" placeholder="${P.kind==="run"?"ex. Footing récup, sortie longue…":"ex. Vélo, padel, mobilité…"}"></label>` : "";
+  if(P.kind==="other"){
     const r=prev?.run||{};
-    $("#b7Form").innerHTML = `<div class="b7-run">
+    $("#b7Form").innerHTML = nameField+`<div class="b7-run"><label>Durée (min ou h:mm:ss)<input type="text" id="b7Dur" inputmode="numeric" value="${r.dur?esc(r.dur):""}" placeholder="ex. 45"></label><label>Distance (km, facultatif)<input type="number" id="b7Km" step="0.01" min="0" inputmode="decimal" value="${r.km??""}"></label><div class="b7-pace" id="b7Pace"></div></div>`;
+  } else if(P.kind==="run"){
+    const r=prev?.run||{};
+    $("#b7Form").innerHTML = nameField+`<div class="b7-run">
       <label>Distance (km)<input type="number" id="b7Km" step="0.01" min="0" inputmode="decimal" value="${r.km??""}" placeholder="ex. 8,5"></label>
       <label>Durée (min ou h:mm:ss)<input type="text" id="b7Dur" inputmode="numeric" value="${r.dur?esc(r.dur):""}" placeholder="ex. 52 ou 52:30"></label>
       <div class="b7-pace" id="b7Pace"></div></div>`;
@@ -2123,11 +2142,11 @@ async function b7Write(date, fn){
   await store.save(clone(day));
   if(isCur){ dirty=false; setSave("ok"); }
 }
-$("#b7Date").addEventListener("change",()=>{ const d=$("#b7Date").value; if(d) b7Open(d, null); });
+$("#b7Date").addEventListener("change",()=>{ const d=$("#b7Date").value; if(d) b7Open(d, b7Kind, true); });
 $("#b7Save").onclick=async()=>{
   const date=$("#b7Date").value || todayIso(), P=B7[b7Kind], prev=b7Find(date,b7Kind);
-  const s = {id: prev?.id || uid(), b7:b7Kind, type: P.kind==="run"?"Course":"Renforcement", title:P.label, feel:b7Feel, note:$("#b7Notes").value.trim()};
-  if(P.kind==="run"){ s.run={km:num($("#b7Km").value), dur:$("#b7Dur").value.trim()||null}; if(s.run.km==null && !s.run.dur){ $("#b7Msg").textContent="Ajoute au moins la distance ou la durée."; $("#b7Msg").className="save-msg err"; return; } }
+  const s = {id: prev?.id || uid(), b7:b7Kind, type: P.kind==="run"?"Course":P.kind==="other"?"Autre":"Renforcement", title: (P.free && $("#b7Title")?.value.trim()) || P.label, feel:b7Feel, note:$("#b7Notes").value.trim()};
+  if(P.kind==="run" || P.kind==="other"){ s.run={km:num($("#b7Km").value), dur:$("#b7Dur").value.trim()||null}; if(s.run.km==null && !s.run.dur){ $("#b7Msg").textContent="Ajoute au moins la distance ou la durée."; $("#b7Msg").className="save-msg err"; return; } }
   else {
     s.sets={};
     $$("#b7Form [data-ex]").forEach(i=>{ const e=i.dataset.ex, k=Number(i.dataset.i); (s.sets[e] ||= []); (s.sets[e][k] ||= {c:null,r:null}); s.sets[e][k][i.dataset.f]=num(i.value); });
@@ -2135,14 +2154,17 @@ $("#b7Save").onclick=async()=>{
     if(!Object.values(s.sets).some(a=>a.some(z=>z.r!=null||z.c!=null))){ $("#b7Msg").textContent="Note au moins une série."; $("#b7Msg").className="save-msg err"; return; }
   }
   const btn=$("#b7Save"); btn.disabled=true;
-  try{ await b7Write(date, list=>{ const i=list.findIndex(x=>x.b7===b7Kind); if(i>=0) list[i]=s; else list.push(s); return list; });
-    $("#b7Msg").textContent="✓ Séance enregistrée"; $("#b7Msg").className="save-msg ok"; $("#b7Del").hidden=false; $("#b7LogTitle").innerHTML=`${esc(P.label)} <small>déjà notée · tu peux la modifier</small>`; }
+  try{ await b7Write(date, list=>{ const i=list.findIndex(x=>x.id===s.id); if(i>=0) list[i]=s; else list.push(s); return list; });
+    b7EditId = s.id;
+    $("#b7Msg").textContent="✓ Séance enregistrée"; $("#b7Msg").className="save-msg ok"; $("#b7Del").hidden=false; renderB7Form(); $("#b7Msg").textContent="✓ Séance enregistrée"; $("#b7Msg").className="save-msg ok"; }
   catch(e){ $("#b7Msg").textContent="Enregistrée sur l'appareil, synchronisation plus tard."; }
   btn.disabled=false; renderB7Week(); renderB7Hist(); renderWeek();
 };
 $("#b7Del").onclick=async()=>{
-  const date=$("#b7Date").value; if(!confirm(`Supprimer « ${B7[b7Kind].label} » du ${fmtShort(date)} ?`)) return;
-  try{ await b7Write(date, list=>list.filter(x=>x.b7!==b7Kind)); }catch(e){}
+  const date=$("#b7Date").value, prev=b7Find(date,b7Kind); if(!prev) return;
+  if(!confirm(`Supprimer « ${prev.title||B7[b7Kind].label} » du ${fmtShort(date)} ?`)) return;
+  try{ await b7Write(date, list=>list.filter(x=>x.id!==prev.id)); }catch(e){}
+  b7EditId=null;
   renderB7Form(); renderB7Week(); renderB7Hist();
 };
 function renderB7Week(){ const k=b7Kind; renderB7(); b7Kind=k; }
@@ -2150,10 +2172,13 @@ function renderB7Hist(){
   const all=b7Sessions(), mon=mondayOf(todayIso()); let rows="";
   for(let w=0; w<8; w++){
     const m=addDays(mon,-7*w), e=addDays(m,6), ws=all.filter(x=>x.date>=m&&x.date<=e);
+    if(m<B7_START && !ws.length) continue;
     const nR=ws.filter(x=>B7[x.b7]?.kind==="renfo").length, nC=ws.filter(x=>B7[x.b7]?.kind==="run").length;
     const km=ws.reduce((a,x)=>a+(x.run?.km||0),0), sec=ws.reduce((a,x)=>a+(parseTime(x.run?.dur)||0),0), fe=avg(ws.map(x=>x.feel));
-    rows+=`<tr data-m="${m}"><td class="l">${fmtShort(m)}</td><td class="${nR>=2?"ok":""}">${nR}/2</td><td class="${nC>=2?"ok":""}">${nC}/2</td><td>${km?fmtNum(km,1):"–"}</td><td>${sec?Math.round(sec/60)+" min":"–"}</td><td>${fe!=null?fmtNum(fe,1)+"/5":"–"}</td></tr>`;
+    const wn=b7WeekNo(m);
+    rows+=`<tr data-m="${m}"><td class="l">${wn>=1?`<b>S${wn}</b> · `:""}${fmtShort(m)}</td><td class="${nR>=2?"ok":""}">${nR}/2</td><td class="${nC>=2?"ok":""}">${nC}${nC<2?"/2":""}</td><td>${km?fmtNum(km,1):"–"}</td><td>${sec?Math.round(sec/60)+" min":"–"}</td><td>${fe!=null?fmtNum(fe,1)+"/5":"–"}</td></tr>`;
   }
+  if(!rows) rows=`<tr><td colspan="6" class="l" style="color:var(--muted)">Le programme commence le lundi ${fmtShort(B7_START).replace(/\.$/,"")}. Tes semaines apparaîtront ici.</td></tr>`;
   $("#b7Hist").innerHTML = `<thead><tr><th class="l">Semaine du</th><th>Renfo</th><th>Course</th><th>km</th><th>Durée</th><th>Sensations</th></tr></thead><tbody>${rows}</tbody>`;
   $$("#b7Hist tbody tr").forEach(tr=>tr.onclick=null);
 }
