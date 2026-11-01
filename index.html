@@ -7,32 +7,25 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<meta name="theme-color" content="#1C2620">
+<meta name="theme-color" content="#0B0D10">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Carnet">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#EDF0EA; --surface:#FFFFFF; --ink:#1C2620; --muted:#5E6B63; --line:#D3D9D0;
-  --accent:#2438C9; --accent-soft:#E3E7FB; --sleep:#6B4FC0; --steps:#1F7A57; --weight:#2438C9;
-  --warn:#B3261E; --good:#1F7A57; --on-accent:#fff;
+  /* Look sportif : sombre, couleurs vives */
+  --bg:#0B0D10; --surface:#14181D; --surface-2:#1A1F26; --field:#0F1216; --ink:#F3F5F7; --muted:#8D97A3; --line:#262C34;
+  --accent:#C6F432; --accent-soft:rgba(198,244,50,.12); --on-accent:#0B0D10;
+  --weight:#3DB2FF; --steps:#22E3A0; --sleep:#A07EFF; --train:#FF7A3D; --gold:#FFC93D;
+  --warn:#FF5468; --good:#22E3A0;
+  color-scheme:dark;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#131915; --surface:#1C241F; --ink:#E8EDE7; --muted:#9AA79F; --line:#2E3A33;
-    --accent:#8C9BFF; --accent-soft:#252C52; --sleep:#B39DFF; --steps:#5CCB9C; --weight:#8C9BFF; --warn:#FF8A80; --good:#5CCB9C; --on-accent:#10142e;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#131915; --surface:#1C241F; --ink:#E8EDE7; --muted:#9AA79F; --line:#2E3A33;
-  --accent:#8C9BFF; --accent-soft:#252C52; --sleep:#B39DFF; --steps:#5CCB9C; --weight:#8C9BFF; --warn:#FF8A80; --good:#5CCB9C; --on-accent:#10142e;
 }
 *,*::before,*::after{box-sizing:inherit}
 html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -92,9 +85,7 @@ textarea{resize:vertical;min-height:70px}
 .save-msg.ok{color:var(--good)}
 .pace-line{flex-basis:100%;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--line);margin-top:2px}
 .badge{display:inline-block;font-size:.78rem;font-weight:700;letter-spacing:.02em;text-transform:uppercase;border-radius:999px;padding:2px 9px;border:1px solid currentColor}
-.badge.ok{color:var(--good)} .badge.warn{color:#B26A00} .badge.late,.badge.bad{color:var(--warn)} .badge.info{color:var(--muted)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .badge.warn{color:#F2B155}}
-:root[data-theme="dark"] .badge.warn{color:#F2B155}
+.badge.ok{color:var(--good)} .badge.warn{color:var(--gold)} .badge.late,.badge.bad{color:var(--warn)} .badge.info{color:var(--muted)}
 .pace-panel p{margin:6px 0 0} .save-msg.err{color:var(--warn)}
 .express{border-color:var(--ink)}
 .xgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
@@ -185,7 +176,7 @@ tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
 
 /* Tendances */
 .chart{overflow-x:auto}
-.chart svg{display:block;width:100%;height:auto;min-width:420px}
+.chart svg{display:block;width:100%;height:auto}
 .stat-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:10px}
 .stat b{font-family:"Barlow Condensed",sans-serif;font-size:1.8rem;display:block;line-height:1}
 .stat span{font-size:.8rem;color:var(--muted)}
@@ -236,10 +227,86 @@ tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
 .exfeel button{padding:6px 0;font-size:.85rem}
 .exhint{margin:8px 0 0;font-size:.84rem;color:var(--muted);line-height:1.4}
 .dir{display:inline-block;font-weight:700;border-radius:6px;padding:0 6px;margin-right:4px}
-.dir.up{color:var(--good);border:1px solid var(--good)} .dir.same{color:var(--muted);border:1px solid var(--line)} .dir.down{color:#B26A00;border:1px solid #B26A00}
+.dir.up{color:var(--good);border:1px solid var(--good)} .dir.same{color:var(--muted);border:1px solid var(--line)} .dir.down{color:var(--gold);border:1px solid var(--gold)}
 .next{font-size:.84rem;color:var(--muted);display:block;margin-top:1px}
 @media (max-width:520px){.exgrid{grid-template-columns:1fr}}
 .sub{font-family:"Barlow Condensed",sans-serif;font-size:1.2rem;margin:14px 0 6px}
+
+/* ---------- Look sportif ---------- */
+h1,h2,h3{font-weight:800;text-transform:uppercase;letter-spacing:.01em}
+header.top h1{font-style:italic;letter-spacing:-.005em}
+header.top h1 em{font-style:inherit;color:var(--accent)}
+.stat b,.test b,.day .dn,.xgrid input,.hist-date,.pace{font-variant-numeric:tabular-nums}
+section.panel{background:linear-gradient(180deg,var(--surface-2),var(--surface) 60%);border-color:var(--line);border-radius:16px;box-shadow:0 1px 0 rgba(255,255,255,.03) inset}
+section.panel h2{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px;font-size:1.55rem}
+section.panel h2::before{content:"";align-self:center;width:4px;height:.8em;border-radius:2px;background:var(--accent);flex:none}
+section.panel h2 small{margin-left:0;text-transform:none;letter-spacing:0}
+.phase{background:linear-gradient(100deg,var(--accent-soft),var(--surface) 55%);border-color:var(--line);border-left-color:var(--accent);border-radius:14px}
+.phase > b:first-child{color:var(--accent);font-style:italic;text-transform:uppercase}
+.test-alert{background:linear-gradient(100deg,rgba(255,122,61,.14),var(--surface) 60%);border-left-color:var(--train);border-radius:14px}
+.test-alert b{text-transform:uppercase;font-style:italic;color:var(--train)}
+nav.tabs{background:var(--surface);border-color:var(--line)}
+nav.tabs button[aria-selected="true"]{background:var(--accent);color:var(--on-accent)}
+.day{background:var(--surface);border-color:var(--line);border-radius:12px}
+.day[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent),0 0 18px -6px var(--accent)}
+.day[aria-pressed="true"] .dn{color:var(--accent)}
+.day .sl{background:var(--field)}
+.day .sl b{background:linear-gradient(180deg,var(--sleep),rgba(160,126,255,.45))}
+input[type=number],input[type=text],input[type=date],select,textarea{background:var(--field);border-color:var(--line);border-radius:10px}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.scale button,.seg button{background:var(--field);border-color:var(--line);border-radius:10px}
+.scale button[aria-pressed="true"],.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btn{border-radius:12px;font-weight:700;letter-spacing:.01em}
+.btn:not(.ghost):not(.danger){box-shadow:0 6px 18px -8px var(--accent)}
+.btn.ghost{border-color:var(--line);background:var(--field)}
+.express{border-color:rgba(198,244,50,.35)}
+.xgrid input{background:var(--field);font-weight:700}
+.session,.test,.prog-card,.ed-card,.exrow{background:var(--field);border-color:var(--line);border-radius:12px}
+.test b{font-weight:800}
+.test em{color:var(--muted)}
+.stat b{font-weight:800;font-size:2rem;letter-spacing:.005em}
+.stat .dl{display:inline-flex;align-items:center;gap:2px;margin-top:4px;font-size:.78rem;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--field);border:1px solid var(--line);color:var(--muted)}
+.stat .dl.good{color:var(--good);border-color:rgba(34,227,160,.35)} .stat .dl.bad{color:var(--warn);border-color:rgba(255,84,104,.35)}
+.stat span{display:block}
+.chip{background:var(--field);border-color:var(--line)}
+.range button{background:var(--field);border-color:var(--line)}
+.range button[aria-pressed="true"]{border-color:var(--accent);color:var(--on-accent);background:var(--accent)}
+tbody tr:hover td{background:var(--surface-2)}
+.blocks li.now .bn{color:var(--accent)}
+details.addform>summary,details.more>summary,.addlink{color:var(--accent)}
+:focus-visible{outline-color:var(--accent)}
+::selection{background:var(--accent);color:var(--on-accent)}
+/* records */
+.records{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.rec{position:relative;border:1px solid var(--line);border-radius:12px;padding:12px 12px 10px;background:var(--field);overflow:hidden}
+.rec::after{content:"";position:absolute;inset:auto -20px -30px auto;width:90px;height:90px;border-radius:50%;background:var(--c,var(--accent));opacity:.10}
+.rec span{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--c,var(--accent))}
+.rec b{display:block;font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:2rem;line-height:1.05;font-variant-numeric:tabular-nums}
+.rec em{font-style:normal;font-size:.8rem;color:var(--muted)}
+/* écran du code */
+body.booting .wrap,body.locked .wrap{visibility:hidden}
+body.booting{background:radial-gradient(120% 60% at 50% 0%,rgba(198,244,50,.10),transparent 60%),var(--bg)}
+.lock{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:calc(24px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px));
+  background:radial-gradient(120% 60% at 50% 0%,rgba(198,244,50,.13),transparent 60%),var(--bg)}
+.lock-in{width:100%;max-width:320px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.lock-mark{width:64px;height:64px;border-radius:18px;background:var(--accent);display:grid;place-items:center;box-shadow:0 10px 30px -10px var(--accent)}
+.lock-mark svg{width:34px;height:34px;fill:none;stroke:var(--on-accent);stroke-width:2.2;stroke-linecap:round}
+.lock h1{font-size:2.4rem;font-style:italic;margin-top:14px}
+.lock-sub{margin:2px 0 22px;color:var(--muted)}
+.pin-dots{display:flex;gap:14px;height:18px}
+.pin-dots i{width:16px;height:16px;border-radius:50%;border:2px solid var(--muted);transition:background .12s,border-color .12s,transform .12s}
+.pin-dots i.on{background:var(--accent);border-color:var(--accent);transform:scale(1.08)}
+.pin-dots.shake{animation:shake .4s}
+@keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.lock-msg{min-height:1.4em;margin:14px 0 10px;font-size:.92rem;color:var(--muted)}
+.lock-msg.bad{color:var(--warn)}
+.keypad{display:grid;grid-template-columns:repeat(3,76px);gap:16px 22px;justify-content:center}
+.keypad button{width:76px;height:76px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font:700 2rem/1 "Barlow Condensed",sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.keypad button:active{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.keypad .kdel{background:none;border-color:transparent}
+.keypad .kdel svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.keypad.busy{opacity:.55;pointer-events:none}
+@media (prefers-reduced-motion:reduce){.pin-dots.shake{animation:none}}
 
 /* ---------- Mobile (iPhone) ---------- */
 nav.bottom-nav{display:none}
@@ -265,10 +332,13 @@ nav.bottom-nav{display:none}
   nav.bottom-nav button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   nav.bottom-nav button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   nav.bottom-nav button[aria-selected="true"]{background:none;color:var(--accent)}
+  nav.bottom-nav{background:rgba(11,13,16,.88);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+  nav.bottom-nav button{position:relative}
+  nav.bottom-nav button[aria-selected="true"]::before{content:"";position:absolute;top:-7px;left:30%;right:30%;height:3px;border-radius:0 0 3px 3px;background:var(--accent);box-shadow:0 0 12px var(--accent)}
 
   /* pastille « Enregistré » au-dessus de la barre d'onglets, sans masquer le contenu */
   .save-bar{position:fixed;z-index:39;right:12px;left:auto;bottom:calc(66px + env(safe-area-inset-bottom,0px));padding:0;background:none;pointer-events:none}
-  .save-bar .save-msg:not(:empty){display:inline-block;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:.82rem;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+  .save-bar .save-msg:not(:empty){display:inline-block;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:.82rem;box-shadow:0 4px 14px rgba(0,0,0,.5)}
   .save-bar .btn{pointer-events:auto}
   .save-bar.faded{opacity:0}
 
@@ -278,6 +348,7 @@ nav.bottom-nav{display:none}
 
   /* cibles tactiles d'au moins 44 px */
   .scale button,.seg button,.btn{min-height:44px}
+  .seg button{padding:8px 4px;font-size:.92rem;white-space:nowrap}
   .btn.small,.btn.danger,.icon{min-height:36px}
   .icon{min-width:36px}
   .meal-check{padding:12px}
@@ -303,11 +374,26 @@ nav.bottom-nav{display:none}
 }
 </style>
 </head>
-<body>
+<body class="booting">
+<div id="lock" class="lock" hidden role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+  <div class="lock-in">
+    <div class="lock-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10v4M21 10v4M6 7v10M18 7v10M6 12h12"/></svg></div>
+    <h1 id="lockTitle">Carnet</h1>
+    <p class="lock-sub">Entre ton code</p>
+    <div class="pin-dots" id="pinDots" aria-live="polite"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <p class="lock-msg" id="lockMsg" role="status"></p>
+    <div class="keypad" id="keypad">
+      <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+      <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+      <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+      <span></span><button type="button" data-k="0">0</button><button type="button" data-k="del" aria-label="Effacer" class="kdel"><svg viewBox="0 0 24 24"><path d="M9 5h11v14H9l-6-7zM12.5 9.5l5 5M17.5 9.5l-5 5"/></svg></button>
+    </div>
+  </div>
+</div>
 <div class="wrap">
   <header class="top">
     <div>
-      <h1>Carnet d'entraînement</h1>
+      <h1>Carnet <em>d'entraînement</em></h1>
       <div class="status" id="status">Chargement…</div>
     </div>
   </header>
@@ -331,7 +417,7 @@ nav.bottom-nav{display:none}
   <!-- ================= JOURNÉE ================= -->
   <main id="tab-jour">
     <div class="week" id="week"></div>
-    <div class="legend">Points bleus : séances. Barre violette : heures de sommeil (0–10 h).</div>
+    <div class="legend">Points verts : séances. Barre violette : heures de sommeil (0–10 h).</div>
 
     <div class="row" style="margin-bottom:14px">
       <label style="flex-direction:row;align-items:center;gap:8px">Date
@@ -492,6 +578,7 @@ nav.bottom-nav{display:none}
       <button data-days="90" aria-pressed="true">90 j</button>
       <button data-days="180" aria-pressed="false">6 mois</button>
     </div>
+    <section class="panel"><h2>Records <small>depuis le début</small></h2><div class="records" id="records"></div></section>
     <section class="panel pace-panel" id="pacePanel"><h2>Rythme vers l'objectif <small>tendance des 3 dernières semaines</small></h2><div class="stat-row" id="st-pace"></div><div id="paceText"></div></section>
     <section class="panel" id="goalPanel"><h2>Objectif réaliste <small>d'après ce que tu as déjà perdu et ta tendance récente</small></h2><div class="stat-row" id="st-goal"></div><div id="goalText"></div><div class="row" id="goalActions" style="margin-top:12px"></div></section>
     <section class="panel"><h2>Poids <small>trait pointillé : objectif de phase · courbe épaisse : moyenne 7 j</small></h2><div class="stat-row" id="st-weight"></div><div class="chart" id="ch-weight"></div></section>
@@ -784,14 +871,80 @@ const emptyDay = date => ({date, weight:null, steps:null, sleepHours:null, sleep
 function normalize(d){ const o=Object.assign(emptyDay(d.date),d); o.sessions=(o.sessions||[]).map(s=>({...s, pleasure: s.pleasure ?? s.rating ?? null})); o.meals=o.meals||{}; return o; }
 
 /* ---------- synchro serveur (routes /api → Supabase) ---------- */
-const PW_KEY="carnet-sport.pw", PENDING_KEY="carnet-sport.pending";
+const PENDING_KEY="carnet-sport.pending";
 let apiOk=false;
+
+/* ---------- code d'accès à 6 chiffres (APP_PASSWORD sur Vercel) ---------- */
+// Le code reste en mémoire seulement : il est redemandé à chaque ouverture de l'app
+// et après 2 minutes passées en arrière-plan. Une empreinte permet de vérifier hors ligne.
+const PIN_HASH_KEY="carnet-sport.pinhash", PIN_LEN=6, RELOCK_MS=120000;
+let PIN=null, pinRequired=false, pinWaiters=[], pinBuf="", pinFails=0, pinBlockedUntil=0, hiddenAt=0;
+try{ localStorage.removeItem("carnet-sport.pw"); }catch(e){}
+async function pinHash(code){
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("carnet-sport:"+code));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+async function authCheck(code){
+  const r = await fetch("/api/auth", {cache:"no-store", headers: code?{"x-app-password":code}:{}});
+  if(r.status===404) return {required:false, ok:true}; // pas de route (version locale)
+  if(r.status!==200 && r.status!==401) throw new Error("http "+r.status);
+  return r.json();
+}
+function paintPin(){ $$("#pinDots i").forEach((d,i)=>d.classList.toggle("on", i<pinBuf.length)); }
+function lockMsg(t, bad){ const m=$("#lockMsg"); m.textContent=t||""; m.classList.toggle("bad",!!bad); }
+function showLock(){
+  pinBuf=""; paintPin(); lockMsg("");
+  $("#lock").hidden=false; document.body.classList.add("locked");
+  return new Promise(res=>pinWaiters.push(res));
+}
+function unlockDone(code){
+  PIN=code; pinFails=0; $("#lock").hidden=true; document.body.classList.remove("locked");
+  const w=pinWaiters; pinWaiters=[]; w.forEach(f=>f());
+}
+async function submitPin(){
+  const code=pinBuf; $("#keypad").classList.add("busy");
+  try{
+    let ok;
+    try{ const j=await authCheck(code); ok=j.ok; if(!j.required) ok=true; }
+    catch(e){ // hors ligne : on compare à l'empreinte enregistrée lors du dernier déverrouillage
+      let h=null; try{ h=localStorage.getItem(PIN_HASH_KEY); }catch(_){}
+      if(!h){ lockMsg("Pas de connexion : impossible de vérifier le code.", true); pinBuf=""; paintPin(); return; }
+      ok = (await pinHash(code))===h;
+    }
+    if(ok){ try{ localStorage.setItem(PIN_HASH_KEY, await pinHash(code)); }catch(e){} unlockDone(code); return; }
+    pinFails++;
+    $("#pinDots").classList.remove("shake"); void $("#pinDots").offsetWidth; $("#pinDots").classList.add("shake");
+    navigator.vibrate?.(120);
+    if(pinFails>=5){ pinBlockedUntil=Date.now()+30000; pinFails=0; lockMsg("Trop d'essais : attends 30 secondes.", true); }
+    else lockMsg("Code incorrect", true);
+    pinBuf=""; paintPin();
+  } finally { $("#keypad").classList.remove("busy"); }
+}
+function pinKey(k){
+  if($("#lock").hidden || $("#keypad").classList.contains("busy")) return;
+  if(Date.now()<pinBlockedUntil){ lockMsg(`Trop d'essais : attends ${Math.ceil((pinBlockedUntil-Date.now())/1000)} s.`, true); return; }
+  if(k==="del"){ pinBuf=pinBuf.slice(0,-1); paintPin(); return; }
+  if(pinBuf.length>=PIN_LEN) return;
+  pinBuf+=k; paintPin(); if(pinBuf.length===1) lockMsg("");
+  if(pinBuf.length===PIN_LEN) setTimeout(submitPin,120);
+}
+$$("#keypad button").forEach(b=>b.addEventListener("click",()=>pinKey(b.dataset.k)));
+document.addEventListener("keydown",e=>{ if($("#lock").hidden) return; if(/^[0-9]$/.test(e.key)){ e.preventDefault(); pinKey(e.key); } else if(e.key==="Backspace"){ e.preventDefault(); pinKey("del"); } });
+async function pinGate(){
+  try{ const j=await authCheck(null); pinRequired=!!j.required; if(!pinRequired){ try{ localStorage.removeItem(PIN_HASH_KEY); }catch(e){} } }
+  catch(e){ try{ pinRequired=!!localStorage.getItem(PIN_HASH_KEY); }catch(_){ pinRequired=false; } }
+  if(pinRequired) await showLock();
+}
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="hidden") hiddenAt=Date.now();
+  else if(pinRequired && PIN && hiddenAt && Date.now()-hiddenAt>RELOCK_MS){ PIN=null; showLock(); }
+});
+
 async function api(method, path, body, retry=true){
-  let pw=null; try{ pw=localStorage.getItem(PW_KEY); }catch(e){}
-  const r = await fetch("/api/"+path, {method, headers:{"content-type":"application/json", ...(pw?{"x-app-password":pw}:{})}, body: body!==undefined?JSON.stringify(body):undefined});
+  if(pinRequired && !PIN) await new Promise(res=>pinWaiters.push(res));
+  const r = await fetch("/api/"+path, {method, headers:{"content-type":"application/json", ...(PIN?{"x-app-password":PIN}:{})}, body: body!==undefined?JSON.stringify(body):undefined});
   if(r.status===401 && retry){
-    const p=prompt("Mot de passe du carnet :"); if(!p) throw new Error("auth");
-    try{ localStorage.setItem(PW_KEY,p); }catch(e){}
+    pinRequired=true; PIN=null; await showLock();
     return api(method,path,body,false);
   }
   if(!r.ok) throw new Error("http "+r.status);
@@ -1324,8 +1477,8 @@ function renderPerf(){
     const ps=perfSeries(p=>p.pace), ms=perfSeries(p=>p.mile);
     const pv=ps.filter(p=>p.v!=null), mv=ms.filter(p=>p.v!=null);
     $("#perfStats").innerHTML = stat(pv.length?fmtPaceShort(Math.min(...pv.map(p=>p.v)))+"/km":"–","meilleure allure notée")+stat(pv.length?fmtPaceShort(pv.at(-1).v)+"/km":"–","dernière allure")+stat(mv.length?fmtSec(Math.min(...mv.map(p=>p.v))):"–","meilleur 1,6 km (test)");
-    $("#perfCharts").innerHTML = `<div class="perf-sub">Allure des sorties (plus bas = plus rapide)</div><div class="chart">${lineChart(ps,css("--steps"),"/km",0,{fmt:fmtPaceShort,h:200})}</div>`
-      + (mv.length?`<div class="perf-sub">Tests 1,6 km</div><div class="chart">${lineChart(ms,css("--steps"),"",0,{fmt:v=>fmtSec(v),h:180,connect:false})}</div>`:"")
+    $("#perfCharts").innerHTML = `<div class="perf-sub">Allure des sorties (plus bas = plus rapide)</div><div class="chart">${lineChart(ps,css("--steps"),"/km",0,{fmt:fmtPaceShort,h:200,best:"min"})}</div>`
+      + (mv.length?`<div class="perf-sub">Tests 1,6 km</div><div class="chart">${lineChart(ms,css("--steps"),"",0,{fmt:v=>fmtSec(v),h:180,connect:false,best:"min"})}</div>`:"")
       + (!pv.length?`<p class="hint">Note la distance et le temps de tes sorties (ou « 32 min à 6'35 » dans le réalisé) pour suivre ton allure.</p>`:"");
     return;
   }
@@ -1339,7 +1492,7 @@ function renderPerf(){
     + stat(avgL!=null?fmtNum(avgL,0):"–","volume moyen / séance (4 sem.)"+(avgL!=null&&avgP!=null?` · ${avgL>=avgP?"+":""}${fmtNum((avgL/avgP-1)*100,0)} % vs 4 sem. d'avant`:""))
     + stat(`${m.murph}`,"reps dans le Murph");
   $("#perfCharts").innerHTML = `<div class="perf-sub">Volume par séance (reps)</div><div class="chart">${barChart(vs,col,"reps",0,{min:5})}</div>`
-    + (perfView!=="squats"?`<div class="perf-sub">Meilleure série</div><div class="chart">${lineChart(bs,col,"reps",0,{h:180})}</div>`:"")
+    + (perfView!=="squats"?`<div class="perf-sub">Meilleure série</div><div class="chart">${lineChart(bs,col,"reps",0,{h:180,best:"max"})}</div>`:"")
     + (!vv.length?`<p class="hint">Note le réalisé de tes exercices (ex. 2,2,2,2,2,2) pour voir la courbe se construire.</p>`:"");
 }
 
@@ -1538,39 +1691,100 @@ $$("[data-reset]").forEach(b=>b.onclick=()=>{
 /* ---------- tendances ---------- */
 function series(field){ const end=todayIso(), out=[]; for(let i=rangeDays-1;i>=0;i--){ const d=addDays(end,-i); const v=days[d]?.[field]; out.push({d, v: v==null?null:v}); } return out; }
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-function axisLabels(pts,W,pl,pr,H){ const step=Math.ceil(pts.length/7); let t=""; pts.forEach((p,i)=>{ if(i%step===0||i===pts.length-1){ const x=pl+(i+.5)*(W-pl-pr)/pts.length; t+=`<text x="${x}" y="${H-6}" text-anchor="middle" font-size="11" fill="${css("--muted")}">${fmtShort(p.d)}</text>`; }}); return t; }
+function axisLabels(pts,W,pl,pr,H){ const step=Math.ceil(pts.length/(W<500?5:7)); let t=""; pts.forEach((p,i)=>{ if(i%step===0||i===pts.length-1){ const x=pl+(i+.5)*(W-pl-pr)/pts.length; t+=`<text x="${x}" y="${H-6}" text-anchor="middle" font-size="11" fill="${css("--muted")}">${fmtShort(p.d)}</text>`; }}); return t; }
+let chartSeq=0;
+// Largeur de dessin : plus étroite sur téléphone pour que tout le graphique tienne à l'écran, textes lisibles
+const chartW = () => window.matchMedia("(max-width: 700px)").matches ? 400 : 760;
+const tip = (d,txt) => `<title>${fmtShort(d)} : ${txt}</title>`;
+// Étiquette en bulle (valeur du jour, record) — reste dans le cadre du graphique
+function bubble(x,y,txt,fill,ink,W,pl,pr,below){
+  const w=txt.length*7.2+14, h=20, bx=Math.min(Math.max(x-w/2,pl),W-pr-w), by=below?y+10:y-h-9;
+  return `<g><rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${w.toFixed(1)}" height="${h}" rx="10" fill="${fill}"/><text x="${(bx+w/2).toFixed(1)}" y="${(by+14).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="${ink}">${esc(txt)}</text></g>`;
+}
 function lineChart(pts,color,unit,dec,opts={}){
-  const W=760,H=opts.h||240,pl=44,pr=12,pt=14,pb=26, F = opts.fmt || (v=>fmtNum(v,dec));
+  const W=chartW(),H=opts.h||240,pl=44,pr=12,pt=30,pb=26, F = opts.fmt || (v=>fmtNum(v,dec)), id="lg"+(++chartSeq);
   const vals=pts.filter(p=>p.v!=null).map(p=>p.v);
   if(!vals.length) return '<p class="empty">Pas encore de données sur cette période.</p>';
   let all=[...vals]; if(opts.target) all.push(opts.target);
-  let mn=Math.min(...all), mx=Math.max(...all); if(mn===mx){mn-=1;mx+=1;} const pv=(mx-mn)*.1; mn-=pv; mx+=pv;
-  const X=i=>pl+(i+.5)*(W-pl-pr)/pts.length, Y=v=>pt+(1-(v-mn)/(mx-mn))*(H-pt-pb);
-  let g=""; for(let k=0;k<=3;k++){ const v=mn+(mx-mn)*k/3,y=Y(v); g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${css("--line")}"/><text x="${pl-6}" y="${y+4}" text-anchor="end" font-size="11" fill="${css("--muted")}">${F(v)}</text>`; }
-  if(opts.target){ const y=Y(opts.target); g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${css("--good")}" stroke-dasharray="5 4"/><text x="${W-pr}" y="${y-5}" text-anchor="end" font-size="11" fill="${css("--good")}">objectif ${opts.target} kg</text>`; }
-  let ma="";
-  if(opts.ma){ const P=pts.map((p,i)=>{ const w=pts.slice(Math.max(0,i-6),i+1).map(x=>x.v).filter(v=>v!=null); return w.length&&p.v!=null?[X(i),Y(avg(w))]:null; }).filter(Boolean);
-    ma=`<path d="${P.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ")}" fill="none" stroke="${color}" stroke-width="3.5" stroke-linejoin="round"/>`; }
-  const P=pts.map((p,i)=>p.v==null?null:[X(i),Y(p.v)]).filter(Boolean);
-  const path=P.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
-  const dots=pts.map((p,i)=>p.v==null?"":`<circle cx="${X(i)}" cy="${Y(p.v)}" r="2.8" fill="${color}"><title>${fmtShort(p.d)} : ${F(p.v)} ${unit}</title></circle>`).join("");
-  if(opts.connect===false) return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Courbe">${g}${dots.replace(/r="2.8"/g,'r="4"')}${axisLabels(pts,W,pl,pr,H)}</svg>`;
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Courbe">${g}<path d="${path}" fill="none" stroke="${color}" stroke-width="1.2" opacity="${opts.ma?.45:1}"/>${ma}${dots}${axisLabels(pts,W,pl,pr,H)}</svg>`;
+  let mn=Math.min(...all), mx=Math.max(...all); if(mn===mx){mn-=1;mx+=1;} const pv=(mx-mn)*.12; mn-=pv; mx+=pv;
+  const X=i=>pl+(i+.5)*(W-pl-pr)/pts.length, Y=v=>pt+(1-(v-mn)/(mx-mn))*(H-pt-pb), base=H-pb;
+  const line=css("--line"), muted=css("--muted");
+  let g=`<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".38"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>`;
+  for(let k=0;k<=3;k++){ const v=mn+(mx-mn)*k/3,y=Y(v); g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${line}" stroke-dasharray="${k?"2 5":""}"/><text x="${pl-6}" y="${y+4}" text-anchor="end" font-size="11" fill="${muted}">${F(v)}</text>`; }
+  if(opts.target){ const y=Y(opts.target); g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${css("--good")}" stroke-width="1.5" stroke-dasharray="6 5"/><text x="${pl+4}" y="${y-6}" font-size="11" font-weight="700" fill="${css("--good")}">objectif ${fmtNum(opts.target,1)} kg</text>`; }
+  const raw=pts.map((p,i)=>p.v==null?null:[X(i),Y(p.v),p]).filter(Boolean);
+  const toPath=P=>P.map((q,i)=>(i?"L":"M")+q[0].toFixed(1)+" "+q[1].toFixed(1)).join(" ");
+  const main = opts.ma ? pts.map((p,i)=>{ const w=pts.slice(Math.max(0,i-6),i+1).map(x=>x.v).filter(v=>v!=null); return w.length&&p.v!=null?[X(i),Y(avg(w))]:null; }).filter(Boolean) : raw;
+  // record (plus bas pour le poids / l'allure, plus haut pour des reps)
+  const bestMode = opts.best || null; let rec=null;
+  if(bestMode && raw.length>1){ rec = raw.reduce((a,q)=> (bestMode==="min"? q[2].v<a[2].v : q[2].v>a[2].v) ? q : a); }
+  const last=raw[raw.length-1], gold=css("--gold"), ink=css("--on-accent");
+  const recMark = rec && rec!==last ? `<circle cx="${rec[0]}" cy="${rec[1]}" r="6" fill="none" stroke="${gold}" stroke-width="2"/>${bubble(rec[0],rec[1],"record "+F(rec[2].v),gold,"#0B0D10",W,pl,pr,bestMode==="min")}` : "";
+  const lastMark = `<circle cx="${last[0]}" cy="${last[1]}" r="9" fill="${color}" opacity=".25"/><circle cx="${last[0]}" cy="${last[1]}" r="4.5" fill="${color}" stroke="${css("--surface")}" stroke-width="2"/>${bubble(last[0],last[1],(rec===last?"record ":"")+F(last[2].v)+(unit&&unit.length<4?" "+unit:""),rec===last?gold:color,"#0B0D10",W,pl,pr,false)}`;
+  const dots=raw.map(q=>`<circle cx="${q[0]}" cy="${q[1]}" r="${opts.connect===false?4:2.4}" fill="${color}" opacity="${opts.ma?.55:1}">${tip(q[2].d,F(q[2].v)+" "+unit)}</circle>`).join("");
+  if(opts.connect===false) return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Courbe">${g}${dots}${recMark}${lastMark}${axisLabels(pts,W,pl,pr,H)}</svg>`;
+  const area = main.length>1 ? `<path d="${toPath(main)} L${main[main.length-1][0].toFixed(1)} ${base} L${main[0][0].toFixed(1)} ${base} Z" fill="url(#${id})"/>` : "";
+  const rawLine = opts.ma ? `<path d="${toPath(raw)}" fill="none" stroke="${color}" stroke-width="1.2" opacity=".4"/>` : "";
+  const mainLine = `<path d="${toPath(main)}" fill="none" stroke="${color}" stroke-width="${opts.ma?3.5:2.5}" stroke-linejoin="round" stroke-linecap="round"/>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Courbe">${g}${area}${rawLine}${mainLine}${dots}${recMark}${lastMark}${axisLabels(pts,W,pl,pr,H)}</svg>`;
 }
 function barChart(pts,color,unit,dec,opts={}){
-  const W=760,H=220,pl=44,pr=12,pt=14,pb=26;
+  const W=chartW(),H=230,pl=44,pr=12,pt=30,pb=26, id="bg"+(++chartSeq);
   const vals=pts.filter(p=>p.v!=null).map(p=>p.v);
   if(!vals.length) return '<p class="empty">Pas encore de données sur cette période.</p>';
-  const mx=Math.max(opts.min||0,...vals)*1.1||1, bw=(W-pl-pr)/pts.length, Y=v=>pt+(1-v/mx)*(H-pt-pb);
-  let g=""; for(let k=0;k<=3;k++){ const v=mx*k/3,y=Y(v); g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${css("--line")}"/><text x="${pl-6}" y="${y+4}" text-anchor="end" font-size="11" fill="${css("--muted")}">${fmtNum(v,dec)}</text>`; }
-  if(opts.target){ const y=Y(opts.target); g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${color}" stroke-dasharray="4 4" opacity=".7"/>`; }
-  const bars=pts.map((p,i)=>{ if(p.v==null) return ""; const y=Y(p.v), op=opts.opacity?opts.opacity(p):1;
-    return `<rect x="${pl+i*bw+bw*.15}" y="${y}" width="${Math.max(1,bw*.7)}" height="${H-pb-y}" rx="1.5" fill="${color}" opacity="${op}"><title>${fmtShort(p.d)} : ${fmtNum(p.v,dec)} ${unit}${opts.extra?opts.extra(p):""}</title></rect>`; }).join("");
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Histogramme">${g}${bars}${axisLabels(pts,W,pl,pr,H)}</svg>`;
+  const mx=Math.max(opts.min||0,opts.target||0,...vals)*1.12||1, bw=(W-pl-pr)/pts.length, Y=v=>pt+(1-v/mx)*(H-pt-pb);
+  const line=css("--line"), muted=css("--muted"), gold=css("--gold");
+  let g=`<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}"/><stop offset="1" stop-color="${color}" stop-opacity=".25"/></linearGradient><linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${gold}"/><stop offset="1" stop-color="${gold}" stop-opacity=".35"/></linearGradient></defs>`;
+  for(let k=0;k<=3;k++){ const v=mx*k/3,y=Y(v); g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${line}" stroke-dasharray="${k?"2 5":""}"/><text x="${pl-6}" y="${y+4}" text-anchor="end" font-size="11" fill="${muted}">${fmtNum(v,dec)}</text>`; }
+  const showRec = opts.record!==false && vals.length>2;
+  const best = showRec ? Math.max(...vals) : null; let bestDone=false;
+  const bars=pts.map((p,i)=>{ if(p.v==null) return ""; const y=Y(p.v), op=opts.opacity?opts.opacity(p):1, isRec = showRec && !bestDone && p.v===best;
+    if(isRec) bestDone=true;
+    return `<rect x="${(pl+i*bw+bw*.15).toFixed(1)}" y="${y.toFixed(1)}" width="${Math.max(1.5,bw*.7).toFixed(1)}" height="${(H-pb-y).toFixed(1)}" rx="${Math.min(4,bw*.3).toFixed(1)}" fill="url(#${id}${isRec?"g":""})" opacity="${isRec?1:op}">${tip(p.d,fmtNum(p.v,dec)+" "+unit+(opts.extra?opts.extra(p):""))}</rect>`; }).join("");
+  let over="";
+  const m=avg(vals);
+  if(m!=null && vals.length>2){ const y=Y(m); over+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${css("--ink")}" stroke-width="1" stroke-dasharray="3 4" opacity=".55"/><text x="${W-pr-2}" y="${y-5}" text-anchor="end" font-size="11" font-weight="700" fill="${css("--ink")}" opacity=".8">moy. ${fmtNum(m,dec)}</text>`; }
+  if(opts.target){ const y=Y(opts.target); over+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${color}" stroke-width="1.5" stroke-dasharray="6 5"/><text x="${pl+4}" y="${y-6}" font-size="11" font-weight="700" fill="${color}">objectif ${fmtNum(opts.target,dec)}</text>`; }
+  if(showRec){ const i=pts.findIndex(p=>p.v===best); over+=bubble(pl+(i+.5)*bw, Y(best), "record "+fmtNum(best,dec), gold, "#0B0D10", W, pl, pr, false); }
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Histogramme">${g}${bars}${over}${axisLabels(pts,W,pl,pr,H)}</svg>`;
 }
-const stat = (v,l) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`;
+const stat = (v,l,dl) => `<div class="stat"><b>${v}</b><span>${l}</span>${dl||""}</div>`;
+// Comparaison 7 derniers jours vs 7 jours d'avant. better : "up" ou "down"
+function weekDelta(field, better, dec=0, unit=""){
+  const t=todayIso(), cur=[], prev=[];
+  for(let i=0;i<7;i++){ const a=days[addDays(t,-i)]?.[field], b=days[addDays(t,-7-i)]?.[field]; if(a!=null) cur.push(a); if(b!=null) prev.push(b); }
+  if(!cur.length || !prev.length) return "";
+  const d=avg(cur)-avg(prev), eps = dec ? .5/10**dec : .5;
+  if(Math.abs(d)<eps) return `<em class="dl">= vs sem. préc.</em>`;
+  const good = better==="up" ? d>0 : d<0;
+  return `<em class="dl ${good?"good":"bad"}">${d>0?"▲":"▼"} ${fmtNum(Math.abs(d),dec)}${unit} vs sem. préc.</em>`;
+}
+function sessionsDelta(){
+  const t=todayIso(); let a=0,b=0;
+  for(let i=0;i<7;i++){ a+=(days[addDays(t,-i)]?.sessions||[]).length; b+=(days[addDays(t,-7-i)]?.sessions||[]).length; }
+  if(!a && !b) return "";
+  if(a===b) return `<em class="dl">= vs sem. préc.</em>`;
+  return `<em class="dl ${a>b?"good":"bad"}">${a>b?"▲":"▼"} ${Math.abs(a-b)} vs sem. préc.</em>`;
+}
+function renderRecords(){
+  const box=$("#records"); if(!box) return;
+  const all=Object.values(days), R=[];
+  const top=(field,mode)=>{ let best=null; all.forEach(d=>{ const v=d[field]; if(v==null||v==="") return; if(!best || (mode==="min"? v<best.v : v>best.v)) best={v,d:d.date}; }); return best; };
+  const w=top("weight","min"); if(w) R.push(["Poids le plus bas", fmtNum(w.v,1)+" kg", w.d, "--weight"]);
+  const st=top("steps","max"); if(st) R.push(["Pas en une journée", fmtNum(st.v), st.d, "--steps"]);
+  const sl=top("sleepHours","max"); if(sl) R.push(["Plus longue nuit", fmtH(sl.v), sl.d, "--sleep"]);
+  const wk={}; all.forEach(d=>{ const n=(d.sessions||[]).length; if(n){ const m=mondayOf(d.date); wk[m]=(wk[m]||0)+n; } });
+  const bw=Object.entries(wk).sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?1:-1))[0]; if(bw) R.push(["Séances en une semaine", String(bw[1]), bw[0], "--train", "sem. du "]);
+  const tb=(k,mode,f)=>{ let best=null; all.forEach(d=>{ const v=d.tests?.[k]; if(v==null||v==="") return; const n = k==="mile"?parseTime(v):Number(v); if(n==null||isNaN(n)) return; if(!best || (mode==="min"? n<best.v : n>best.v)) best={v:n,d:d.date}; }); return best; };
+  const tr=tb("pullups","max"); if(tr) R.push(["Tractions (test)", String(tr.v), tr.d, "--accent"]);
+  const pu=tb("pushups","max"); if(pu) R.push(["Pompes (test)", String(pu.v), pu.d, "--accent"]);
+  const mi=tb("mile","min"); if(mi) R.push(["1,6 km (test)", fmtSec(mi.v), mi.d, "--gold"]);
+  box.innerHTML = R.length ? R.map(([l,v,d,c,pre])=>`<div class="rec" style="--c:var(${c})"><span>${esc(l)}</span><b>${esc(v)}</b><em>${pre||"le "}${fmtShort(d)}</em></div>`).join("")
+    : '<p class="empty" style="grid-column:1/-1">Tes records apparaîtront ici dès tes premières saisies.</p>';
+}
 function renderTrends(){
   if($("#tab-tend").hidden) return;
+  renderRecords();
   renderGoal();
   const r = paceInfo();
   $("#pacePanel").hidden = !r;
@@ -1584,18 +1798,18 @@ function renderTrends(){
   const w=series("weight"), wv=w.filter(p=>p.v!=null).map(p=>p.v), target=targetFor(todayIso());
   const diff = wv.length>1 ? wv.at(-1)-wv[0] : null;
   const allW = Object.values(days).filter(d=>d.weight!=null).sort((a,b)=>a.date<b.date?-1:1), startW = allW[0]?.weight;
-  $("#st-weight").innerHTML = stat(fmtNum(wv.at(-1),1)+" kg","dernière pesée")+stat(diff==null?"–":(diff>0?"+":"")+fmtNum(diff,1)+" kg","sur la période")+stat(startW&&wv.length?(wv.at(-1)-startW>0?"+":"")+fmtNum(wv.at(-1)-startW,1)+" kg":"–","depuis le début")+(target&&wv.length?stat(fmtNum(Math.abs(wv.at(-1)-target),1)+" kg",(wv.at(-1)>=target?"à perdre":"à prendre")+" jusqu'à ~"+fmtNum(target,1)+" kg"):"");
-  $("#ch-weight").innerHTML = lineChart(w,css("--weight"),"kg",1,{target,ma:true});
+  $("#st-weight").innerHTML = stat(fmtNum(wv.at(-1),1)+" kg","dernière pesée",weekDelta("weight","down",1," kg"))+stat(diff==null?"–":(diff>0?"+":"")+fmtNum(diff,1)+" kg","sur la période")+stat(startW&&wv.length?(wv.at(-1)-startW>0?"+":"")+fmtNum(wv.at(-1)-startW,1)+" kg":"–","depuis le début")+(target&&wv.length?stat(fmtNum(Math.abs(wv.at(-1)-target),1)+" kg",(wv.at(-1)>=target?"à perdre":"à prendre")+" jusqu'à ~"+fmtNum(target,1)+" kg"):"");
+  $("#ch-weight").innerHTML = lineChart(w,css("--weight"),"kg",1,{target,ma:true,best:"min"});
   const s=series("steps"), sv=s.filter(p=>p.v!=null).map(p=>p.v);
-  $("#st-steps").innerHTML = stat(fmtNum(avg(sv)),"pas / jour en moyenne")+stat(fmtNum(sv.length?Math.max(...sv):null),"meilleure journée");
+  $("#st-steps").innerHTML = stat(fmtNum(avg(sv)),"pas / jour en moyenne",weekDelta("steps","up"))+stat(fmtNum(sv.length?Math.max(...sv):null),"meilleure journée");
   $("#ch-steps").innerHTML = barChart(s,css("--steps"),"pas",0,{target:10000});
   const sl=series("sleepHours").map(p=>({...p,q:days[p.d]?.sleepQuality})), slv=sl.filter(p=>p.v!=null).map(p=>p.v);
-  $("#st-sleep").innerHTML = stat(fmtH(avg(slv)),"moyenne par nuit")+stat(fmtNum(avg(sl.map(p=>p.q)),1)+"/5","qualité moyenne")+stat(slv.filter(v=>v<6).length,"nuits sous 6 h");
+  $("#st-sleep").innerHTML = stat(fmtH(avg(slv)),"moyenne par nuit",weekDelta("sleepHours","up",1," h"))+stat(fmtNum(avg(sl.map(p=>p.q)),1)+"/5","qualité moyenne")+stat(slv.filter(v=>v<6).length,"nuits sous 6 h");
   $("#ch-sleep").innerHTML = barChart(sl,css("--sleep"),"h",1,{min:9,target:7,opacity:p=>p.q!=null?.3+p.q*.14:.6,extra:p=>p.q!=null?` · qualité ${p.q}/5`:""});
   const end=todayIso(), tp=[]; let nb=0, rpes=[], pl=[];
   for(let i=rangeDays-1;i>=0;i--){ const d=addDays(end,-i), ss=days[d]?.sessions||[]; nb+=ss.length; ss.forEach(x=>{x.rpe&&rpes.push(x.rpe); x.pleasure!=null&&pl.push(x.pleasure);}); tp.push({d,v:ss.length||null}); }
-  $("#st-train").innerHTML = stat(nb,"séances")+stat(fmtNum(nb/(rangeDays/7),1),"par semaine")+stat(pl.length?fmtNum(avg(pl),1)+"/5":"–","plaisir moyen")+stat(rpes.length?fmtNum(avg(rpes),1):"–","RPE moyen");
-  $("#ch-train").innerHTML = barChart(tp,css("--accent"),"séance(s)",0,{min:2});
+  $("#st-train").innerHTML = stat(nb,"séances",sessionsDelta())+stat(fmtNum(nb/(rangeDays/7),1),"par semaine")+stat(pl.length?fmtNum(avg(pl),1)+"/5":"–","plaisir moyen")+stat(rpes.length?fmtNum(avg(rpes),1):"–","RPE moyen");
+  $("#ch-train").innerHTML = barChart(tp,css("--train"),"séance(s)",0,{min:2,record:false});
 }
 $$("#range button").forEach(b=>b.onclick=()=>{ rangeDays=Number(b.dataset.days); $$("#range button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); renderTrends(); });
 
@@ -1722,7 +1936,6 @@ function showTab(t){
   if(window.matchMedia("(max-width: 700px)").matches) window.scrollTo(0,0);
 }
 $$("nav.tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
-window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",renderTrends);
 function renderOthers(){
   if(!$("#tab-sem").hidden) renderSemainier();
   if(!$("#tab-prog").hidden) renderProgram();
@@ -1738,12 +1951,16 @@ function renderAll(reloadForm){
 }
 
 /* ---------- init ---------- */
-loadSettings();
-buildScales(); renderTplSelect(); renderPhase();
-loadLocal();
-setStatus("Données enregistrées sur cet appareil.");
-renderAll(true);
-initDb();
+(async()=>{
+  await pinGate();                       // écran du code si APP_PASSWORD est activé
+  document.body.classList.remove("booting");
+  loadSettings();
+  buildScales(); renderTplSelect(); renderPhase();
+  loadLocal();
+  setStatus("Données enregistrées sur cet appareil.");
+  renderAll(true);
+  initDb();
+})();
 })();
 </script>
 </body>

@@ -10,11 +10,19 @@ export function checkEnv(res) {
   return true;
 }
 
-// Protection optionnelle : si APP_PASSWORD est défini sur Vercel, il est exigé.
-export function checkPassword(req, res) {
+import { timingSafeEqual } from "node:crypto";
+
+// Code d'accès : si APP_PASSWORD est défini sur Vercel (ex. 6 chiffres), il est exigé partout.
+export function passwordRequired() { return !!process.env.APP_PASSWORD; }
+export function passwordOk(given) {
   const pw = process.env.APP_PASSWORD;
-  if (pw && req.headers["x-app-password"] !== pw) {
-    res.status(401).json({ error: "Mot de passe requis." });
+  if (!pw) return true;
+  const a = Buffer.from(String(given || "")), b = Buffer.from(pw);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+export function checkPassword(req, res) {
+  if (!passwordOk(req.headers["x-app-password"])) {
+    res.status(401).json({ error: "Code requis." });
     return false;
   }
   return true;
