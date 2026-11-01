@@ -526,11 +526,13 @@ nav.bottom-nav{display:none}
     <section class="panel">
       <div class="tbl"><table id="wk-table"></table></div>
     </section>
+    <div hidden>
     <section class="panel">
       <h2>Bilan du vendredi <small>à envoyer avec la photo WhatsApp</small></h2>
       <textarea class="bilan" id="bilan" readonly></textarea>
       <div class="row" style="margin-top:10px"><button class="btn" id="copyBilan">Copier le bilan</button><span class="save-msg" id="copyMsg"></span></div>
     </section>
+    </div>
   </main>
 
   <!-- ================= PROGRAMME ================= -->
@@ -588,7 +590,7 @@ nav.bottom-nav{display:none}
     <section class="panel"><h2>Records <small>depuis le début</small></h2><div class="records" id="records"></div></section>
     <section class="panel pace-panel" id="pacePanel"><h2>Rythme vers l'objectif <small>tendance des 3 dernières semaines</small></h2><div class="stat-row" id="st-pace"></div><div id="paceText"></div></section>
     <section class="panel" id="goalPanel"><h2>Objectif réaliste <small>d'après ce que tu as déjà perdu et ta tendance récente</small></h2><div class="stat-row" id="st-goal"></div><div id="goalText"></div><div class="row" id="goalActions" style="margin-top:12px"></div></section>
-    <section class="panel"><h2>Poids <small>trait pointillé : objectif de phase · courbe épaisse : moyenne 7 j</small></h2><div class="stat-row" id="st-weight"></div><div class="chart" id="ch-weight"></div></section>
+    <section class="panel"><h2>Poids <small>trait pointillé : objectif · courbe épaisse : moyenne 7 j</small></h2><div class="stat-row" id="st-weight"></div><div class="chart" id="ch-weight"></div></section>
     <section class="panel"><h2>Pas / NEAT</h2><div class="stat-row" id="st-steps"></div><div class="chart" id="ch-steps"></div></section>
     <section class="panel"><h2>Sommeil</h2><div class="stat-row" id="st-sleep"></div><div class="chart" id="ch-sleep"></div></section>
     <section class="panel"><h2>Eau</h2><div class="stat-row" id="st-water"></div><div class="chart" id="ch-water"></div></section>
@@ -703,7 +705,7 @@ function defaultSettings(){
     ]
   };
 }
-const PROG_KEYS = ["programStart","eventName","eventDate","phases","baseline","templates","blocks","nextBlock","testEvery"];
+const PROG_KEYS = ["programStart","eventName","eventDate","phases","baseline","templates","blocks","nextBlock","testEvery","targetWeight"];
 let settingsMigrated = false;
 function normalizeSettings(s){
   const ver = s ? (s.programVersion||1) : 2;
@@ -717,6 +719,12 @@ function normalizeSettings(s){
   }
   if(!Array.isArray(o.plans)||!o.plans.length) o.plans = defaultSettings().plans;
   if(!Array.isArray(o.templates)) o.templates = defaultSettings().templates;
+  if(o.targetWeight===undefined){ // ancien réglage par phases → un seul poids cible
+    const w = Math.floor(diffDays(todayIso(), o.programStart||todayIso())/7)+1, ph=(o.phases||[]);
+    const cur = ph.find(p=>w>=Number(p.from)&&w<=Number(p.to)&&p.target!=null&&p.target!=="");
+    const next = ph.filter(p=>Number(p.from)>w&&p.target!=null&&p.target!=="").sort((a,b)=>a.from-b.from)[0];
+    const t = cur||next; o.targetWeight = t ? Number(t.target) : null;
+  }
   o.phases = (o.phases||[]).map(p=>({...p, detail:String(p.detail||"").replace(/Objectif\s*:?\s*~?\d+([.,]\d+)?\s*kg( à la semaine \d+)?\s*(·\s*)?/i,"").replace(/^Objectif\s*:\s*/i,"").replace(/^\((.*)\)$/,"$1").trim()}));
   return o;
 }
@@ -733,10 +741,8 @@ function planTotals(plan){ const t={kcal:0,p:0,g:0,l:0}; plan.meals.forEach(m=>m
 function mealTotals(m){ const t={kcal:0,p:0,g:0,l:0}; m.items.forEach(i=>{ for(const k in t) t[k]+=Number(i[k])||0; }); return t; }
 const qtyLabel = i => i.unit==="u" ? "× "+fmtNum(i.q,1) : fmtNum(i.q,1)+" g";
 
-function phaseFor(dateIso){
-  const w = weekNum(dateIso);
-  const p = S.phases.find(p=>w>=Number(p.from)&&w<=Number(p.to));
-  return p ? {w, ...p} : {w, name: w<1?"Avant le programme":"Hors phase planifiée", detail:"", target:null};
+function phaseFor(dateIso){ // plus de phases : un seul poids cible, sans échéance
+  const t=S.targetWeight; return {w:weekNum(dateIso), name:"", detail:"", target: t==null||t===""?null:Number(t)};
 }
 const targetFor = d => { const t=phaseFor(d).target; return t==null||t===""?null:Number(t); };
 function objectiveText(p){
@@ -807,7 +813,7 @@ function paceAdvice(r){
   if(r.stale>7) s.push(`Ta dernière pesée date du ${fmtShort(r.last.date)} : le calcul se base dessus.`);
   return s.join(" ");
 }
-function remainingTxt(w,target){ const r=w-target; return r>0 ? `reste ${fmtNum(r,1)} kg à perdre jusqu'à ~${fmtNum(target,1)} kg` : r<0 ? `encore ${fmtNum(-r,1)} kg à prendre jusqu'à ~${fmtNum(target,1)} kg` : `objectif de ${fmtNum(target,1)} kg atteint`; }
+function remainingTxt(w,target){ const r=w-target; return r>0 ? `reste ${fmtNum(r,1)} kg à perdre` : r<0 ? `encore ${fmtNum(-r,1)} kg à prendre jusqu'à ~${fmtNum(target,1)} kg` : `objectif de ${fmtNum(target,1)} kg atteint`; }
 /* ---------- rappel du test Murph ---------- */
 function testInfo(){
   const every = Math.max(1, Math.round(Number(S.testEvery)||4));
@@ -841,7 +847,9 @@ function renderPhase(){
   const ev = S.eventDate ? diffDays(S.eventDate, t) : null;
   const obj = objectiveText(p);
   const last = Object.values(days).filter(d=>d.weight!=null).sort((a,b)=>a.date<b.date?-1:1).pop();
-  $("#phase").innerHTML = `<b>Semaine ${p.w}</b><span>${esc(p.name)}</span>${obj?`<span><b style="font-size:1.05rem">${esc(obj)}</b>${last&&p.target!=null&&p.target!==""?` · ${esc(remainingTxt(last.weight,Number(p.target)))}`:""}</span>`:""}${p.detail?`<span>${esc(p.detail)}</span>`:""}<span>Bilan chaque vendredi</span>${(()=>{ const r=paceInfo(); return r?`<span class="pace-line"><span class="badge ${r.status}">${esc(r.label)}</span><span>${esc(paceShort(r))}</span><a href="#" id="paceMore" style="color:var(--accent);font-weight:600">Détail</a></span>`:""; })()}<button type="button" class="btn ghost small" id="editGoal" style="margin-left:auto">Modifier l'objectif</button>`;
+  const tg=p.target;
+  $("#phase").innerHTML = (tg!=null ? `<b>Objectif ${fmtNum(tg,1)} kg</b>${last?`<span>${esc(remainingTxt(last.weight,tg))}</span>`:""}` : `<b>Objectif de poids</b><span>pas encore défini</span>`)
+    + `<button class="btn ghost small" id="editGoal" style="margin-left:auto">${tg!=null?"Modifier l'objectif":"Définir mon objectif"}</button>`;
   $("#paceMore") && ($("#paceMore").onclick=e=>{ e.preventDefault(); showTab("tend"); $("#pacePanel").scrollIntoView?.({behavior:"smooth",block:"start"}); });
   $("#editGoal").onclick=()=>{ showTab("prog"); if(!editing.prog) openProgEdit(); };
   renderTestAlert();
@@ -1113,11 +1121,11 @@ function energyInfo(){
     recentRate: slopeDay!=null ? slopeDay*7 : null,
     watch: avg(recent.map(d=>d.watchKcal)), nWatch: recent.filter(d=>d.watchKcal!=null).length, totalWeeks };
 }
-function currentPhaseIndex(){ const w=weekNum(todayIso()); return S.phases.findIndex(p=>w>=Number(p.from)&&w<=Number(p.to)); }
+function currentPhaseIndex(){ return -1; }
 function realisticGoal(){
   const E=energyInfo(); if(!E) return null;
   const idx=currentPhaseIndex(), ph = idx>=0 ? S.phases[idx] : null;
-  const target = ph && ph.target!=null && ph.target!=="" ? Number(ph.target) : null;
+  const target = S.targetWeight!=null && S.targetWeight!=="" ? Number(S.targetWeight) : null;
   let rate=null, basis=null;
   if(E.recentRate!=null){ rate=E.recentRate; basis="recent"; }
   else if(E.histRate!=null){ rate=E.histRate; basis="hist"; }
@@ -1153,7 +1161,7 @@ function renderGoal(){
     if(R.capped) s.push(`Le rythme calculé dépasse 1 % de ton poids par semaine : je le plafonne à ${kgw(R.rate)}, ce qui reste tenable sans perdre de muscle.`);
     s.push(`Rythme retenu : ${kgw(R.rate)} (${R.basis==="recent"?"d'après ta tendance des 4 dernières semaines":"d'après ta perte moyenne depuis le début"}).`);
     if(R.target!=null && R.reached) s.push(`Tu es déjà sous ton objectif de ${fmtNum(R.target,1)} kg.`);
-    else if(R.target!=null && R.reachDate) s.push(`À ce rythme, ~${fmtNum(R.target,1)} kg serait atteint vers le ${fmtShort(R.reachDate)}${parseIso(R.reachDate).getFullYear()!==new Date().getFullYear()?" "+parseIso(R.reachDate).getFullYear():""} (semaine ${R.reachWeek}). ${R.ph&&R.ph.to&&R.reachWeek>Number(R.ph.to)?`Ta phase se termine en semaine ${R.ph.to}.`:"C'est dans les temps de ta phase."}`);
+    else if(R.target!=null && R.reachDate) s.push(`À ce rythme, ~${fmtNum(R.target,1)} kg serait atteint vers le ${fmtShort(R.reachDate)}${parseIso(R.reachDate).getFullYear()!==new Date().getFullYear()?" "+parseIso(R.reachDate).getFullYear():""}. `);
     if(R.atEnd!=null && R.ph) s.push(`À la fin de la phase (semaine ${R.ph.to}, ${fmtShort(R.end)}), tu serais vers ${fmtNum(R.atEnd,1)} kg.`);
   }
   if(E.watch!=null) s.push(`Montre : ~${fmtNum(Math.round(E.watch/10)*10)} kcal actives par jour en moyenne (${E.nWatch} jours). Indicatif seulement, non utilisé dans le calcul.`);
@@ -1399,7 +1407,7 @@ function weekStats(mon){
 }
 function renderSemainier(){
   const mon = addDays(mondayOf(todayIso()), 7*weekOffset), sun=addDays(mon,6), w=weekNum(mon);
-  $("#wk-title").textContent = `Semaine ${w} · ${fmtShort(mon)} – ${fmtShort(sun)}`;
+  $("#wk-title").textContent = `${fmtShort(mon)} – ${fmtShort(sun)}`;
   $("#wk-next").disabled = weekOffset>=0;
   const W = weekStats(mon), P = weekStats(addDays(mon,-7));
   let rows="";
@@ -1628,21 +1636,15 @@ function bindEditor(root, key, rerender){
 }
 
 /* ---------- programme : éditeur ---------- */
-function openProgEdit(){ editing.prog = clone(Object.fromEntries(PROG_KEYS.map(k=>[k,S[k]]))); $("#progView").hidden=true; $("#progEdit").hidden=false; renderProgEditor(); setTimeout(()=>{ const f=$('#ed-objectifs [data-p$=".target"]'); f&&f.focus({preventScroll:true}); },50); }
+function openProgEdit(){ editing.prog = clone(Object.fromEntries(PROG_KEYS.map(k=>[k,S[k]]))); $("#progView").hidden=true; $("#progEdit").hidden=false; renderProgEditor(); setTimeout(()=>{ const f=$('#ed-objectifs [data-p="targetWeight"]'); f&&f.focus({preventScroll:true}); },50); }
 function closeProgEdit(){ editing.prog=null; $("#progEdit").hidden=true; showTab("jour"); }
 function renderProgEditor(){
   const E=editing.prog, n=E.templates.length;
   $("#progEditor").innerHTML = `
   <section class="panel" id="ed-objectifs"><h2>Objectif de poids</h2>
-    <p class="hint">Le poids visé de chaque phase met à jour le bandeau, le bilan du vendredi et la ligne d'objectif du graphique. Laisse-le vide pour une phase sans objectif de poids (diet break, maintien).</p>
-    <div class="grid"><label>Semaine 1 commence le${I("programStart",E.programStart,"date")}</label></div>
-    <div class="tbl" style="margin-top:12px">
-      <div class="ed-row phase" style="font-size:.75rem;color:var(--muted);font-weight:600"><span>De S</span><span>À S</span><span>Nom</span><span>Poids visé (kg)</span><span>Note (ex. 1 écart / sem.)</span><span></span></div>
-      ${E.phases.map((p,pi)=>`<div class="ed-row phase">${I(`phases.${pi}.from`,p.from,"num")}${I(`phases.${pi}.to`,p.to,"num")}${I(`phases.${pi}.name`,p.name)}${I(`phases.${pi}.target`,p.target,"num")}${I(`phases.${pi}.detail`,p.detail)}${MOVE("phases",pi,E.phases.length,"la phase")}</div>`).join("")}
-    </div>
-    ${ADD("phases","phase","Ajouter une phase")}
-  </section>
-`;
+    <p class="hint">Ton poids cible. Il s'affiche en haut de l'app, sur le graphique du poids, et sert à estimer quand tu l'atteindras. Laisse vide pour ne pas avoir d'objectif.</p>
+    <div class="grid"><label>Poids cible (kg)${I("targetWeight",E.targetWeight,"num",'inputmode="decimal" placeholder="ex. 95"')}</label></div>
+  </section>`;
 }
 bindEditor($("#progEditor"),"prog",renderProgEditor);
 $("#progEditBtn").onclick=openProgEdit;
@@ -1801,7 +1803,7 @@ function renderHistory(){
     if(d.cardio) chips.push("Cardio "+d.cardio);
     const note = d.note || (d.sessions||[]).map(s=>s.feeling).filter(Boolean).join(" — ");
     return `<div class="hist-item" data-d="${k}" tabindex="0" role="button">
-      <div class="hist-date">${dt.getDate()} ${MONTHS[dt.getMonth()]}<small>${DOW[dt.getDay()]} · S${weekNum(k)}</small></div>
+      <div class="hist-date">${dt.getDate()} ${MONTHS[dt.getMonth()]}<small>${DOW[dt.getDay()]}</small></div>
       <div><div class="chips">${chips.map(c=>`<span class="chip">${esc(c)}</span>`).join("")}${chips.length?"":'<span class="chip">Vide</span>'}</div>
       ${note?`<div class="hist-note">${esc(note)}</div>`:""}</div></div>`;
   }).join("");
