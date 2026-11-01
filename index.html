@@ -389,6 +389,11 @@ details.fold[open]>summary{margin-bottom:12px}
 .b7-warn{margin:12px 0 0;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,201,61,.35);background:rgba(255,201,61,.07);font-size:.9rem}
 #b7Hist td,#b7Hist th{white-space:nowrap}
 #b7Hist .ok{color:var(--good);font-weight:700}
+#b7Hist tr.wk-row{cursor:pointer}
+#b7Hist tr.wk-row.on td{background:var(--surface-2)}
+#b7Hist .chev{font-size:.65rem;color:var(--muted)}
+#b7Hist tr.wk-open td{white-space:normal;background:var(--surface-2);padding:6px 8px 12px}
+#b7Hist tr.wk-open td:first-child{position:static}
 @media (max-width:420px){.b7-week{grid-template-columns:repeat(2,1fr)}}
 
 /* minuteur de repos */
@@ -2549,12 +2554,32 @@ $("#b7Del").onclick=async()=>{
 };
 function renderB7Recent(){
   const L=b7Sessions().slice(-12).reverse();
-  $("#b7Recent").innerHTML = L.length ? L.map(x=>{ const P=B7[x.b7]||{}; const det = x.run ? [x.run.km?fmtNum(x.run.km,1)+" km":"", x.run.dur||""].filter(Boolean).join(" · ") : (n=>`${n} série${n>1?"s":""} notée${n>1?"s":""}`)(Object.values(x.sets||{}).reduce((a,v)=>a+v.filter(z=>z.r!=null).length,0));
+  $("#b7Recent").innerHTML = L.length ? L.map(x=>{ const P=B7[x.b7]||{}; const det = x.run ? [x.run.km?fmtNum(x.run.km,1)+" km":"", x.run.dur ? (/^\d+$/.test(x.run.dur)? x.run.dur+" min" : x.run.dur) : ""].filter(Boolean).join(" · ") : (n=>`${n} série${n>1?"s":""} notée${n>1?"s":""}`)(Object.values(x.sets||{}).reduce((a,v)=>a+v.filter(z=>z.r!=null).length,0));
     return `<button type="button" data-d="${x.date}" data-k="${x.b7}" data-id="${x.id}"><span class="dt">${DOW[parseIso(x.date).getDay()]} ${parseIso(x.date).getDate()}</span><span class="tt"><b>${esc(x.title||P.label||"Séance")}</b><span>${fmtShort(x.date)} · ${esc(det)}</span></span><span class="ed">Modifier</span></button>`; }).join("")
     : '<p class="empty" style="margin:0">Aucune séance notée pour l\'instant.</p>';
   $$("#b7Recent button").forEach(b=>b.onclick=()=>{ b7Open(b.dataset.d, b.dataset.k, false, b.dataset.id); $("#b7Log").scrollIntoView?.({behavior:"smooth",block:"start"}); });
 }
 function renderB7Week(){ const k=b7Kind; renderB7(); b7Kind=k; }
+let b7HistOpen=null; // semaine dépliée dans l'historique
+function weekDetail(m){
+  const e=addDays(m,6), ws=b7Sessions().filter(x=>x.date>=m&&x.date<=e), wp=weekPaused(m), pd=pausedDays(m);
+  const list = ws.length ? ws.map(x=>{ const P=B7[x.b7]||{}; const det = x.run ? [x.run.km?fmtNum(x.run.km,1)+" km":"", x.run.dur ? (/^\d+$/.test(x.run.dur)? x.run.dur+" min" : x.run.dur) : ""].filter(Boolean).join(" · ") : (n=>`${n} série${n>1?"s":""}`)(Object.values(x.sets||{}).reduce((a,v)=>a+v.filter(z=>z.r!=null).length,0));
+      return `<button type="button" data-d="${x.date}" data-k="${x.b7}" data-id="${x.id}"><span class="dt">${DOW[parseIso(x.date).getDay()]} ${parseIso(x.date).getDate()}</span><span class="tt"><b>${esc(x.title||P.label||"Séance")}</b><span>${esc(det)}</span></span><span class="ed">Modifier</span></button>`; }).join("")
+    : `<p class="empty" style="margin:0 0 4px">Aucune séance notée cette semaine.</p>`;
+  return `<div class="wk-detail"><div class="b7-recent">${list}</div>
+    <div class="row" style="margin-top:8px;gap:8px">
+      <button type="button" class="btn ghost small" data-wadd="${m}">+ Ajouter une séance</button>
+      ${pd ? `<button type="button" class="btn ghost small" data-wunpause="${m}">▶ Retirer la pause</button>` : `<button type="button" class="btn ghost small" data-wpause="${m}">⏸ Semaine en pause</button>`}
+    </div></div>`;
+}
+// retire les jours [from, to] de toutes les pauses (en coupant une pause en deux si besoin)
+function unpauseRange(from,to){
+  const out=[]; pauses().forEach(p=>{ const pe=p.to||"9999-12-31";
+    if(pe<from || p.from>to){ out.push(p); return; }
+    if(p.from<from) out.push({...p, to:addDays(from,-1)});
+    if(pe>to) out.push({...p, from:addDays(to,1), to:p.to});
+  }); S.pauses=out;
+}
 function renderB7Hist(){
   const all=b7Sessions(), mon=mondayOf(todayIso()); let rows="";
   for(let w=0; w<8; w++){
@@ -2563,12 +2588,18 @@ function renderB7Hist(){
     const nR=ws.filter(x=>B7[x.b7]?.kind==="renfo").length, nC=ws.filter(x=>B7[x.b7]?.kind==="run").length;
     const km=ws.reduce((a,x)=>a+(x.run?.km||0),0), sec=ws.reduce((a,x)=>a+(parseTime(x.run?.dur)||0),0), fe=avg(ws.map(x=>x.feel));
     const wn=b7WeekNo(m), wp=weekPaused(m);
-    if(wp){ rows+=`<tr data-m="${m}"><td class="l">⏸ ${fmtShort(m)}</td><td colspan="5" class="l" style="color:var(--muted)">En pause${ws.length?` · ${ws.length} séance${ws.length>1?"s":""} notée${ws.length>1?"s":""}`:""}</td></tr>`; continue; }
-    rows+=`<tr data-m="${m}"><td class="l">${wn>=1?`<b>S${wn}</b> · `:""}${fmtShort(m)}</td><td class="${nR>=2?"ok":""}">${nR}/2</td><td class="${nC>=2?"ok":""}">${nC}${nC<2?"/2":""}</td><td>${km?fmtNum(km,1):"–"}</td><td>${sec?Math.round(sec/60)+" min":"–"}</td><td>${fe!=null?fmtNum(fe,1)+"/5":"–"}</td></tr>`;
+    const open=b7HistOpen===m, det = open ? `<tr class="wk-open"><td colspan="6" class="l">${weekDetail(m)}</td></tr>` : "";
+    if(wp){ rows+=`<tr data-m="${m}" class="wk-row${open?" on":""}"><td class="l">⏸ ${fmtShort(m)}</td><td colspan="5" class="l" style="color:var(--muted)">En pause${ws.length?` · ${ws.length} séance${ws.length>1?"s":""} notée${ws.length>1?"s":""}`:""} <span class="chev">${open?"▲":"▼"}</span></td></tr>`+det; continue; }
+    rows+=`<tr data-m="${m}" class="wk-row${open?" on":""}"><td class="l"><span class="chev">${open?"▲":"▼"}</span> ${wn>=1?`<b>S${wn}</b> · `:""}${fmtShort(m)}</td><td class="${nR>=2?"ok":""}">${nR}/2</td><td class="${nC>=2?"ok":""}">${nC}${nC<2?"/2":""}</td><td>${km?fmtNum(km,1):"–"}</td><td>${sec?Math.round(sec/60)+" min":"–"}</td><td>${fe!=null?fmtNum(fe,1)+"/5":"–"}</td></tr>`+det;
   }
   if(!rows) rows=`<tr><td colspan="6" class="l" style="color:var(--muted);white-space:normal">Le programme commence le lundi ${fmtShort(B7_START).replace(/\.$/,"")}. Tes semaines apparaîtront ici.</td></tr>`;
   $("#b7Hist").innerHTML = `<thead><tr><th class="l">Semaine du</th><th>Renfo</th><th>Course</th><th>km</th><th>Durée</th><th>Sensations</th></tr></thead><tbody>${rows}</tbody>`;
-  $$("#b7Hist tbody tr").forEach(tr=>tr.onclick=null);
+
+  $$("#b7Hist tr.wk-row").forEach(tr=>tr.onclick=()=>{ b7HistOpen = b7HistOpen===tr.dataset.m ? null : tr.dataset.m; renderB7Hist(); });
+  $$("#b7Hist .wk-detail [data-id]").forEach(b=>b.onclick=e=>{ e.stopPropagation(); b7Open(b.dataset.d, b.dataset.k, false, b.dataset.id); $("#b7Log").scrollIntoView?.({behavior:"smooth",block:"start"}); });
+  $$("#b7Hist [data-wadd]").forEach(b=>b.onclick=e=>{ e.stopPropagation(); const m=b.dataset.wadd, t=todayIso(); const d = t>=m && t<=addDays(m,6) ? t : m; b7Open(d, "R", false); $("#b7Log").scrollIntoView?.({behavior:"smooth",block:"start"}); $("#b7Msg").textContent="Choisis le type et le jour, puis enregistre."; });
+  $$("#b7Hist [data-wpause]").forEach(b=>b.onclick=async e=>{ e.stopPropagation(); const m=b.dataset.wpause; unpauseRange(m,addDays(m,6)); S.pauses=[...pauses(), {from:m, to:addDays(m,6), reason:"Semaine en pause"}].sort((a,c)=>a.from<c.from?-1:1); await afterPauseChange(); });
+  $$("#b7Hist [data-wunpause]").forEach(b=>b.onclick=async e=>{ e.stopPropagation(); const m=b.dataset.wunpause; unpauseRange(m,addDays(m,6)); await afterPauseChange(); });
 }
 
 /* ---------- progression de force ---------- */
