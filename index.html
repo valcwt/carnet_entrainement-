@@ -3101,7 +3101,7 @@ $("#pgSave").onclick=async()=>{
     v.short=(v.short||v.label).trim().slice(0,12); delete v._shortTouched;
     if(v.kind==="renfo"){ v.ex=(v.ex||[]).filter(e=>e.name && e.name.trim()); if(!v.ex.length) return msg(`Ajoute au moins un exercice à « ${v.label} ».`);
       const used={}; v.ex.forEach(e=>{ e.name=e.name.trim(); e.sets=Math.max(1,Math.min(10,Math.round(e.sets||3))); e.lo=Math.max(1,Math.round(e.lo||8)); e.hi=Math.max(e.lo,Math.round(e.hi||e.lo)); e.rest=e.rest||90;
-        let id=e.id||slug(e.name); if(used[id]) id+="_"+(++used[id]); else used[id]=1; e.id=id; // garde l'identifiant existant : l'historique de progression suit l'exercice if(!e.bw) delete e.bw; if(!e.time) delete e.time; }); }
+        let id=e.id||slug(e.name); if(used[id]) id+="_"+(++used[id]); else used[id]=1; e.id=id; /* garde l'identifiant existant : l'historique de progression suit l'exercice */ if(!e.bw) delete e.bw; if(!e.time) delete e.time; }); }
     else delete v.ex; }
   P.plan=P.plan.filter(x=>P.sessions[x.k]);
   if(!P.start) P.start=mondayOf(todayIso());
