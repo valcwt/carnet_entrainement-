@@ -382,28 +382,47 @@ section.panel h2.b7-title::before{display:none}
 @media (prefers-reduced-motion:reduce){.rest.done{animation:none}}
 
 /* Aujourd'hui */
-.today-card{background:radial-gradient(120% 140% at 0% 0%,rgba(198,244,50,.10),transparent 55%),linear-gradient(180deg,var(--surface-2),var(--surface))}
-.today-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-section.panel .today-head h2{margin:0}
-.today-plan{display:flex;align-items:center;gap:12px;border:1px solid var(--line);background:var(--field);border-radius:14px;padding:10px 12px;margin-bottom:12px}
-.today-plan .ico{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);flex:none;font-size:1.2rem}
-.today-plan .txt{flex:1;min-width:0}
-.today-plan .txt b{display:block;font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:1.2rem;text-transform:uppercase;line-height:1.1}
-.today-plan .txt span{font-size:.82rem;color:var(--muted)}
-.today-plan.done{border-color:rgba(34,227,160,.4)}
-.today-plan.done .ico{background:rgba(34,227,160,.15);color:var(--good)}
-.rings{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.ring{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
-.ring svg{width:76px;height:76px;transform:rotate(-90deg)}
-.ring circle{fill:none;stroke-width:7;stroke-linecap:round}
-.ring .bg{stroke:var(--line)}
-.ring .val{position:relative;margin-top:-54px;height:50px;display:flex;flex-direction:column;justify-content:center;font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:1.05rem;line-height:1}
-.ring .val small{font-family:Barlow,sans-serif;font-weight:600;font-size:.62rem;color:var(--muted)}
-.ring .lbl{font-size:.75rem;color:var(--muted);font-weight:600;margin-top:2px}
-.ring.full .val{color:var(--good)}
-.nudges:not(:empty){margin-top:12px;display:flex;flex-direction:column;gap:6px}
-.nudge{font-size:.88rem;border-left:3px solid var(--gold);padding:4px 10px;background:rgba(255,201,61,.06);border-radius:0 8px 8px 0}
+.today{margin:0 0 16px}
+.hero{position:relative;overflow:hidden;border-radius:22px;padding:18px 18px 16px;min-height:170px;display:flex;flex-direction:column;justify-content:flex-end;isolation:isolate;
+  background:linear-gradient(135deg,#1d2a0c 0%,#141a10 45%,#0d1013 100%);border:1px solid rgba(198,244,50,.28);box-shadow:0 20px 40px -24px rgba(198,244,50,.45)}
+.hero.run{background:linear-gradient(135deg,#0b2a22 0%,#0f1b18 45%,#0d1013 100%);border-color:rgba(34,227,160,.3);box-shadow:0 20px 40px -24px rgba(34,227,160,.45)}
+.hero.rest{background:linear-gradient(135deg,#221a3a 0%,#16131f 50%,#0d1013 100%);border-color:rgba(160,126,255,.3);box-shadow:0 20px 40px -24px rgba(160,126,255,.4)}
+.hero.done{border-color:rgba(34,227,160,.5)}
+.hero::before{content:"";position:absolute;inset:-40% -30% auto auto;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,var(--hc,rgba(198,244,50,.35)),transparent 70%);z-index:-1}
+.hero.run{--hc:rgba(34,227,160,.32)} .hero.rest{--hc:rgba(160,126,255,.3)}
+.hero .wm{position:absolute;right:-6px;top:-8px;z-index:-1;font:italic 800 7.5rem/1 "Barlow Condensed",sans-serif;letter-spacing:-.04em;color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.05);text-transform:uppercase;white-space:nowrap;pointer-events:none}
+.hero .kick{display:flex;align-items:center;gap:8px;font-size:.75rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--hk,var(--accent))}
+.hero.run{--hk:var(--steps)} .hero.rest{--hk:var(--sleep)}
+.hero .kick i{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor}
+.hero h2{font:italic 800 clamp(2.4rem,12vw,3.4rem)/.92 "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:-.01em;margin:6px 0 4px;color:#fff}
+.hero .sub{color:rgba(243,245,247,.72);font-size:.9rem;margin:0 0 14px}
+.hero .go{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:12px 20px;font-weight:800;font-size:1rem;cursor:pointer;
+  background:var(--hk,var(--accent));color:#0B0D10;box-shadow:0 10px 24px -10px var(--hk,var(--accent))}
+.hero .go.ghost{background:rgba(255,255,255,.08);color:#fff;box-shadow:none;border:1px solid rgba(255,255,255,.18)}
+.hero .badge-done{position:absolute;top:16px;right:16px;display:inline-flex;align-items:center;gap:6px;background:rgba(34,227,160,.16);color:var(--good);border:1px solid rgba(34,227,160,.4);border-radius:999px;padding:4px 10px;font-size:.78rem;font-weight:800}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.tile{position:relative;overflow:hidden;border-radius:18px;padding:12px 12px 12px;background:linear-gradient(180deg,var(--tb),var(--surface) 75%);border:1px solid var(--tl);min-width:0}
+.tile.water{--tc:var(--weight);--tb:rgba(61,178,255,.13);--tl:rgba(61,178,255,.22)}
+.tile.steps{--tc:var(--steps);--tb:rgba(34,227,160,.12);--tl:rgba(34,227,160,.22)}
+.tile.sleep{--tc:var(--sleep);--tb:rgba(160,126,255,.14);--tl:rgba(160,126,255,.24)}
+.tile .tl{display:flex;align-items:center;gap:6px;font-size:.68rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--tc)}
+.tile .tl svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tile .tv{font:800 1.9rem/1 "Barlow Condensed",sans-serif;margin:8px 0 2px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tile .tv small{font:600 .8rem Barlow,sans-serif;color:var(--muted);margin-left:2px}
+.tile .tg{font-size:.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .bar{position:relative;height:8px;border-radius:999px;background:rgba(255,255,255,.07);margin-top:8px;overflow:hidden}
+.tile .bar b{position:absolute;inset:0 auto 0 0;border-radius:999px;background:linear-gradient(90deg,color-mix(in srgb,var(--tc) 55%,transparent),var(--tc));box-shadow:0 0 12px var(--tc)}
+.tile .bar .zone{position:absolute;top:0;bottom:0;background:rgba(255,255,255,.12);border-left:1px solid rgba(255,255,255,.35);border-right:1px solid rgba(255,255,255,.35)}
+.tile.hit{border-color:var(--tc);box-shadow:0 0 0 1px var(--tc) inset,0 10px 24px -14px var(--tc)}
+.tile .tl{overflow:hidden;white-space:nowrap}
+.tile.hit .tl{padding-right:20px}
+.hero.done .kick{padding-right:70px}
+.tile.hit .tv{color:var(--tc)}
+.tile .ok{position:absolute;top:10px;right:10px;width:18px;height:18px;border-radius:50%;background:var(--tc);color:#0B0D10;font-size:.7rem;font-weight:900;display:grid;place-items:center}
+.nudges:not(:empty){margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.nudge{display:flex;gap:8px;align-items:flex-start;font-size:.86rem;padding:9px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
 .nudge a{color:var(--accent);font-weight:700}
+@media (max-width:380px){.tile .tv{font-size:1.6rem}}
 /* corps & ressenti */
 .flabel{display:block;font-size:.85rem;color:var(--muted);font-weight:500;margin:10px 0 4px}
 .seg.wrap{flex-wrap:wrap}
@@ -567,10 +586,9 @@ nav.bottom-nav{display:none}
       <button class="btn ghost" id="today">Aujourd'hui</button>
     </div>
 
-    <section class="panel today-card" id="todayCard">
-      <div class="today-head"><h2 id="todayTitle">Aujourd'hui</h2><span class="hint" id="todayDate" style="margin:0"></span></div>
-      <div class="today-plan" id="todayPlan"></div>
-      <div class="rings" id="rings"></div>
+    <section class="today" id="todayCard">
+      <div class="hero" id="todayPlan"></div>
+      <div class="tiles" id="rings"></div>
       <div class="nudges" id="nudges"></div>
     </section>
 
@@ -882,7 +900,8 @@ nav.bottom-nav{display:none}
       <h2>Objectifs du jour &amp; rappels</h2>
       <div class="grid">
         <label>Eau (L / jour)<input type="number" id="goalWater" step="0.25" min="0.5" inputmode="decimal"></label>
-        <label>Pas / jour<input type="number" id="goalSteps" step="500" min="1000" inputmode="numeric"></label>
+        <label>Pas / jour (min.)<input type="number" id="goalSteps" step="500" min="1000" inputmode="numeric"></label>
+        <label>Pas / jour (max.)<input type="number" id="goalStepsMax" step="500" min="1000" inputmode="numeric"></label>
         <label>Sommeil (h / nuit)<input type="number" id="goalSleep" step="0.25" min="4" inputmode="decimal"></label>
       </div>
       <label class="chk" style="margin-top:12px"><input type="checkbox" id="remWeigh"> Rappel de pesée le matin (dans l'app, avant midi)</label>
@@ -978,7 +997,7 @@ function defaultSettings(){
   });
   return {
     programStart:"2026-06-22", eventName:"Murph", eventDate:"2027-05-01", testEvery:4, testSnooze:"",
-    goals:{water:2.5, steps:10000, sleep:7}, reminders:{weigh:true, water:true}, race:{name:"Semi-marathon", date:"", km:21.1, target:""},
+    goals:{water:2.5, steps:10000, stepsMax:12000, sleep:8}, reminders:{weigh:true, water:true}, race:{name:"Semi-marathon", date:"", km:21.1, target:""},
     phases:[
       {from:1,to:16,name:"Phase 1 — perte de poids",target:97,detail:"1 écart autorisé par semaine"},
       {from:17,to:20,name:"Diet break",target:null,detail:"Reprise d'énergie"},
@@ -1023,6 +1042,7 @@ function normalizeSettings(s){
   }
   if(!Array.isArray(o.plans)||!o.plans.length) o.plans = defaultSettings().plans;
   if(!Array.isArray(o.templates)) o.templates = defaultSettings().templates;
+  if(!o.goals || !o.goals.v2){ o.goals = {...(o.goals||{}), sleep:8, steps:10000, stepsMax:12000, v2:true}; if(o.goals.water==null) o.goals.water=2.5; }
   if(o.targetWeight===undefined){ // ancien réglage par phases → un seul poids cible
     const w = Math.floor(diffDays(todayIso(), o.programStart||todayIso())/7)+1, ph=(o.phases||[]);
     const cur = ph.find(p=>w>=Number(p.from)&&w<=Number(p.to)&&p.target!=null&&p.target!=="");
@@ -2085,13 +2105,13 @@ function renderTrends(){
   $("#ch-weight").innerHTML = lineChart(w,css("--weight"),"kg",1,{target,ma:true,best:"min"});
   const s=series("steps"), sv=s.filter(p=>p.v!=null).map(p=>p.v);
   $("#st-steps").innerHTML = stat(fmtNum(avg(sv)),"pas / jour en moyenne",weekDelta("steps","up"))+stat(fmtNum(sv.length?Math.max(...sv):null),"meilleure journée");
-  $("#ch-steps").innerHTML = barChart(s,css("--steps"),"pas",0,{target:10000});
+  $("#ch-steps").innerHTML = barChart(s,css("--steps"),"pas",0,{target:G().steps});
   const sl=series("sleepHours").map(p=>({...p,q:days[p.d]?.sleepQuality})), slv=sl.filter(p=>p.v!=null).map(p=>p.v);
-  $("#st-sleep").innerHTML = stat(fmtH(avg(slv)),"moyenne par nuit",weekDelta("sleepHours","up",1," h"))+stat(slv.filter(v=>v>=7).length,"nuits de 7 h ou plus")+stat(slv.filter(v=>v<6).length,"nuits sous 6 h");
-  $("#ch-sleep").innerHTML = barChart(sl,css("--sleep"),"h",1,{min:9,target:7});
+  $("#st-sleep").innerHTML = stat(fmtH(avg(slv)),"moyenne par nuit",weekDelta("sleepHours","up",1," h"))+stat(slv.filter(v=>v>=G().sleep).length,`nuits de ${fmtH(G().sleep)} ou plus`)+stat(slv.filter(v=>v<6).length,"nuits sous 6 h");
+  $("#ch-sleep").innerHTML = barChart(sl,css("--sleep"),"h",1,{min:9,target:G().sleep});
   const wt=series("water"), wtv=wt.filter(p=>p.v!=null).map(p=>p.v);
-  $("#st-water").innerHTML = stat(wtv.length?fmtNum(avg(wtv),2)+" L":"–","par jour en moyenne",weekDelta("water","up",2," L"))+stat(wtv.filter(v=>v>=2.5).length,"jours à 2,5 L ou plus")+stat(wtv.length,"jours renseignés");
-  $("#ch-water").innerHTML = barChart(wt,css("--weight"),"L",2,{target:2.5,min:3});
+  $("#st-water").innerHTML = stat(wtv.length?fmtNum(avg(wtv),2)+" L":"–","par jour en moyenne",weekDelta("water","up",2," L"))+stat(wtv.filter(v=>v>=G().water).length,`jours à ${fmtNum(G().water,2)} L ou plus`)+stat(wtv.length,"jours renseignés");
+  $("#ch-water").innerHTML = barChart(wt,css("--weight"),"L",2,{target:G().water,min:3});
 }
 $$("#range button").forEach(b=>b.onclick=()=>{ rangeDays=Number(b.dataset.days); $$("#range button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); renderTrends(); });
 
@@ -2498,33 +2518,46 @@ function renderStrength(){
 }
 
 /* ================= compagnon : aujourd'hui, corps, course, récap ================= */
-const G = () => ({water:2.5, steps:10000, sleep:7, ...(S.goals||{})});
+const G = () => ({water:2.5, steps:10000, stepsMax:12000, sleep:8, ...(S.goals||{})});
 function ringSvg(frac, color){ const R=32, C=2*Math.PI*R, f=Math.max(0,Math.min(1,frac||0));
   return `<svg viewBox="0 0 76 76" aria-hidden="true"><circle cx="38" cy="38" r="${R}" class="bg"/><circle cx="38" cy="38" r="${R}" stroke="${color}" stroke-dasharray="${C}" stroke-dashoffset="${(C*(1-f)).toFixed(1)}"/></svg>`; }
 function liveVals(){ return { water:num($("#water").value), steps:num($("#steps").value), sleep:num($("#sleepHours").value), weight:num($("#weight").value) }; }
+const TICON={
+  water:'<svg viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/></svg>',
+  steps:'<svg viewBox="0 0 24 24"><path d="M8 4c1.7 0 2.5 1.6 2.5 3.5S9.5 12 8 12s-2.5-2-2.5-4S6.3 4 8 4ZM6 14.5h4V17a2 2 0 0 1-4 0v-2.5ZM16 7c1.7 0 2.5 1.6 2.5 3.5S17.5 15 16 15s-2.5-2-2.5-4S14.3 7 16 7ZM14 17.5h4V20a2 2 0 0 1-4 0v-2.5Z"/></svg>',
+  sleep:'<svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>'};
 function renderToday(){
   if(!current || !$("#todayCard")) return;
   const d=current.date, t=todayIso(), isToday=d===t, g=G(), v=liveVals();
-  $("#todayTitle").textContent = isToday ? "Aujourd'hui" : (d<t ? "Ce jour-là" : "Ce jour-là");
-  $("#todayDate").textContent = `${DOW[parseIso(d).getDay()]} ${fmtShort(d)}`;
-  // séance prévue
+  const dayLbl = `${["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"][parseIso(d).getDay()]} ${fmtShort(d)}`;
   const dow=(parseIso(d).getDay()+6)%7, plan=B7_PLAN.find(x=>x.dow===dow), list=(d===current.date?current:days[d])?.sessions?.filter(x=>x.b7)||[];
-  let html="";
-  if(d<B7_START){ html=`<div class="today-plan"><div class="ico">🗓</div><div class="txt"><b>Programme Big Seven</b><span>Début le lundi ${fmtShort(B7_START).replace(/\.$/,"")}</span></div></div>`; }
-  else if(plan){ const P=B7[plan.k], done=list.find(x=>x.b7===plan.k || x.b7==="T"+plan.k);
-    html=`<div class="today-plan${done?" done":""}"><div class="ico">${done?"✓":P.kind==="run"?"🏃":"🏋️"}</div><div class="txt"><b>${esc(P.label)}</b><span>${done?"Faite"+(done.run?.km?` · ${fmtNum(done.run.km,1)} km`:""):P.kind==="run"?"Selon Kiprun":"Séance prévue"}</span></div><button type="button" class="btn small${done?" ghost":""}" id="todayGo">${done?"Voir":"Commencer"}</button></div>`; }
-  else { html=`<div class="today-plan"><div class="ico">😌</div><div class="txt"><b>Repos</b><span>${list.length?list.map(x=>esc(x.title)).join(" · "):"Pas de séance prévue · une sortie facile si tu as envie"}</span></div><button type="button" class="btn ghost small" id="todayGo">+ Séance</button></div>`; }
-  $("#todayPlan").innerHTML = html;
-  $("#todayGo") && ($("#todayGo").onclick=()=>{ showTab("b7"); const k = plan ? plan.k : "R"; b7Open(d, k, false, (list.find(x=>x.b7===k)||{}).id); setTimeout(()=>$("#b7Log").scrollIntoView?.({behavior:"smooth",block:"start"}),60); });
-  // anneaux
-  const ring=(val,goal,fmt,unit,lbl,color)=>`<div class="ring${val!=null&&val>=goal?" full":""}">${ringSvg(val!=null?val/goal:0,color)}<div class="val">${val!=null?fmt(val):"–"}<small>/ ${fmt(goal)}${unit}</small></div><div class="lbl">${lbl}</div></div>`;
-  $("#rings").innerHTML = ring(v.water,g.water,x=>fmtNum(x,1)," L","Eau",css("--weight")) + ring(v.steps,g.steps,x=>x>=1000?fmtNum(x/1000,1)+"k":fmtNum(x),"","Pas",css("--steps")) + ring(v.sleep,g.sleep,x=>fmtH(x),"","Sommeil",css("--sleep"));
+  const wn=b7WeekNo(d), when = isToday ? "Aujourd'hui" : d<t ? "Ce jour-là" : "Prévu";
+  let cls="", wm="", kick="", title="", sub="", btn="", k=null, done=null;
+  if(d<B7_START){ cls="rest"; wm="J−"+diffDays(B7_START,d); kick=`${when} · ${dayLbl}`; title="C'est bientôt"; sub=`Big Seven Athletic démarre le lundi ${fmtShort(B7_START).replace(/\.$/,"")} avec le Renfo A.`; btn=`<button type="button" class="go ghost" id="todayGo">Voir le programme →</button>`; }
+  else if(plan){ const P=B7[plan.k]; k=plan.k; done=list.find(x=>x.b7===plan.k || x.b7==="T"+plan.k); cls=P.kind==="run"?"run":"";
+    wm=P.short; kick=`${when} · ${dayLbl}${wn>=1?` · S${wn}`:""}`; title=P.short;
+    sub = done ? (done.run?.km ? `${fmtNum(done.run.km,1)} km${done.run.dur?` en ${esc(done.run.dur)}`:""} · bien joué.` : "Séance notée · bien joué.") : P.kind==="run" ? `${esc(P.label)} · selon ton plan Kiprun.` : `${esc(P.label)} · ${P.ex.length} exercices · ~50 min.`;
+    btn = `<button type="button" class="go${done?" ghost":""}" id="todayGo">${done?"Voir la séance":"Commencer →"}</button>`; }
+  else { cls="rest"; wm="Repos"; k="R"; kick=`${when} · ${dayLbl}${wn>=1?` · S${wn}`:""}`; title="Récup";
+    sub = list.length ? list.map(x=>esc(x.title)).join(" · ") : "Pas de séance prévue. Une sortie facile si tu en as envie.";
+    btn=`<button type="button" class="go ghost" id="todayGo">+ Ajouter une séance</button>`; }
+  $("#todayPlan").className = `hero ${cls}${done?" done":""}`;
+  $("#todayPlan").innerHTML = `<span class="wm" aria-hidden="true">${esc(wm)}</span>${done?`<span class="badge-done">✓ Fait</span>`:""}<div class="kick"><i></i>${kick}</div><h2>${esc(title)}</h2><p class="sub">${sub}</p>${btn}`;
+  $("#todayGo").onclick=()=>{ showTab("b7"); if(k) b7Open(d<B7_START?B7_START:d, k, false, (list.find(x=>x.b7===k)||{}).id); setTimeout(()=>$(k?"#b7Log":"#b7Week").scrollIntoView?.({behavior:"smooth",block:"start"}),60); };
+  // tuiles
+  const tile=(key,lbl,val,disp,unit,frac,goalTxt,full,zone)=>`<div class="tile ${key}${full?" hit":""}">${full?'<span class="ok">✓</span>':""}<div class="tl">${TICON[key]}${lbl}</div><div class="tv">${disp}<small>${unit}</small></div><div class="tg">${goalTxt}</div><div class="bar">${zone||""}<b style="width:${Math.round(Math.max(0,Math.min(1,frac))*100)}%"></b></div></div>`;
+  const sMax=Math.max(g.stepsMax||g.steps, g.steps), scale=sMax*1.1;
+  const zone=`<span class="zone" style="left:${(g.steps/scale*100).toFixed(1)}%;width:${((sMax-g.steps)/scale*100).toFixed(1)}%"></span>`;
+  $("#rings").innerHTML =
+      tile("water","Eau",v.water, v.water!=null?fmtNum(v.water,2):"–"," L", (v.water||0)/g.water, `objectif ${fmtNum(g.water,1)} L`, v.water!=null&&v.water>=g.water)
+    + tile("steps","Pas",v.steps, v.steps!=null?(v.steps>=10000?fmtNum(v.steps/1000,1)+"k":fmtNum(v.steps)):"–","", (v.steps||0)/scale, `objectif ${fmtNum(g.steps/1000,0)}–${fmtNum(sMax/1000,0)}k`, v.steps!=null&&v.steps>=g.steps, zone)
+    + tile("sleep","Sommeil",v.sleep, v.sleep!=null?fmtH(v.sleep):"–","", (v.sleep||0)/g.sleep, `minimum ${fmtH(g.sleep)}`, v.sleep!=null&&v.sleep>=g.sleep);
   // rappels discrets
   const n=[], h=new Date().getHours(), R=S.reminders||{};
   if(isToday){
-    if(R.weigh!==false && v.weight==null && h<12) n.push("⚖️ Pense à ta pesée du matin.");
-    if(R.water!==false && h>=16 && (v.water||0) < g.water*0.6) n.push(`💧 ${fmtNum(v.water||0,2)} L pour l'instant : encore ${fmtNum(g.water-(v.water||0),2)} L pour l'objectif.`);
-    if(parseIso(d).getDay()===0) n.push(`📊 C'est dimanche : ton <a href="#" id="toRecap">récap de la semaine</a> est prêt.`);
+    if(R.weigh!==false && v.weight==null && h<12) n.push("⚖️ <span>Pense à ta pesée du matin.</span>");
+    if(R.water!==false && h>=16 && (v.water||0) < g.water*0.6) n.push(`💧 <span>${fmtNum(v.water||0,2)} L pour l'instant : encore ${fmtNum(g.water-(v.water||0),2)} L pour l'objectif.</span>`);
+    if(parseIso(d).getDay()===0) n.push(`📊 <span>C'est dimanche : ton <a href="#" id="toRecap">récap de la semaine</a> est prêt.</span>`);
   }
   $("#nudges").innerHTML = n.map(x=>`<div class="nudge">${x}</div>`).join("");
   $("#toRecap") && ($("#toRecap").onclick=e=>{ e.preventDefault(); weekOffset=0; showTab("sem"); });
@@ -2705,17 +2738,18 @@ $("#recapShare").onclick=async()=>{
 /* ---- objectifs & rappels (réglages) ---- */
 function renderRemind(){
   const g=G(), R=S.reminders||{};
-  $("#goalWater").value=g.water; $("#goalSteps").value=g.steps; $("#goalSleep").value=g.sleep;
+  $("#goalWater").value=g.water; $("#goalSteps").value=g.steps; $("#goalStepsMax").value=g.stepsMax; $("#goalSleep").value=g.sleep;
   $("#remWeigh").checked = R.weigh!==false; $("#remWater").checked = R.water!==false;
 }
 async function saveRemind(){
-  S.goals={water:num($("#goalWater").value)||2.5, steps:num($("#goalSteps").value)||10000, sleep:num($("#goalSleep").value)||7};
+  const st=num($("#goalSteps").value)||10000;
+  S.goals={water:num($("#goalWater").value)||2.5, steps:st, stepsMax:Math.max(st, num($("#goalStepsMax").value)||st), sleep:num($("#goalSleep").value)||8, v2:true};
   S.reminders={weigh:$("#remWeigh").checked, water:$("#remWater").checked};
   renderToday();
   try{ await saveSettings(); $("#remMsg").textContent="Enregistré ✓"; $("#remMsg").className="save-msg ok"; }catch(e){ $("#remMsg").textContent="Enregistré sur l'appareil."; }
   setTimeout(()=>$("#remMsg").textContent="",2000);
 }
-["#goalWater","#goalSteps","#goalSleep"].forEach(id=>$(id).addEventListener("change",saveRemind));
+["#goalWater","#goalSteps","#goalStepsMax","#goalSleep"].forEach(id=>$(id).addEventListener("change",saveRemind));
 ["#remWeigh","#remWater"].forEach(id=>$(id).addEventListener("change",saveRemind));
 
 /* ---------- onglets ---------- */
