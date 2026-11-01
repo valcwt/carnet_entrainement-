@@ -328,6 +328,14 @@ section.panel h2.b7-title::before{display:none}
 .b7-day.done{background:linear-gradient(180deg,rgba(34,227,160,.14),var(--field))}
 .b7-day.done::after{content:"✓";position:absolute;top:8px;right:9px;width:20px;height:20px;border-radius:50%;background:var(--good);color:#0B0D10;font-weight:800;font-size:.8rem;display:grid;place-items:center}
 .b7-kinds{flex-wrap:wrap}
+.b7-move{margin:6px 0;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,201,61,.4);background:rgba(255,201,61,.08);font-size:.88rem}
+.b7-recent{display:flex;flex-direction:column;gap:6px}
+.b7-recent button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:12px;padding:10px 12px;cursor:pointer;font:inherit}
+.b7-recent .dt{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:1.05rem;min-width:62px;color:var(--muted)}
+.b7-recent .tt{flex:1;min-width:0}
+.b7-recent .tt b{display:block}
+.b7-recent .tt span{font-size:.8rem;color:var(--muted)}
+.b7-recent .ed{color:var(--accent);font-weight:700;font-size:.85rem}
 .b7-daylist{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}
 .b7-chip{cursor:pointer;color:var(--ink);font:inherit;font-size:.82rem}
 .b7-chip.on{border-color:var(--accent);color:var(--accent)}
@@ -386,13 +394,13 @@ section.panel h2.b7-title::before{display:none}
 .hero{position:relative;overflow:hidden;border-radius:22px;padding:18px 18px 16px;min-height:170px;display:flex;flex-direction:column;justify-content:flex-end;isolation:isolate;
   background:linear-gradient(135deg,#1d2a0c 0%,#141a10 45%,#0d1013 100%);border:1px solid rgba(198,244,50,.28);box-shadow:0 20px 40px -24px rgba(198,244,50,.45)}
 .hero.run{background:linear-gradient(135deg,#0b2a22 0%,#0f1b18 45%,#0d1013 100%);border-color:rgba(34,227,160,.3);box-shadow:0 20px 40px -24px rgba(34,227,160,.45)}
-.hero.rest{background:linear-gradient(135deg,#221a3a 0%,#16131f 50%,#0d1013 100%);border-color:rgba(160,126,255,.3);box-shadow:0 20px 40px -24px rgba(160,126,255,.4)}
+.hero.recup{background:linear-gradient(135deg,#221a3a 0%,#16131f 50%,#0d1013 100%);border-color:rgba(160,126,255,.3);box-shadow:0 20px 40px -24px rgba(160,126,255,.4)}
 .hero.done{border-color:rgba(34,227,160,.5)}
 .hero::before{content:"";position:absolute;inset:-40% -30% auto auto;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,var(--hc,rgba(198,244,50,.35)),transparent 70%);z-index:-1}
-.hero.run{--hc:rgba(34,227,160,.32)} .hero.rest{--hc:rgba(160,126,255,.3)}
+.hero.run{--hc:rgba(34,227,160,.32)} .hero.recup{--hc:rgba(160,126,255,.3)}
 .hero .wm{position:absolute;right:-6px;top:-8px;z-index:-1;font:italic 800 7.5rem/1 "Barlow Condensed",sans-serif;letter-spacing:-.04em;color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.05);text-transform:uppercase;white-space:nowrap;pointer-events:none}
 .hero .kick{display:flex;align-items:center;gap:8px;font-size:.75rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--hk,var(--accent))}
-.hero.run{--hk:var(--steps)} .hero.rest{--hk:var(--sleep)}
+.hero.run{--hk:var(--steps)} .hero.recup{--hk:var(--sleep)}
 .hero .kick i{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor}
 .hero h2{font:italic 800 clamp(2.4rem,12vw,3.4rem)/.92 "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:-.01em;margin:6px 0 4px;color:#fff}
 .hero .sub{color:rgba(243,245,247,.72);font-size:.9rem;margin:0 0 14px}
@@ -828,6 +836,7 @@ nav.bottom-nav{display:none}
       <div class="row" style="margin:12px 0 4px">
         <label style="flex-direction:row;align-items:center;gap:8px">Date<input type="date" id="b7Date" style="width:auto"></label>
       </div>
+      <p class="b7-move" id="b7Move" hidden></p>
       <div class="b7-daylist" id="b7DayList"></div>
       <p class="hint" id="b7Note" style="margin:6px 0 10px"></p>
       <div id="b7Form"></div>
@@ -838,6 +847,11 @@ nav.bottom-nav{display:none}
         <button class="btn danger" id="b7Del" hidden>Supprimer</button>
         <span class="save-msg" id="b7Msg"></span>
       </div>
+    </section>
+
+    <section class="panel">
+      <h2>Dernières séances <small>touche pour modifier</small></h2>
+      <div class="b7-recent" id="b7Recent"></div>
     </section>
 
     <section class="panel">
@@ -2331,7 +2345,7 @@ const B7 = {
     {id:"t_pallof", name:"Pallof press (par côté)", sets:2, lo:10, hi:12, bw:true}]}
 };
 const B7_PLAN = [{dow:0, k:"A", d:"Lundi"},{dow:2, k:"Q", d:"Mercredi"},{dow:4, k:"B", d:"Vendredi"},{dow:6, k:"E", d:"Dimanche"}]; // dow : 0 = lundi
-let b7Kind = null, b7Feel = null, b7EditId = null;
+let b7Kind = null, b7Feel = null, b7EditId = null, b7Orig = null; // b7Orig : séance enregistrée en cours de modification {id, date}
 const B7_START = "2026-11-02"; // lundi 2 novembre 2026 : semaine 1 du programme
 const b7WeekNo = d => Math.floor(diffDays(mondayOf(d), B7_START)/7)+1;
 const rx = e => `${e.min&&e.min<e.sets?e.min+"–":""}${e.sets} × ${e.lo===e.hi?e.lo:e.lo+"–"+e.hi}${e.time?" s":""}`;
@@ -2372,21 +2386,24 @@ function renderB7(){
   const nX=wk.filter(x=>B7[x.b7]?.kind==="other").length;
   $("#b7WeekHint").textContent = `Cette semaine : ${nR}/2 renfo · ${nC} course${nC>1?"s":""} (2 minimum)${km?` · ${fmtNum(km,1)} km`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}.${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}`;
   if(!b7Kind) b7Open($("#b7Date").value || t, null, true);
-  renderB7Hist(); renderStrength(); renderRace();
+  renderB7Hist(); renderStrength(); renderRace(); renderB7Recent();
 }
 function b7Open(date, k, keep, id){
-  $("#b7Date").value = date; b7EditId = id || null;
+  $("#b7Date").value = date; b7EditId = id || null; b7Orig = null;
   b7Kind = k || (keep && b7Kind) || (b7Find(date, b7DefaultKind(date)) ? b7DefaultKind(date) : (b7Sessions().filter(x=>x.date===date)[0]?.b7 || b7DefaultKind(date)));
   renderB7Form();
 }
+const b7ById = (date,id) => b7DaySessions(date).find(x=>x.id===id) || null;
 function renderB7Form(){
-  const date=$("#b7Date").value || todayIso(), P=B7[b7Kind], prev=b7Find(date,b7Kind);
+  const date=$("#b7Date").value || todayIso(), P=B7[b7Kind];
+  const prev = b7Orig ? b7ById(b7Orig.date, b7Orig.id) : b7Find(date,b7Kind);
+  b7Orig = prev ? {id:prev.id, date: b7Orig?.date || date} : null;
   $("#b7Kinds").innerHTML = Object.entries(B7).map(([k,v])=>`<button type="button" data-k="${k}" aria-pressed="${k===b7Kind}">${v.short}</button>`).join("");
-  $$("#b7Kinds button").forEach(b=>b.onclick=()=>{ b7Kind=b.dataset.k; b7EditId=null; renderB7Form(); });
+  $$("#b7Kinds button").forEach(b=>b.onclick=()=>{ b7Kind=b.dataset.k; b7EditId=null; b7Orig=null; renderB7Form(); });
   const dl=b7DaySessions(date);
   $("#b7DayList").innerHTML = dl.length ? `<span class="hint" style="margin:0">Déjà noté ce jour-là :</span>`+dl.map(x=>`<button type="button" class="chip b7-chip${(b7EditId===x.id||(!b7EditId&&!B7[b7Kind].multi&&x.b7===b7Kind))?" on":""}" data-id="${x.id}" data-k="${x.b7}">${esc(x.title||B7[x.b7]?.label||"Séance")}${x.run?.km?` · ${fmtNum(x.run.km,1)} km`:""}</button>`).join("") : "";
   $$("#b7DayList [data-id]").forEach(b=>b.onclick=()=>b7Open(date, b.dataset.k, false, b.dataset.id));
-  $("#b7LogTitle").innerHTML = `${esc(P.label)}${prev?" <small>déjà notée · tu peux la modifier</small>":""}`;
+  $("#b7LogTitle").innerHTML = `${esc(P.label)}${prev?" <small>déjà notée · modifie ce que tu veux, même la date</small>":""}`;
   $("#b7Note").textContent = P.note;
   const nameField = P.free ? `<label style="margin-bottom:10px">Nom<input type="text" id="b7Title" value="${esc(prev?.title&&prev.title!==P.label?prev.title:"")}" placeholder="${P.kind==="run"?"ex. Footing récup, sortie longue…":"ex. Vélo, padel, mobilité…"}"></label>` : "";
   if(P.kind==="other"){
@@ -2424,6 +2441,7 @@ function renderB7Form(){
     if(!e || k>=e.sets-1 && e===P.ex.at(-1)) return; // dernière série de la séance : pas de repos
     startRest(e.rest||(e.time?60:75), `Repos · ${e.name}${k<e.sets-1?` · série ${k+2} ensuite`:""}`);
   }));
+  paintB7Move();
   b7Feel = prev?.feel ?? null; paintB7Feel();
   $("#b7Notes").value = prev?.note || "";
   $("#b7Del").hidden = !prev; $("#b7Msg").textContent = ""; $("#b7Msg").className="save-msg";
@@ -2441,9 +2459,21 @@ async function b7Write(date, fn){
   await store.save(clone(day));
   if(isCur){ dirty=false; setSave("ok"); }
 }
-$("#b7Date").addEventListener("change",()=>{ const d=$("#b7Date").value; if(d) b7Open(d, b7Kind, true); });
+function paintB7Move(){
+  const d=$("#b7Date").value, m=$("#b7Move");
+  if(b7Orig && d && d!==b7Orig.date){ m.hidden=false; m.innerHTML=`↪ Cette séance du <b>${fmtShort(b7Orig.date)}</b> sera déplacée au <b>${fmtShort(d)}</b> quand tu enregistres.`; }
+  else m.hidden=true;
+}
+$("#b7Date").addEventListener("change",()=>{
+  const d=$("#b7Date").value; if(!d) return;
+  if(b7Orig){ paintB7Move(); return; } // modification : on garde la saisie, la séance changera de jour à l'enregistrement
+  b7Open(d, b7Kind, true);
+});
 $("#b7Save").onclick=async()=>{
-  const date=$("#b7Date").value || todayIso(), P=B7[b7Kind], prev=b7Find(date,b7Kind);
+  const date=$("#b7Date").value || todayIso(), P=B7[b7Kind], prev = b7Orig ? b7ById(b7Orig.date, b7Orig.id) : b7Find(date,b7Kind);
+  const from = b7Orig && b7Orig.date!==date ? b7Orig.date : null;
+  if(from && !P.multi){ const clash=b7DaySessions(date).find(x=>x.b7===b7Kind && x.id!==prev?.id);
+    if(clash && !confirm(`Il y a déjà « ${clash.title||P.label} » le ${fmtShort(date).replace(/\.$/,"")}. La remplacer par celle-ci ?`)) return; }
   const s = {id: prev?.id || uid(), b7:b7Kind, type: P.kind==="run"?"Course":P.kind==="other"?"Autre":"Renforcement", title: (P.free && $("#b7Title")?.value.trim()) || P.label, feel:b7Feel, note:$("#b7Notes").value.trim()};
   if(P.kind==="run" || P.kind==="other"){ s.run={km:num($("#b7Km").value), dur:$("#b7Dur").value.trim()||null}; if(s.run.km==null && !s.run.dur){ $("#b7Msg").textContent="Ajoute au moins la distance ou la durée."; $("#b7Msg").className="save-msg err"; return; } }
   else {
@@ -2454,19 +2484,28 @@ $("#b7Save").onclick=async()=>{
   }
   const recs = P.kind==="renfo" ? newRecords(s, date) : [];
   const btn=$("#b7Save"); btn.disabled=true;
-  try{ await b7Write(date, list=>{ const i=list.findIndex(x=>x.id===s.id); if(i>=0) list[i]=s; else list.push(s); return list; });
-    b7EditId = s.id;
+  try{ await b7Write(date, list=>{ if(from && !P.multi) list=list.filter(x=>!(x.b7===b7Kind && x.id!==s.id)); const i=list.findIndex(x=>x.id===s.id); if(i>=0) list[i]=s; else list.push(s); return list; });
+    if(from) await b7Write(from, list=>list.filter(x=>x.id!==s.id));
+    b7EditId = s.id; b7Orig = {id:s.id, date};
     $("#b7Msg").textContent="✓ Séance enregistrée"; $("#b7Msg").className="save-msg ok"; $("#b7Del").hidden=false; renderB7Form(); $("#b7Msg").innerHTML = recs.length ? `🏆 <b>Record !</b> ${esc(recs.join(" · "))}` : "✓ Séance enregistrée"; $("#b7Msg").className="save-msg ok"+(recs.length?" rec-msg":""); }
   catch(e){ $("#b7Msg").textContent="Enregistrée sur l'appareil, synchronisation plus tard."; }
-  btn.disabled=false; renderB7Week(); renderB7Hist(); renderStrength(); renderWeek();
+  if(from && $("#b7Msg").classList.contains("ok") && !$("#b7Msg").classList.contains("rec-msg")) $("#b7Msg").textContent=`✓ Séance déplacée au ${fmtShort(date)}`;
+  btn.disabled=false; renderB7Week(); renderB7Hist(); renderStrength(); renderB7Recent(); renderWeek();
 };
 $("#b7Del").onclick=async()=>{
-  const date=$("#b7Date").value, prev=b7Find(date,b7Kind); if(!prev) return;
-  if(!confirm(`Supprimer « ${prev.title||B7[b7Kind].label} » du ${fmtShort(date)} ?`)) return;
+  const date = b7Orig ? b7Orig.date : $("#b7Date").value, prev = b7Orig ? b7ById(b7Orig.date,b7Orig.id) : b7Find(date,b7Kind); if(!prev) return;
+  if(!confirm(`Supprimer « ${prev.title||B7[b7Kind].label} » du ${fmtShort(date).replace(/\.$/,"")} ?`)) return;
   try{ await b7Write(date, list=>list.filter(x=>x.id!==prev.id)); }catch(e){}
-  b7EditId=null;
-  renderB7Form(); renderB7Week(); renderB7Hist();
+  b7EditId=null; b7Orig=null; $("#b7Date").value=date;
+  renderB7Form(); renderB7Week(); renderB7Hist(); renderB7Recent();
 };
+function renderB7Recent(){
+  const L=b7Sessions().slice(-12).reverse();
+  $("#b7Recent").innerHTML = L.length ? L.map(x=>{ const P=B7[x.b7]||{}; const det = x.run ? [x.run.km?fmtNum(x.run.km,1)+" km":"", x.run.dur||""].filter(Boolean).join(" · ") : (n=>`${n} série${n>1?"s":""} notée${n>1?"s":""}`)(Object.values(x.sets||{}).reduce((a,v)=>a+v.filter(z=>z.r!=null).length,0));
+    return `<button type="button" data-d="${x.date}" data-k="${x.b7}" data-id="${x.id}"><span class="dt">${DOW[parseIso(x.date).getDay()]} ${parseIso(x.date).getDate()}</span><span class="tt"><b>${esc(x.title||P.label||"Séance")}</b><span>${fmtShort(x.date)} · ${esc(det)}</span></span><span class="ed">Modifier</span></button>`; }).join("")
+    : '<p class="empty" style="margin:0">Aucune séance notée pour l\'instant.</p>';
+  $$("#b7Recent button").forEach(b=>b.onclick=()=>{ b7Open(b.dataset.d, b.dataset.k, false, b.dataset.id); $("#b7Log").scrollIntoView?.({behavior:"smooth",block:"start"}); });
+}
 function renderB7Week(){ const k=b7Kind; renderB7(); b7Kind=k; }
 function renderB7Hist(){
   const all=b7Sessions(), mon=mondayOf(todayIso()); let rows="";
@@ -2548,12 +2587,12 @@ function renderToday(){
   const dow=(parseIso(d).getDay()+6)%7, plan=B7_PLAN.find(x=>x.dow===dow), list=(d===current.date?current:days[d])?.sessions?.filter(x=>x.b7)||[];
   const wn=b7WeekNo(d), when = isToday ? "Aujourd'hui" : d<t ? "Ce jour-là" : "Prévu";
   let cls="", wm="", kick="", title="", sub="", btn="", k=null, done=null;
-  if(d<B7_START){ cls="rest"; wm="J−"+diffDays(B7_START,d); kick=`${when} · ${dayLbl}`; title="C'est bientôt"; sub=`Big Seven Athletic démarre le lundi ${fmtShort(B7_START).replace(/\.$/,"")} avec le Renfo A.`; btn=`<button type="button" class="go ghost" id="todayGo">Voir le programme →</button>`; }
+  if(d<B7_START){ cls="recup"; wm="J−"+diffDays(B7_START,d); kick=`${when} · ${dayLbl}`; title="C'est bientôt"; sub=`Big Seven Athletic démarre le lundi ${fmtShort(B7_START).replace(/\.$/,"")} avec le Renfo A.`; btn=`<button type="button" class="go ghost" id="todayGo">Voir le programme →</button>`; }
   else if(plan){ const P=B7[plan.k]; k=plan.k; done=list.find(x=>x.b7===plan.k || x.b7==="T"+plan.k); cls=P.kind==="run"?"run":"";
     wm=P.short; kick=`${when} · ${dayLbl}${wn>=1?` · S${wn}`:""}`; title=P.short;
     sub = done ? (done.run?.km ? `${fmtNum(done.run.km,1)} km${done.run.dur?` en ${esc(done.run.dur)}`:""} · bien joué.` : "Séance notée · bien joué.") : P.kind==="run" ? `${esc(P.label)} · selon ton plan Kiprun.` : `${esc(P.label)} · ${P.ex.length} exercices · ~50 min.`;
     btn = `<button type="button" class="go${done?" ghost":""}" id="todayGo">${done?"Voir la séance":"Commencer →"}</button>`; }
-  else { cls="rest"; wm="Repos"; k="R"; kick=`${when} · ${dayLbl}${wn>=1?` · S${wn}`:""}`; title="Récup";
+  else { cls="recup"; wm="Repos"; k="R"; kick=`${when} · ${dayLbl}${wn>=1?` · S${wn}`:""}`; title="Récup";
     sub = list.length ? list.map(x=>esc(x.title)).join(" · ") : "Pas de séance prévue. Une sortie facile si tu en as envie.";
     btn=`<button type="button" class="go ghost" id="todayGo">+ Ajouter une séance</button>`; }
   $("#todayPlan").className = `hero ${cls}${done?" done":""}`;
