@@ -318,7 +318,8 @@ body.booting{background:radial-gradient(120% 60% at 50% 0%,rgba(198,244,50,.10),
 .b7-tag{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--on-accent);background:var(--accent);border-radius:999px;padding:3px 10px;margin-bottom:8px}
 section.panel h2.b7-title{font-size:2.2rem;font-style:italic;margin-bottom:6px}
 section.panel h2.b7-title::before{display:none}
-.b7-week{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.b7-week{display:grid;grid-template-columns:repeat(var(--cols,4),minmax(0,1fr));gap:8px}
+.b7-day .t{overflow-wrap:anywhere;hyphens:auto}
 .b7-day{position:relative;border:1px solid var(--line);background:var(--field);border-radius:14px;padding:10px 8px;text-align:left;cursor:pointer;color:var(--ink);min-width:0;display:flex;flex-direction:column;gap:2px}
 .b7-day .d{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .b7-day .t{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:1.15rem;line-height:1.05;text-transform:uppercase}
@@ -328,6 +329,28 @@ section.panel h2.b7-title::before{display:none}
 .b7-day.done{background:linear-gradient(180deg,rgba(34,227,160,.14),var(--field))}
 .b7-day.done::after{content:"✓";position:absolute;top:8px;right:9px;width:20px;height:20px;border-radius:50%;background:var(--good);color:#0B0D10;font-weight:800;font-size:.8rem;display:grid;place-items:center}
 .b7-kinds{flex-wrap:wrap}
+.plib{display:flex;flex-direction:column;gap:8px}
+.plib-item{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--line);background:var(--field);border-radius:14px;padding:12px}
+.plib-item.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.plib-item .tt{flex:1;min-width:160px}
+.plib-item .tt b{display:block;font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:1.2rem;text-transform:uppercase}
+.plib-item .tt span{font-size:.8rem;color:var(--muted)}
+.plib-item .acts{display:flex;gap:6px;flex-wrap:wrap}
+.on-badge{font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--on-accent);background:var(--accent);border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:middle}
+.pg-h{font-size:1.2rem;margin:18px 0 8px}
+.pg-ses{border:1px solid var(--line);background:var(--field);border-radius:14px;padding:12px;margin-bottom:10px}
+.pg-ses-head{display:grid;grid-template-columns:1fr 110px auto;gap:8px;align-items:end}
+.pg-kind{font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;display:block}
+.pg-kind.run{color:var(--steps)} .pg-kind.other{color:var(--sleep)}
+.pg-ex{display:grid;grid-template-columns:minmax(0,1fr) 52px 52px 52px auto;gap:6px;align-items:center;margin-top:6px}
+.pg-ex.hd{font-size:.7rem;color:var(--muted);font-weight:700;margin-top:10px}
+.pg-ex input,.pg-ex select,.pg-ses input,.pg-ses select{padding:8px;font-size:16px}
+.pg-ex2{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:6px;margin:4px 0 10px;padding-bottom:8px;border-bottom:1px dashed var(--line)}
+.pg-del{border:0;background:none;color:var(--muted);font-size:1.1rem;cursor:pointer;padding:4px 6px}
+.pg-del:hover{color:var(--warn)}
+.pg-week{display:grid;gap:6px}
+.pg-day{display:grid;grid-template-columns:90px minmax(0,1fr);gap:8px;align-items:center}
+.pg-day span{font-weight:700}
 .pause-bar{margin:-4px 0 12px}
 .pause-bar:empty{display:none}
 .pause-on{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border-radius:14px;border:1px solid rgba(160,126,255,.4);background:linear-gradient(100deg,rgba(160,126,255,.16),transparent)}
@@ -394,7 +417,7 @@ details.fold[open]>summary{margin-bottom:12px}
 #b7Hist .chev{font-size:.65rem;color:var(--muted)}
 #b7Hist tr.wk-open td{white-space:normal;background:var(--surface-2);padding:6px 8px 12px}
 #b7Hist tr.wk-open td:first-child{position:static}
-@media (max-width:420px){.b7-week{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:420px){.b7-week{grid-template-columns:repeat(min(2,var(--cols,2)),minmax(0,1fr))}}
 
 /* minuteur de repos */
 .rest{position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:45;max-width:520px;margin:0 auto;display:flex;align-items:center;gap:10px;
@@ -831,9 +854,32 @@ nav.bottom-nav{display:none}
   <!-- ================= PROGRAMME BIG SEVEN ================= -->
   <main id="tab-b7" hidden>
     <section class="panel b7-hero">
-      <span class="b7-tag">Plan hybride</span>
-      <h2 class="b7-title">Big Seven Athletic</h2>
-      <p class="hint" style="margin:0">2 séances de renforcement + 2 sorties course minimum. Force, muscle et endurance, sans fatigue inutile. Le plan Kiprun prime pour la course.</p>
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px"><span class="b7-tag" id="b7Tag">Plan hybride</span><button type="button" class="btn ghost small" id="progLibBtn">⚙ Mes programmes</button></div>
+      <h2 class="b7-title" id="b7Name">Big Seven Athletic</h2>
+      <p class="hint" style="margin:0" id="b7Desc"></p>
+    </section>
+
+    <section class="panel" id="progLib" hidden>
+      <h2>Mes programmes</h2>
+      <div class="plib" id="progList"></div>
+      <div class="row" style="margin-top:12px"><button type="button" class="btn" id="progNew">+ Créer un programme</button><button type="button" class="btn ghost small" id="progLibClose">Fermer</button></div>
+    </section>
+
+    <section class="panel" id="progEd" hidden>
+      <h2 id="progEdTitle">Nouveau programme</h2>
+      <div class="grid">
+        <label class="full">Nom<input type="text" id="pgName" placeholder="ex. Push / Pull / Legs"></label>
+        <label class="full">Description<input type="text" id="pgDesc" placeholder="ex. 3 séances de muscu + 1 footing"></label>
+        <label>Étiquette<input type="text" id="pgTag" placeholder="ex. Force"></label>
+        <label>Semaine 1 le<input type="date" id="pgStart"></label>
+      </div>
+      <h3 class="pg-h">Séances</h3>
+      <div id="pgSessions"></div>
+      <div class="row" style="gap:8px"><button type="button" class="btn ghost small" data-pgadd="renfo">+ Séance muscu</button><button type="button" class="btn ghost small" data-pgadd="run">+ Course</button><button type="button" class="btn ghost small" data-pgadd="other">+ Autre</button></div>
+      <h3 class="pg-h">Semaine type</h3>
+      <p class="hint">Choisis la séance prévue chaque jour. Les jours sans séance sont du repos.</p>
+      <div class="pg-week" id="pgWeek"></div>
+      <div class="row" style="margin-top:16px;gap:8px"><button type="button" class="btn" id="pgSave">Enregistrer et utiliser</button><button type="button" class="btn ghost small" id="pgCancel">Annuler</button><span class="save-msg" id="pgMsg"></span></div>
     </section>
 
     <section class="panel">
@@ -1420,6 +1466,7 @@ async function initDb(){
   setInterval(refresh, 60000);
 }
 function applySettings(){
+  applyProgram();
   renderPhase(); renderTplSelect();
   renderOthers();
 }
@@ -2349,7 +2396,7 @@ document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==
 
 /* ---------- Programme Big Seven Athletic ---------- */
 // Séances enregistrées dans days[date].sessions avec { b7: "A"|"B"|"Q"|"E"|"TA"|"TB", sets:{exId:[{c,r}]}, run:{km,dur}, feel, note }
-const B7 = {
+const B7_BUILTIN = {
   A:{label:"Renforcement A", short:"Renfo A", kind:"renfo", note:"Échauffement 5–8 min + séries progressives sur le squat.", ex:[
     {id:"squat", rest:150, name:"Squat", sets:3, lo:6, hi:10, tip:"Amplitude maîtrisée, gainage solide."},
     {id:"bench", rest:150, name:"Développé couché / pompes lestées", sets:3, lo:6, hi:10, tip:"Garde 1–3 répétitions en réserve."},
@@ -2382,9 +2429,31 @@ const B7 = {
     {id:"t_face", name:"Face pull élastique", sets:2, lo:15, hi:20, bw:true},
     {id:"t_pallof", name:"Pallof press (par côté)", sets:2, lo:10, hi:12, bw:true}]}
 };
-const B7_PLAN = [{dow:0, k:"A", d:"Lundi"},{dow:2, k:"Q", d:"Mercredi"},{dow:4, k:"B", d:"Vendredi"},{dow:6, k:"E", d:"Dimanche"}]; // dow : 0 = lundi
+const B7_BUILTIN_PLAN = [{dow:0, k:"A"},{dow:2, k:"Q"},{dow:4, k:"B"},{dow:6, k:"E"}]; // dow : 0 = lundi
+// ---- programmes : Big Seven (intégré) + programmes perso (S.programs), un seul actif (S.activeProgram)
+let B7 = {}, B7_PLAN = [], B7_KINDS = [];
+function builtinProgram(){
+  const ses={}; Object.entries(B7_BUILTIN).forEach(([k,v])=>{ if(!v.free) ses[k]=v; });
+  return {id:"b7", builtin:true, name:"Big Seven Athletic", tag:"Plan hybride", desc:"2 séances de renforcement + 2 sorties course minimum. Force, muscle et endurance, sans fatigue inutile. Le plan Kiprun prime pour la course.", start:"2026-11-02", sessions:ses, plan:B7_BUILTIN_PLAN, extra:["TA","TB"]};
+}
+const programs = () => [builtinProgram(), ...((S && Array.isArray(S.programs)) ? S.programs.filter(p=>p && p.id!=="b7") : [])];
+const activeProgram = () => programs().find(p=>p.id===(S?.activeProgram||"b7")) || builtinProgram();
+const TGT = () => ({ r: B7_PLAN.filter(p=>B7[p.k]?.kind==="renfo").length, c: B7_PLAN.filter(p=>B7[p.k]?.kind==="run").length });
+function applyProgram(){
+  const P=activeProgram(), all={};
+  programs().forEach(pr=>Object.assign(all, pr.sessions||{}));   // toutes les séances connues (les anciennes restent lisibles)
+  Object.assign(all, P.sessions, {R:B7_BUILTIN.R, X:B7_BUILTIN.X});
+  B7 = all;
+  B7_PLAN = (P.plan||[]).filter(x=>B7[x.k]).map(x=>({dow:Number(x.dow), k:x.k, d:DOWL[Number(x.dow)]})).sort((a,b)=>a.dow-b.dow);
+  const order=[...new Set(B7_PLAN.map(x=>x.k))]; Object.keys(P.sessions||{}).forEach(k=>{ if(!order.includes(k) && !(P.extra||[]).includes(k)) order.push(k); });
+  B7_KINDS = [...order, "R", "X", ...(P.extra||[])].filter(k=>B7[k]);
+  B7_START = P.start || mondayOf(todayIso());
+  if($("#b7Name")){ $("#b7Name").textContent=P.name; $("#b7Tag").textContent=P.tag||"Mon programme"; $("#b7Desc").textContent=P.desc||""; }
+  $$('details.fold[data-fold="deplacement"],details.fold[data-fold="regles"]').forEach(d=>d.hidden=!P.builtin);
+  if(b7Kind && !B7_KINDS.includes(b7Kind)) b7Kind=null;
+}
 let b7Kind = null, b7Feel = null, b7EditId = null, b7Orig = null; // b7Orig : séance enregistrée en cours de modification {id, date}
-const B7_START = "2026-11-02"; // lundi 2 novembre 2026 : semaine 1 du programme
+let B7_START = "2026-11-02"; // semaine 1 du programme actif (mis à jour par applyProgram)
 // Pauses du programme : S.pauses = [{from, to|null, reason}] (to = dernier jour de pause, null = en cours)
 const pauses = () => (S && Array.isArray(S.pauses)) ? S.pauses : [];
 const pauseOn = d => pauses().find(p=>p.from<=d && (!p.to || d<=p.to)) || null;
@@ -2417,7 +2486,7 @@ function b7Suggest(e, last){
 }
 const setsTxt = (e,sets) => sets.filter(z=>z.r!=null||z.c!=null).map(z=> e.time ? `${z.r??"–"} s` : e.bw ? `${z.r??"–"}` : `${z.c!=null?fmtNum(z.c,1)+" kg × ":""}${z.r??"–"}`).join(" · ");
 const fmtRest = s => s>=60 ? `${Math.floor(s/60)} min${s%60?" "+String(s%60).padStart(2,"0"):""}` : `${s} s`;
-function b7DefaultKind(date){ const dow=(parseIso(date).getDay()+6)%7, p=B7_PLAN.find(x=>x.dow===dow); return p ? p.k : "A"; }
+function b7DefaultKind(date){ const dow=(parseIso(date).getDay()+6)%7, p=B7_PLAN.find(x=>x.dow===dow); return p ? p.k : (B7_PLAN[0]?.k || "R"); }
 
 function renderB7(){
   if($("#tab-b7").hidden) return;
@@ -2426,7 +2495,9 @@ function renderB7(){
   $("#b7WeekLbl").textContent = wn>=1 ? `semaine ${wn} · ${fmtShort(mon)} – ${fmtShort(addDays(mon,6))}` : `début le lundi ${fmtShort(B7_START).replace(/\.$/,"")}`;
   renderPauseBar();
   const wk=b7Sessions().filter(x=>x.date>=mon && x.date<=addDays(mon,6));
-  $("#b7Week").innerHTML = B7_PLAN.map(p=>{
+  $("#b7Week").style.setProperty("--cols", Math.min(4,Math.max(1,B7_PLAN.length)));
+  if(!B7_PLAN.length) $("#b7Week").innerHTML = `<p class="empty" style="margin:0">Aucun jour prévu dans ce programme. Ajoute des séances à ta semaine type avec « Mes programmes ».</p>`;
+  else $("#b7Week").innerHTML = B7_PLAN.map(p=>{
     const d=addDays(mon,p.dow), P=B7[p.k];
     const done = wk.find(x=>x.b7===p.k || (P.kind==="renfo" && x.b7===("T"+p.k)));
     const pz = !done && pauseOn(d);
@@ -2437,7 +2508,7 @@ function renderB7(){
   const nX=wk.filter(x=>B7[x.b7]?.kind==="other").length;
   const pd=pausedDays(mon);
   if(pd) { $("#b7WeekHint").textContent = `⏸ ${pd===7?"Semaine en pause":`${pd} jour${pd>1?"s":""} en pause cette semaine`} : rien à rattraper.${nR+nC+nX?` Séances notées quand même : ${nR+nC+nX}${km?` · ${fmtNum(km,1)} km`:""}.`:""}`; }
-  else $("#b7WeekHint").textContent = `Cette semaine : ${nR}/2 renfo · ${nC} course${nC>1?"s":""} (2 minimum)${km?` · ${fmtNum(km,1)} km`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}.${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}`;
+  else $("#b7WeekHint").textContent = `Cette semaine : ${nR}/${TGT().r} renfo · ${nC}/${TGT().c} course${TGT().c>1?"s":""}${km?` · ${fmtNum(km,1)} km`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}.${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}`;
   if(!b7Kind) b7Open($("#b7Date").value || t, null, true);
   renderB7Hist(); renderStrength(); renderRace(); renderB7Recent();
 }
@@ -2451,7 +2522,7 @@ function renderB7Form(){
   const date=$("#b7Date").value || todayIso(), P=B7[b7Kind];
   const prev = b7Orig ? b7ById(b7Orig.date, b7Orig.id) : b7Find(date,b7Kind);
   b7Orig = prev ? {id:prev.id, date: b7Orig?.date || date} : null;
-  $("#b7Kinds").innerHTML = Object.entries(B7).map(([k,v])=>`<button type="button" data-k="${k}" aria-pressed="${k===b7Kind}">${v.short}</button>`).join("");
+  $("#b7Kinds").innerHTML = B7_KINDS.map(k=>[k,B7[k]]).map(([k,v])=>`<button type="button" data-k="${k}" aria-pressed="${k===b7Kind}">${v.short}</button>`).join("");
   $$("#b7Kinds button").forEach(b=>b.onclick=()=>{ b7Kind=b.dataset.k; b7EditId=null; b7Orig=null; renderB7Form(); });
   const dl=b7DaySessions(date);
   $("#b7DayList").innerHTML = dl.length ? `<span class="hint" style="margin:0">Déjà noté ce jour-là :</span>`+dl.map(x=>`<button type="button" class="chip b7-chip${(b7EditId===x.id||(!b7EditId&&!B7[b7Kind].multi&&x.b7===b7Kind))?" on":""}" data-id="${x.id}" data-k="${x.b7}">${esc(x.title||B7[x.b7]?.label||"Séance")}${x.run?.km?` · ${fmtNum(x.run.km,1)} km`:""}</button>`).join("") : "";
@@ -2590,7 +2661,7 @@ function renderB7Hist(){
     const wn=b7WeekNo(m), wp=weekPaused(m);
     const open=b7HistOpen===m, det = open ? `<tr class="wk-open"><td colspan="6" class="l">${weekDetail(m)}</td></tr>` : "";
     if(wp){ rows+=`<tr data-m="${m}" class="wk-row${open?" on":""}"><td class="l">⏸ ${fmtShort(m)}</td><td colspan="5" class="l" style="color:var(--muted)">En pause${ws.length?` · ${ws.length} séance${ws.length>1?"s":""} notée${ws.length>1?"s":""}`:""} <span class="chev">${open?"▲":"▼"}</span></td></tr>`+det; continue; }
-    rows+=`<tr data-m="${m}" class="wk-row${open?" on":""}"><td class="l"><span class="chev">${open?"▲":"▼"}</span> ${wn>=1?`<b>S${wn}</b> · `:""}${fmtShort(m)}</td><td class="${nR>=2?"ok":""}">${nR}/2</td><td class="${nC>=2?"ok":""}">${nC}${nC<2?"/2":""}</td><td>${km?fmtNum(km,1):"–"}</td><td>${sec?Math.round(sec/60)+" min":"–"}</td><td>${fe!=null?fmtNum(fe,1)+"/5":"–"}</td></tr>`+det;
+    rows+=`<tr data-m="${m}" class="wk-row${open?" on":""}"><td class="l"><span class="chev">${open?"▲":"▼"}</span> ${wn>=1?`<b>S${wn}</b> · `:""}${fmtShort(m)}</td><td class="${nR>=TGT().r?"ok":""}">${nR}/${TGT().r}</td><td class="${nC>=TGT().c?"ok":""}">${nC}/${TGT().c}</td><td>${km?fmtNum(km,1):"–"}</td><td>${sec?Math.round(sec/60)+" min":"–"}</td><td>${fe!=null?fmtNum(fe,1)+"/5":"–"}</td></tr>`+det;
   }
   if(!rows) rows=`<tr><td colspan="6" class="l" style="color:var(--muted);white-space:normal">Le programme commence le lundi ${fmtShort(B7_START).replace(/\.$/,"")}. Tes semaines apparaîtront ici.</td></tr>`;
   $("#b7Hist").innerHTML = `<thead><tr><th class="l">Semaine du</th><th>Renfo</th><th>Course</th><th>km</th><th>Durée</th><th>Sensations</th></tr></thead><tbody>${rows}</tbody>`;
@@ -2606,7 +2677,7 @@ function renderB7Hist(){
 // Force maximale estimée (formule d'Epley) : charge × (1 + reps / 30). Sans charge : meilleure série en reps.
 const e1rm = (c,r) => c>0 && r>0 ? c*(1+Math.min(r,15)/30) : null;
 let b7StrEx = null;
-function exInfo(id){ for(const k of ["A","B","TA","TB"]){ const e=B7[k].ex.find(x=>x.id===id); if(e) return e; } return null; }
+function exInfo(id){ for(const k of Object.keys(B7)){ const e=(B7[k].ex||[]).find(x=>x.id===id); if(e) return e; } return null; }
 // meilleure valeur de chaque séance pour un exercice : {d, v, top:{c,r}, mode}
 function strSeries(id, until){
   const out=[]; let loaded=false;
@@ -2667,7 +2738,7 @@ function renderToday(){
   const dow=(parseIso(d).getDay()+6)%7, plan=B7_PLAN.find(x=>x.dow===dow), list=(d===current.date?current:days[d])?.sessions?.filter(x=>x.b7)||[];
   const wn=b7WeekNo(d), when = isToday ? "Aujourd'hui" : d<t ? "Ce jour-là" : "Prévu";
   let cls="", wm="", kick="", title="", sub="", btn="", k=null, done=null;
-  if(d<B7_START){ cls="recup"; wm="J−"+diffDays(B7_START,d); kick=`${when} · ${dayLbl}`; title="C'est bientôt"; sub=`Big Seven Athletic démarre le lundi ${fmtShort(B7_START).replace(/\.$/,"")} avec le Renfo A.`; btn=`<button type="button" class="go ghost" id="todayGo">Voir le programme →</button>`; }
+  if(d<B7_START){ cls="recup"; wm="J−"+diffDays(B7_START,d); kick=`${when} · ${dayLbl}`; title="C'est bientôt"; sub=`${esc(activeProgram().name)} démarre le ${["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"][parseIso(B7_START).getDay()]} ${fmtShort(B7_START).replace(/\.$/,"")}${B7_PLAN[0]?` avec ${esc(B7[B7_PLAN[0].k].short)}`:""}.`; btn=`<button type="button" class="go ghost" id="todayGo">Voir le programme →</button>`; }
   else if(pauseOn(d) && !list.length){ const pz=pauseOn(d); cls="recup"; wm="Pause"; k="R"; kick=`${when} · ${dayLbl}`; title="En pause";
     sub = `${pz.reason?esc(pz.reason)+" · ":""}aucune séance attendue. Reprends quand tu es prêt.`;
     btn = `<button type="button" class="go ghost" id="todayGo">Voir le programme →</button>`; }
@@ -2817,8 +2888,8 @@ $("#raceSave").onclick=async()=>{
 /* ---- récap de la semaine + série ---- */
 function weekDone(m){ const ws=b7Sessions().filter(x=>x.date>=m&&x.date<=addDays(m,6)); return { r:ws.filter(x=>B7[x.b7]?.kind==="renfo").length, c:ws.filter(x=>B7[x.b7]?.kind==="run").length, ws }; }
 function streak(){
-  let m=mondayOf(todayIso()), n=0; const cur=weekDone(m); if(!(cur.r>=2&&cur.c>=2)) m=addDays(m,-7); // la semaine en cours compte seulement si elle est déjà complète
-  while(m>=B7_START){ const w=weekDone(m); if(w.r>=2&&w.c>=2){ n++; m=addDays(m,-7); } else if(weekPaused(m)){ m=addDays(m,-7); } else break; } // semaine en pause : sautée, la série continue
+  let m=mondayOf(todayIso()), n=0; const T=TGT(), full=w=>w.r>=T.r&&w.c>=T.c&&(T.r+T.c)>0, cur=weekDone(m); if(!full(cur)) m=addDays(m,-7); // la semaine en cours compte seulement si elle est déjà complète
+  while(m>=B7_START){ const w=weekDone(m); if(full(w)){ n++; m=addDays(m,-7); } else if(weekPaused(m)){ m=addDays(m,-7); } else break; } // semaine en pause : sautée, la série continue
   return n;
 }
 let recapData=null;
@@ -2829,8 +2900,8 @@ function renderRecap(mon){
   const card=(l,v,e,ok)=>`<div class="rc${ok?" ok":""}"><span>${l}</span><b>${v}</b>${e?`<em>${e}</em>`:""}</div>`;
   $("#recapStreak").innerHTML = st ? `<span class="streak">🔥 ${st} semaine${st>1?"s":""} complète${st>1?"s":""} d'affilée</span>` : "";
   $("#recapGrid").innerHTML =
-      card("Renfo", pausedDays(mon)>=4 ? `${D.r}` : `${D.r}/2`, D.ws.filter(x=>B7[x.b7]?.kind==="renfo").map(x=>B7[x.b7].short).join(", "), D.r>=2)
-    + card("Course", `${D.c}${D.c<2?"/2":""}`, km?`${fmtNum(km,1)} km`:"", D.c>=2)
+      card("Renfo", pausedDays(mon)>=4 ? `${D.r}` : `${D.r}/${TGT().r}`, D.ws.filter(x=>B7[x.b7]?.kind==="renfo").map(x=>B7[x.b7].short).join(", "), D.r>=TGT().r&&TGT().r>0)
+    + card("Course", pausedDays(mon)>=4 ? `${D.c}` : `${D.c}/${TGT().c}`, km?`${fmtNum(km,1)} km`:"", D.c>=TGT().c&&TGT().c>0)
     + card("Poids moyen", W.weight!=null?fmtNum(W.weight,1)+" kg":"–", dW!=null?`${dW>0?"+":""}${fmtNum(dW,2)} kg vs sem. préc.`:"")
     + card("Pas / jour", W.steps!=null?fmtNum(W.steps):"–", "")
     + card("Sommeil", W.sleep!=null?fmtH(W.sleep):"–", "par nuit")
@@ -2848,7 +2919,7 @@ async function recapCanvas(){
   const g=X.createRadialGradient(w,0,50,w,0,900); g.addColorStop(0,"rgba(198,244,50,.22)"); g.addColorStop(1,"rgba(198,244,50,0)"); X.fillStyle=g; X.fillRect(0,0,w,h);
   X.fillStyle=col("--accent"); X.font='italic 800 92px "Barlow Condensed", sans-serif'; X.fillText("MA SEMAINE",70,150);
   X.fillStyle="#F3F5F7"; X.font='500 36px Barlow, sans-serif'; X.fillText(`${fmtShort(mon)} – ${fmtShort(addDays(mon,6))}${b7WeekNo(mon)>=1?`  ·  semaine ${b7WeekNo(mon)}`:""}`,72,210);
-  const cells=[["RENFO",`${D.r}/2`,D.r>=2],["COURSE",`${D.c}${D.c<2?"/2":""}`,D.c>=2],["KILOMÈTRES",km?fmtNum(km,1):"–"],["POIDS MOYEN",W.weight!=null?fmtNum(W.weight,1)+" kg":"–"],["PAS / JOUR",W.steps!=null?fmtNum(W.steps):"–"],["SOMMEIL",W.sleep!=null?fmtH(W.sleep):"–"],["EAU / JOUR",W.water!=null?fmtNum(W.water,2)+" L":"–"],["VS SEM. PRÉC.",dW!=null?`${dW>0?"+":""}${fmtNum(dW,2)} kg`:"–"]];
+  const cells=[["RENFO",`${D.r}/${TGT().r}`,D.r>=TGT().r&&TGT().r>0],["COURSE",`${D.c}/${TGT().c}`,D.c>=TGT().c&&TGT().c>0],["KILOMÈTRES",km?fmtNum(km,1):"–"],["POIDS MOYEN",W.weight!=null?fmtNum(W.weight,1)+" kg":"–"],["PAS / JOUR",W.steps!=null?fmtNum(W.steps):"–"],["SOMMEIL",W.sleep!=null?fmtH(W.sleep):"–"],["EAU / JOUR",W.water!=null?fmtNum(W.water,2)+" L":"–"],["VS SEM. PRÉC.",dW!=null?`${dW>0?"+":""}${fmtNum(dW,2)} kg`:"–"]];
   cells.forEach((cl,i)=>{ const cx=70+(i%2)*480, cy=280+Math.floor(i/2)*190;
     X.fillStyle="#1A1F26"; X.beginPath(); X.roundRect?X.roundRect(cx,cy,460,170,24):X.rect(cx,cy,460,170); X.fill();
     X.fillStyle="#8D97A3"; X.font='700 28px Barlow, sans-serif'; X.fillText(cl[0],cx+30,cy+52);
@@ -2950,6 +3021,96 @@ $$("details.fold[data-fold]").forEach(d=>{
   try{ d.open = localStorage.getItem(k)==="1"; }catch(e){}
   d.addEventListener("toggle",()=>{ try{ localStorage.setItem(k, d.open?"1":"0"); }catch(e){} });
 });
+/* ---------- mes programmes : créer, modifier, choisir ---------- */
+const slug = t => String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"").slice(0,30) || "ex";
+let pgEdit=null;
+function renderProgLib(){
+  const act=activeProgram().id;
+  $("#progList").innerHTML = programs().map(p=>{ const n=Object.keys(p.sessions||{}).length, d=(p.plan||[]).length;
+    return `<div class="plib-item${p.id===act?" on":""}"><div class="tt"><b>${esc(p.name)}${p.id===act?'<span class="on-badge">actif</span>':""}</b><span>${n} séance${n>1?"s":""} · ${d} jour${d>1?"s":""} / semaine${p.start?` · depuis le ${fmtShort(p.start)}`:""}${p.builtin?" · intégré":""}</span></div>
+      <div class="acts">${p.id!==act?`<button type="button" class="btn small" data-puse="${p.id}">Utiliser</button>`:""}${p.builtin?`<button type="button" class="btn ghost small" data-pdup="${p.id}">Copier pour modifier</button>`:`<button type="button" class="btn ghost small" data-pedit="${p.id}">Modifier</button><button type="button" class="btn ghost small" data-pdup="${p.id}">Copier</button><button type="button" class="btn danger" data-pdel="${p.id}">Supprimer</button>`}</div></div>`; }).join("");
+  $$("#progList [data-puse]").forEach(b=>b.onclick=()=>useProgram(b.dataset.puse));
+  $$("#progList [data-pedit]").forEach(b=>b.onclick=()=>openPgEdit(clone(programs().find(p=>p.id===b.dataset.pedit))));
+  $$("#progList [data-pdup]").forEach(b=>b.onclick=()=>{ const src=clone(programs().find(p=>p.id===b.dataset.pdup)); const map={}; const ses={};
+    Object.entries(src.sessions||{}).forEach(([k,v])=>{ const nk="c"+uid(); map[k]=nk; ses[nk]=v; });
+    openPgEdit({id:null, name:src.name+" (perso)", tag:src.tag||"", desc:src.desc||"", start:mondayOf(todayIso())<src.start?src.start:addDays(mondayOf(todayIso()),7), sessions:ses, plan:(src.plan||[]).map(x=>({dow:x.dow,k:map[x.k]})).filter(x=>x.k)}); });
+  $$("#progList [data-pdel]").forEach(b=>b.onclick=async()=>{ const p=programs().find(x=>x.id===b.dataset.pdel); if(!p||!confirm(`Supprimer le programme « ${p.name} » ? Les séances déjà notées restent dans ton historique.`)) return;
+    S.programs=(S.programs||[]).filter(x=>x.id!==p.id); if(S.activeProgram===p.id) S.activeProgram="b7"; await afterProgChange(); });
+}
+async function useProgram(id){
+  const p=programs().find(x=>x.id===id); if(!p) return;
+  if(!confirm(`Passer au programme « ${p.name} » ? Ta semaine, tes rappels de séance et tes objectifs suivront ce programme. Rien n'est effacé.`)) return;
+  S.activeProgram=id; await afterProgChange();
+}
+async function afterProgChange(){
+  applyProgram(); b7Kind=null; renderProgLib(); renderB7(); renderToday(); renderWeek();
+  try{ await saveSettings(); }catch(e){}
+}
+$("#progLibBtn").onclick=()=>{ const h=!$("#progLib").hidden; $("#progLib").hidden=h; $("#progEd").hidden=true; if(!h){ renderProgLib(); $("#progLib").scrollIntoView?.({behavior:"smooth",block:"start"}); } };
+$("#progLibClose").onclick=()=>{ $("#progLib").hidden=true; };
+$("#progNew").onclick=()=>openPgEdit({id:null, name:"", tag:"", desc:"", start:addDays(mondayOf(todayIso()), (parseIso(todayIso()).getDay()===1?0:7)), sessions:{}, plan:[]});
+function openPgEdit(p){
+  pgEdit=p; $("#progLib").hidden=true; $("#progEd").hidden=false;
+  $("#progEdTitle").textContent = p.id ? "Modifier le programme" : "Nouveau programme";
+  $("#pgName").value=p.name||""; $("#pgDesc").value=p.desc||""; $("#pgTag").value=p.tag||""; $("#pgStart").value=p.start||"";
+  $("#pgMsg").textContent=""; renderPgEdit(); $("#progEd").scrollIntoView?.({behavior:"smooth",block:"start"});
+}
+const KLBL={renfo:"Muscu / renfo",run:"Course",other:"Autre activité"};
+function renderPgEdit(){
+  const S_=pgEdit.sessions, keys=Object.keys(S_);
+  $("#pgSessions").innerHTML = keys.length ? keys.map(k=>{ const v=S_[k];
+    const ex = v.kind==="renfo" ? `<div class="pg-ex hd"><span>Exercice</span><span>Séries</span><span>Min</span><span>Max</span><span></span></div>`
+      + (v.ex||[]).map((e,i)=>`<div class="pg-ex"><input type="text" data-pk="${k}" data-pi="${i}" data-pf="name" value="${esc(e.name)}" placeholder="ex. Squat" aria-label="Exercice"><input type="number" min="1" max="10" inputmode="numeric" data-pk="${k}" data-pi="${i}" data-pf="sets" value="${e.sets??3}" aria-label="Séries"><input type="number" min="1" inputmode="numeric" data-pk="${k}" data-pi="${i}" data-pf="lo" value="${e.lo??8}" aria-label="Reps min"><input type="number" min="1" inputmode="numeric" data-pk="${k}" data-pi="${i}" data-pf="hi" value="${e.hi??12}" aria-label="Reps max"><button type="button" class="pg-del" data-pexdel="${k}:${i}" aria-label="Retirer l'exercice">✕</button></div>
+        <div class="pg-ex2"><select data-pk="${k}" data-pi="${i}" data-pf="mode" aria-label="Type"><option value="load"${!e.bw&&!e.time?" selected":""}>Avec charge (kg × reps)</option><option value="bw"${e.bw?" selected":""}>Poids du corps (reps)</option><option value="time"${e.time?" selected":""}>Durée (secondes)</option></select><select data-pk="${k}" data-pi="${i}" data-pf="rest" aria-label="Repos"><option value="60"${e.rest==60?" selected":""}>Repos 1 min</option><option value="75"${!e.rest||e.rest==75?" selected":""}>1 min 15</option><option value="90"${e.rest==90?" selected":""}>1 min 30</option><option value="120"${e.rest==120?" selected":""}>2 min</option><option value="150"${e.rest==150?" selected":""}>2 min 30</option><option value="180"${e.rest==180?" selected":""}>3 min</option></select></div>`).join("")
+      + `<button type="button" class="addlink" data-pexadd="${k}">+ Ajouter un exercice</button>` : "";
+    return `<div class="pg-ses"><span class="pg-kind ${v.kind}">${KLBL[v.kind]}</span>
+      <div class="pg-ses-head"><label>Nom<input type="text" data-pk="${k}" data-pf="label" value="${esc(v.label)}" placeholder="${v.kind==="run"?"ex. Sortie longue":"ex. Push"}"></label><label>Nom court<input type="text" data-pk="${k}" data-pf="short" value="${esc(v.short)}" maxlength="12" placeholder="ex. Push"></label><button type="button" class="pg-del" data-pdelses="${k}" aria-label="Retirer la séance">✕</button></div>
+      <label style="margin-top:8px">Consigne<input type="text" data-pk="${k}" data-pf="note" value="${esc(v.note||"")}" placeholder="ex. Échauffement 10 min"></label>${ex}</div>`; }).join("")
+    : `<p class="empty">Ajoute ta première séance avec les boutons ci-dessous.</p>`;
+  const opts = `<option value="">Repos</option>`+keys.map(k=>`<option value="${k}">${esc(S_[k].short||S_[k].label||"Séance")}</option>`).join("");
+  $("#pgWeek").innerHTML = DOWL.map((d,i)=>{ const cur=(pgEdit.plan.find(x=>Number(x.dow)===i)||{}).k||""; return `<div class="pg-day"><span>${d}</span><select data-pday="${i}">${opts.replace(`value="${cur}"`,`value="${cur}" selected`)}</select></div>`; }).join("");
+}
+$("#progEd").addEventListener("input",e=>{
+  const el=e.target; if(!pgEdit) return;
+  if(el.id==="pgName") pgEdit.name=el.value; if(el.id==="pgDesc") pgEdit.desc=el.value; if(el.id==="pgTag") pgEdit.tag=el.value; if(el.id==="pgStart") pgEdit.start=el.value;
+  const k=el.dataset.pk; if(!k) return; const v=pgEdit.sessions[k]; const f=el.dataset.pf;
+  if(el.dataset.pi==null){ v[f]=el.value; if(f==="label" && !v._shortTouched){ v.short=el.value.slice(0,12); const sh=$(`[data-pk="${k}"][data-pf="short"]`); if(sh) sh.value=v.short; } if(f==="short") v._shortTouched=true; $$(`#pgWeek option[value="${k}"]`).forEach(op=>op.textContent=v.short||v.label||"Séance"); return; }
+  const ex=v.ex[Number(el.dataset.pi)];
+  if(f==="name"){ ex.name=el.value; } else if(["sets","lo","hi"].includes(f)) ex[f]=num(el.value);
+});
+$("#progEd").addEventListener("change",e=>{
+  const el=e.target; if(!pgEdit) return;
+  if(el.dataset.pday!=null){ const i=Number(el.dataset.pday); pgEdit.plan=pgEdit.plan.filter(x=>Number(x.dow)!==i); if(el.value) pgEdit.plan.push({dow:i,k:el.value}); return; }
+  const k=el.dataset.pk, f=el.dataset.pf; if(!k||el.dataset.pi==null) return; const ex=pgEdit.sessions[k].ex[Number(el.dataset.pi)];
+  if(f==="mode"){ ex.bw = el.value==="bw"; ex.time = el.value==="time"; if(ex.time){ ex.lo=ex.lo>20?ex.lo:30; ex.hi=ex.hi>20?ex.hi:45; } }
+  if(f==="rest") ex.rest=Number(el.value);
+});
+$("#progEd").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b||!pgEdit) return;
+  if(b.dataset.pgadd){ const kind=b.dataset.pgadd, k="c"+uid(); pgEdit.sessions[k]={label:"", short:"", kind, note:"", ex: kind==="renfo"?[{name:"",sets:3,lo:8,hi:12,rest:90}]:undefined}; renderPgEdit(); const f=$(`[data-pk="${k}"][data-pf="label"]`); f&&f.focus(); }
+  if(b.dataset.pexadd){ pgEdit.sessions[b.dataset.pexadd].ex.push({name:"",sets:3,lo:8,hi:12,rest:90}); renderPgEdit(); }
+  if(b.dataset.pexdel){ const [k,i]=b.dataset.pexdel.split(":"); pgEdit.sessions[k].ex.splice(Number(i),1); renderPgEdit(); }
+  if(b.dataset.pdelses){ const k=b.dataset.pdelses; if(!confirm("Retirer cette séance du programme ?")) return; delete pgEdit.sessions[k]; pgEdit.plan=pgEdit.plan.filter(x=>x.k!==k); renderPgEdit(); }
+});
+$("#pgCancel").onclick=()=>{ pgEdit=null; $("#progEd").hidden=true; $("#progLib").hidden=false; renderProgLib(); };
+$("#pgSave").onclick=async()=>{
+  const P=pgEdit, msg=m=>{ $("#pgMsg").textContent=m; $("#pgMsg").className="save-msg err"; };
+  P.name=(P.name||"").trim(); if(!P.name) return msg("Donne un nom à ton programme.");
+  const keys=Object.keys(P.sessions); if(!keys.length) return msg("Ajoute au moins une séance.");
+  for(const k of keys){ const v=P.sessions[k]; v.label=(v.label||"").trim(); if(!v.label) return msg("Chaque séance a besoin d'un nom.");
+    v.short=(v.short||v.label).trim().slice(0,12); delete v._shortTouched;
+    if(v.kind==="renfo"){ v.ex=(v.ex||[]).filter(e=>e.name && e.name.trim()); if(!v.ex.length) return msg(`Ajoute au moins un exercice à « ${v.label} ».`);
+      const used={}; v.ex.forEach(e=>{ e.name=e.name.trim(); e.sets=Math.max(1,Math.min(10,Math.round(e.sets||3))); e.lo=Math.max(1,Math.round(e.lo||8)); e.hi=Math.max(e.lo,Math.round(e.hi||e.lo)); e.rest=e.rest||90;
+        let id=e.id||slug(e.name); if(used[id]) id+="_"+(++used[id]); else used[id]=1; e.id=id; // garde l'identifiant existant : l'historique de progression suit l'exercice if(!e.bw) delete e.bw; if(!e.time) delete e.time; }); }
+    else delete v.ex; }
+  P.plan=P.plan.filter(x=>P.sessions[x.k]);
+  if(!P.start) P.start=mondayOf(todayIso());
+  if(!P.id) P.id="p"+uid();
+  S.programs=(S.programs||[]).filter(x=>x.id!==P.id); S.programs.push(P); S.activeProgram=P.id;
+  pgEdit=null; $("#progEd").hidden=true; $("#progLib").hidden=true;
+  await afterProgChange(); $("#b7Week").scrollIntoView?.({behavior:"smooth",block:"start"});
+};
+
 /* ---------- pause du programme ---------- */
 const PAUSE_REASONS=["Blessure","Malade","Vacances","Boulot","Fatigue","Autre"];
 let pauseReason=null;
@@ -3016,7 +3177,7 @@ function renderAll(reloadForm){
 (async()=>{
   await pinGate();                       // écran du code si APP_PASSWORD est activé
   document.body.classList.remove("booting");
-  loadSettings();
+  loadSettings(); applyProgram();
   buildScales(); renderTplSelect(); renderPhase();
   loadLocal();
   setStatus("Données enregistrées sur cet appareil.");
