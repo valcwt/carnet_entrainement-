@@ -369,6 +369,16 @@ section.panel h2.b7-title::before{display:none}
 .b7-pace{grid-column:1/-1;font-size:.9rem;color:var(--muted)}
 .b7-pace b{color:var(--steps);font-family:"Barlow Condensed",sans-serif;font-size:1.3rem}
 .b7-feel{margin-top:14px;display:flex;flex-direction:column;gap:4px;font-size:.88rem;color:var(--muted);font-weight:500}
+details.panel{background:linear-gradient(180deg,var(--surface-2),var(--surface) 60%);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin-bottom:16px}
+details.panel h2{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px;font-size:1.4rem}
+details.panel h2::before{content:"";align-self:center;width:4px;height:.8em;border-radius:2px;background:var(--accent);flex:none}
+details.panel h2 small{font-family:Barlow,sans-serif;font-size:.8rem;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0}
+details.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;-webkit-tap-highlight-color:transparent}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary h2{flex:1;margin:0!important}
+details.fold>summary::after{content:"";width:10px;height:10px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s;margin:0 4px 4px 0;flex:none}
+details.fold[open]>summary::after{transform:rotate(-135deg);margin:4px 4px 0 0}
+details.fold[open]>summary{margin-bottom:12px}
 .b7-rules{margin:0;padding-left:18px}
 .rec-msg{color:var(--gold)!important;font-weight:600}
 .howto{margin:10px 0 0;padding-left:20px;font-size:.92rem}
@@ -890,16 +900,16 @@ nav.bottom-nav{display:none}
       <div class="tbl"><table id="b7Hist" style="min-width:0"></table></div>
     </section>
 
-    <section class="panel">
-      <h2>Version déplacement</h2>
+    <details class="panel fold" data-fold="deplacement">
+      <summary><h2>Version déplacement <small>sans matériel ou avec élastique</small></h2></summary>
       <p class="hint">Choisis « Déplacement A » ou « Déplacement B » dans « Noter une séance » pour les suivre.</p>
       <p style="margin:0 0 8px"><b>Sans matériel — A :</b> pompes 3 × 8–20 · fentes arrière 3 × 10/jambe · pompes pike 3 × 6–12 · pont fessier une jambe 2 × 10–12/jambe · squats tempo 2 × 12–15 · planche 3 × 30–45 s.</p>
       <p style="margin:0 0 8px"><b>Avec élastique — B :</b> rowing 4 × 12–15 · développé poitrine 3 × 10–15 · squat 3 × 12–15 · soulevé roumain 3 × 12–15 · face pull 2 × 15–20 · Pallof press 2 × 10–12/côté.</p>
       <p class="hint" style="margin:0">Sans point d'ancrage sûr, n'improvise pas de tirage avec un élastique.</p>
-    </section>
+    </details>
 
-    <section class="panel">
-      <h2>Règles de progression</h2>
+    <details class="panel fold" data-fold="regles">
+      <summary><h2>Règles &amp; précautions <small>progression, repos, douleur</small></h2></summary>
       <ul class="b7-rules">
         <li>Garde 1 à 3 répétitions en réserve sur la plupart des séries.</li>
         <li>Toutes les séries en haut de la fourchette, technique propre → <b>+2 à 5 %</b> de charge.</li>
@@ -909,7 +919,7 @@ nav.bottom-nav{display:none}
         <li>Course : pas de sprint sur les intervalles, pas de hausse brutale du volume.</li>
       </ul>
       <p class="b7-warn"><b>Précautions.</b> Douleur persistante = arrête l'exercice concerné et demande un avis professionnel. Pas d'échec systématique. Alimentation et sommeil font la récupération. Ce programme est une base personnalisable, pas une prescription médicale.</p>
-    </section>
+    </details>
   </main>
 
 
@@ -2556,7 +2566,7 @@ function renderB7Hist(){
     if(wp){ rows+=`<tr data-m="${m}"><td class="l">⏸ ${fmtShort(m)}</td><td colspan="5" class="l" style="color:var(--muted)">En pause${ws.length?` · ${ws.length} séance${ws.length>1?"s":""} notée${ws.length>1?"s":""}`:""}</td></tr>`; continue; }
     rows+=`<tr data-m="${m}"><td class="l">${wn>=1?`<b>S${wn}</b> · `:""}${fmtShort(m)}</td><td class="${nR>=2?"ok":""}">${nR}/2</td><td class="${nC>=2?"ok":""}">${nC}${nC<2?"/2":""}</td><td>${km?fmtNum(km,1):"–"}</td><td>${sec?Math.round(sec/60)+" min":"–"}</td><td>${fe!=null?fmtNum(fe,1)+"/5":"–"}</td></tr>`;
   }
-  if(!rows) rows=`<tr><td colspan="6" class="l" style="color:var(--muted)">Le programme commence le lundi ${fmtShort(B7_START).replace(/\.$/,"")}. Tes semaines apparaîtront ici.</td></tr>`;
+  if(!rows) rows=`<tr><td colspan="6" class="l" style="color:var(--muted);white-space:normal">Le programme commence le lundi ${fmtShort(B7_START).replace(/\.$/,"")}. Tes semaines apparaîtront ici.</td></tr>`;
   $("#b7Hist").innerHTML = `<thead><tr><th class="l">Semaine du</th><th>Renfo</th><th>Course</th><th>km</th><th>Durée</th><th>Sensations</th></tr></thead><tbody>${rows}</tbody>`;
   $$("#b7Hist tbody tr").forEach(tr=>tr.onclick=null);
 }
@@ -2903,6 +2913,12 @@ async function renderNotif(){
 // ouverture depuis une notification (ex. ?tab=sem)
 (()=>{ try{ const t=new URLSearchParams(location.search).get("tab"); if(t) window.__openTab=t; }catch(e){} })();
 
+/* ---------- panneaux repliables (fermés par défaut, état retenu sur l'appareil) ---------- */
+$$("details.fold[data-fold]").forEach(d=>{
+  const k="carnet-sport.fold."+d.dataset.fold;
+  try{ d.open = localStorage.getItem(k)==="1"; }catch(e){}
+  d.addEventListener("toggle",()=>{ try{ localStorage.setItem(k, d.open?"1":"0"); }catch(e){} });
+});
 /* ---------- pause du programme ---------- */
 const PAUSE_REASONS=["Blessure","Malade","Vacances","Boulot","Fatigue","Autre"];
 let pauseReason=null;
