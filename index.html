@@ -88,7 +88,7 @@ textarea{resize:vertical;min-height:70px}
 .badge.ok{color:var(--good)} .badge.warn{color:var(--gold)} .badge.late,.badge.bad{color:var(--warn)} .badge.info{color:var(--muted)}
 .pace-panel p{margin:6px 0 0} .save-msg.err{color:var(--warn)}
 .express{border-color:var(--ink)}
-.xgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.xgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .xgrid input{font-family:"Barlow Condensed",sans-serif;font-size:1.7rem;font-weight:600;padding:8px 10px}
 .xgrid input::placeholder{font-family:Barlow,sans-serif;font-size:.85rem;font-weight:400;color:var(--muted)}
 @media (max-width:420px){.xgrid input{font-size:1.4rem}}
@@ -132,6 +132,7 @@ tbody tr{cursor:pointer}
 tbody tr:hover td{background:var(--bg)}
 tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
 .delta-down{color:var(--good)} .delta-up{color:var(--warn)}
+#wk-table{min-width:0}
 .bilan{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;min-height:220px}
 
 /* Historique */
@@ -276,6 +277,10 @@ tbody tr:hover td{background:var(--surface-2)}
 details.addform>summary,details.more>summary,.addlink{color:var(--accent)}
 :focus-visible{outline-color:var(--accent)}
 ::selection{background:var(--accent);color:var(--on-accent)}
+.water-quick{display:flex;gap:8px;margin-top:12px}
+.water-quick button{flex:1;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:10px;padding:10px 0;font-weight:700;cursor:pointer}
+.water-quick button:active{background:var(--weight);color:#0B0D10;border-color:var(--weight)}
+.day .dots i.w{background:var(--weight)}
 /* records */
 .records{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .rec{position:relative;border:1px solid var(--line);border-radius:12px;padding:12px 12px 10px;background:var(--field);overflow:hidden}
@@ -344,6 +349,7 @@ nav.bottom-nav{display:none}
 
   /* Safari zoome sur tout champ en dessous de 16 px : on les met tous à 16 px */
   input, select, textarea, .exgrid input, .exhead input, .ed-row input, .ed-row select{font-size:16px}
+  .xgrid{grid-template-columns:1fr 1fr}
   .xgrid input{font-size:1.6rem}
 
   /* cibles tactiles d'au moins 44 px */
@@ -402,14 +408,12 @@ nav.bottom-nav{display:none}
   <nav class="tabs top-nav" role="tablist">
     <button role="tab" aria-selected="true" data-tab="jour">Journée</button>
     <button role="tab" aria-selected="false" data-tab="sem">Semainier</button>
-    <button role="tab" aria-selected="false" data-tab="prog">Programme</button>
     <button role="tab" aria-selected="false" data-tab="tend">Tendances</button>
     <button role="tab" aria-selected="false" data-tab="histo">Historique</button>
   </nav>
   <nav class="tabs bottom-nav" role="tablist" aria-label="Navigation">
     <button role="tab" aria-selected="true" data-tab="jour"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/><circle cx="12" cy="14.5" r="2"/></svg><span>Journée</span></button>
     <button role="tab" aria-selected="false" data-tab="sem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM4 10h16M4 15h16M10 5v14"/></svg><span>Semainier</span></button>
-    <button role="tab" aria-selected="false" data-tab="prog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4M21 10v4M6 7v10M18 7v10M6 12h12"/></svg><span>Programme</span></button>
     <button role="tab" aria-selected="false" data-tab="tend"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M5 15l4-5 4 3 6-7"/></svg><span>Tendances</span></button>
     <button role="tab" aria-selected="false" data-tab="histo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3 2M3.5 12a8.5 8.5 0 1 0 2.5-6M3 4v4h4"/></svg><span>Historique</span></button>
   </nav>
@@ -417,7 +421,7 @@ nav.bottom-nav{display:none}
   <!-- ================= JOURNÉE ================= -->
   <main id="tab-jour">
     <div class="week" id="week"></div>
-    <div class="legend">Points verts : séances. Barre violette : heures de sommeil (0–10 h).</div>
+    <div class="legend">Barre violette : heures de sommeil (0–10 h) · point bleu : eau notée.</div>
 
     <div class="row" style="margin-bottom:14px">
       <label style="flex-direction:row;align-items:center;gap:8px">Date
@@ -431,11 +435,14 @@ nav.bottom-nav{display:none}
       <div class="xgrid">
         <label>Poids (kg)<input type="number" id="weight" step="0.1" min="0" inputmode="decimal" enterkeyhint="next"></label>
         <label>Pas / NEAT<input type="number" id="steps" step="100" min="0" inputmode="numeric" enterkeyhint="next"></label>
-        <label>Sommeil (h)<input type="number" id="sleepHours" step="0.05" min="0" max="24" inputmode="decimal" enterkeyhint="done"></label>
+        <label>Sommeil (h)<input type="number" id="sleepHours" step="0.05" min="0" max="24" inputmode="decimal" enterkeyhint="next"></label>
+        <label>Eau (L)<input type="number" id="water" step="0.25" min="0" max="15" inputmode="decimal" enterkeyhint="done"></label>
       </div>
-      <label style="margin-top:12px">Qualité du sommeil (0–5)<div class="scale" data-field="sleepQuality"></div></label>
+      <div class="water-quick" id="waterQuick" aria-label="Ajouter de l'eau"><button type="button" data-add="0.25">+ 25 cl</button><button type="button" data-add="0.5">+ 50 cl</button><button type="button" data-add="1">+ 1 L</button></div>
+      <div hidden><div class="scale" data-field="sleepQuality"></div></div>
     </section>
 
+    <div hidden aria-hidden="true">
     <section class="panel">
       <h2>Condition physique</h2>
       <div class="grid">
@@ -506,6 +513,7 @@ nav.bottom-nav{display:none}
       <span class="save-msg" id="saveMsg"></span>
       <button class="btn small" id="saveRetry" hidden>Réessayer</button>
     </div>
+    </div>
   </main>
 
   <!-- ================= SEMAINIER ================= -->
@@ -527,8 +535,8 @@ nav.bottom-nav{display:none}
 
   <!-- ================= PROGRAMME ================= -->
   <main id="tab-prog" hidden>
-    <div id="progView">
-      <div class="ed-bar"><button class="btn ghost" id="progEditBtn">Modifier le programme</button></div>
+    <div id="progView" hidden>
+      <div class="ed-bar"><button class="btn ghost" id="progEditBtn" hidden>Modifier</button></div>
       <section class="panel">
         <h2>Tests <small>départ → meilleur résultat noté</small></h2>
         <div class="tests" id="tests"></div>
@@ -562,9 +570,8 @@ nav.bottom-nav{display:none}
     </div>
     <div id="progEdit" hidden>
       <div class="ed-bar">
-        <button class="btn ghost" data-reset="prog">Revenir au programme d'origine</button>
         <button class="btn ghost" data-cancel="prog">Annuler</button>
-        <button class="btn" data-save="prog">Enregistrer le programme</button>
+        <button class="btn" data-save="prog">Enregistrer l'objectif</button>
       </div>
       <div id="progEditor"></div>
     </div>
@@ -584,7 +591,8 @@ nav.bottom-nav{display:none}
     <section class="panel"><h2>Poids <small>trait pointillé : objectif de phase · courbe épaisse : moyenne 7 j</small></h2><div class="stat-row" id="st-weight"></div><div class="chart" id="ch-weight"></div></section>
     <section class="panel"><h2>Pas / NEAT</h2><div class="stat-row" id="st-steps"></div><div class="chart" id="ch-steps"></div></section>
     <section class="panel"><h2>Sommeil</h2><div class="stat-row" id="st-sleep"></div><div class="chart" id="ch-sleep"></div></section>
-    <section class="panel"><h2>Entraînement</h2><div class="stat-row" id="st-train"></div><div class="chart" id="ch-train"></div></section>
+    <section class="panel"><h2>Eau</h2><div class="stat-row" id="st-water"></div><div class="chart" id="ch-water"></div></section>
+    <div hidden><div id="st-train"></div><div id="ch-train"></div></div>
   </main>
 
   <!-- ================= HISTORIQUE ================= -->
@@ -605,7 +613,7 @@ nav.bottom-nav{display:none}
     <section class="panel"><h2>Historique</h2><div id="history"></div></section>
     <section class="panel">
       <h2>Repartir à zéro</h2>
-      <p class="hint">Efface toutes les journées (poids, pas, sommeil, ressentis, séances, tests) sur tous tes appareils. Ton programme et tes réglages sont gardés, et la semaine 1 repart au prochain lundi. Une sauvegarde est copiée juste avant, au cas où.</p>
+      <p class="hint">Efface toutes les journées (poids, pas, sommeil, eau) sur tous tes appareils. Ton programme et tes réglages sont gardés, et la semaine 1 repart au prochain lundi. Une sauvegarde est copiée juste avant, au cas où.</p>
       <div class="row"><button class="btn ghost" id="resetAllBtn" style="color:var(--warn);border-color:var(--warn)">Tout effacer et repartir à zéro</button><span class="save-msg" id="resetMsg"></span></div>
     </section>
   </main>
@@ -812,6 +820,7 @@ function testInfo(){
 function testWhen(T){ return T.left<=0 ? "c'est le moment" : T.left===1 ? "demain" : `dans ${T.left} jours`; }
 function renderTestAlert(){
   const el=$("#testAlert"); if(!el) return;
+  el.hidden=true; return; // suivi du Murph retiré
   const T=testInfo();
   if(T.left>2){ el.hidden=true; return; }
   el.hidden=false;
@@ -832,9 +841,9 @@ function renderPhase(){
   const ev = S.eventDate ? diffDays(S.eventDate, t) : null;
   const obj = objectiveText(p);
   const last = Object.values(days).filter(d=>d.weight!=null).sort((a,b)=>a.date<b.date?-1:1).pop();
-  $("#phase").innerHTML = `<b>Semaine ${p.w}</b><span>${esc(p.name)}</span>${obj?`<span><b style="font-size:1.05rem">${esc(obj)}</b>${last&&p.target!=null&&p.target!==""?` · ${esc(remainingTxt(last.weight,Number(p.target)))}`:""}</span>`:""}${p.detail?`<span>${esc(p.detail)}</span>`:""}${ev!=null&&ev>=0?`<span>${esc(S.eventName||"Objectif")} : dans ~${ev>60?Math.round(ev/30)+" mois":ev+" jours"}</span>`:""}<span>Bilan chaque vendredi</span>${(()=>{ const r=paceInfo(); return r?`<span class="pace-line"><span class="badge ${r.status}">${esc(r.label)}</span><span>${esc(paceShort(r))}</span><a href="#" id="paceMore" style="color:var(--accent);font-weight:600">Détail</a></span>`:""; })()}<button type="button" class="btn ghost small" id="editGoal" style="margin-left:auto">Modifier l'objectif</button>`;
+  $("#phase").innerHTML = `<b>Semaine ${p.w}</b><span>${esc(p.name)}</span>${obj?`<span><b style="font-size:1.05rem">${esc(obj)}</b>${last&&p.target!=null&&p.target!==""?` · ${esc(remainingTxt(last.weight,Number(p.target)))}`:""}</span>`:""}${p.detail?`<span>${esc(p.detail)}</span>`:""}<span>Bilan chaque vendredi</span>${(()=>{ const r=paceInfo(); return r?`<span class="pace-line"><span class="badge ${r.status}">${esc(r.label)}</span><span>${esc(paceShort(r))}</span><a href="#" id="paceMore" style="color:var(--accent);font-weight:600">Détail</a></span>`:""; })()}<button type="button" class="btn ghost small" id="editGoal" style="margin-left:auto">Modifier l'objectif</button>`;
   $("#paceMore") && ($("#paceMore").onclick=e=>{ e.preventDefault(); showTab("tend"); $("#pacePanel").scrollIntoView?.({behavior:"smooth",block:"start"}); });
-  $("#editGoal").onclick=()=>{ showTab("prog"); if(!editing.prog) openProgEdit(); const s=$("#ed-objectifs"); s&&s.scrollIntoView?.({behavior:"smooth",block:"start"}); const f=s&&s.querySelector('[data-p$=".target"]'); f&&f.focus({preventScroll:true}); };
+  $("#editGoal").onclick=()=>{ showTab("prog"); if(!editing.prog) openProgEdit(); };
   renderTestAlert();
 }
 
@@ -1049,6 +1058,7 @@ function loadDay(date){
   $("#sleepHours").value = current.sleepHours ?? "";
   $("#cardio").value = current.cardio || "";
   $("#watchKcal").value = current.watchKcal ?? "";
+  $("#water").value = current.water ?? "";
   $("#dayNote").value = current.note || "";
   const t = current.tests||{};
   $("#t-pullups").value=t.pullups??""; $("#t-pushups").value=t.pushups??""; $("#t-squats").value=t.squats??""; $("#t-mile").value=t.mile??"";
@@ -1067,14 +1077,16 @@ function readForm(){
   current.sleepHours = num($("#sleepHours").value);
   current.cardio = $("#cardio").value.trim();
   current.watchKcal = num($("#watchKcal").value);
+  current.water = num($("#water").value);
   current.note = $("#dayNote").value.trim();
   ["sleepQuality","energy","stress","soreness"].forEach(f=>current[f]=draft[f]);
   const tests = {pullups:num($("#t-pullups").value), pushups:num($("#t-pushups").value), squats:num($("#t-squats").value), mile:$("#t-mile").value.trim()||null};
   current.tests = Object.values(tests).some(v=>v!=null) ? tests : null;
   current.updatedAt = new Date().toISOString();
 }
-["#weight","#steps","#sleepHours","#cardio","#watchKcal","#dayNote","#t-pullups","#t-pushups","#t-squats","#t-mile"].forEach(s=>$(s).addEventListener("input",markDirty));
-["#weight","#steps","#sleepHours"].forEach((s,i,a)=>$(s).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); if(a[i+1]) $(a[i+1]).focus(); else { e.target.blur(); doSave(); } } }));
+["#weight","#steps","#sleepHours","#water","#cardio","#watchKcal","#dayNote","#t-pullups","#t-pushups","#t-squats","#t-mile"].forEach(s=>$(s).addEventListener("input",markDirty));
+["#weight","#steps","#sleepHours","#water"].forEach((s,i,a)=>$(s).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); if(a[i+1]) $(a[i+1]).focus(); else { e.target.blur(); doSave(); } } }));
+$$("#waterQuick button").forEach(b=>b.onclick=()=>{ const v=(num($("#water").value)||0)+Number(b.dataset.add); $("#water").value=Math.round(v*100)/100; markDirty(); });
 
 /* ---------- calories & objectif réaliste ---------- */
 const KCAL_KG = 7700;
@@ -1367,10 +1379,10 @@ function renderWeek(){
   let h="";
   for(let i=0;i<7;i++){
     const d = addDays(start,i), dd = d===current.date ? current : days[d], dt=parseIso(d);
-    const n = dd?.sessions?.length||0, sh = dd?.sleepHours;
-    h += `<button class="day" aria-pressed="${d===current.date}" data-d="${d}" aria-label="${fmtShort(d)}, ${n} séance(s)${sh!=null?`, ${fmtH(sh)} de sommeil`:""}">
+    const wa = dd?.water, sh = dd?.sleepHours;
+    h += `<button class="day" aria-pressed="${d===current.date}" data-d="${d}" aria-label="${fmtShort(d)}${wa!=null?`, ${fmtNum(wa,2)} L d'eau`:""}${sh!=null?`, ${fmtH(sh)} de sommeil`:""}">
       <span class="dw">${DOW[dt.getDay()]}</span><span class="dn">${dt.getDate()}</span>
-      <span class="dots">${"<i></i>".repeat(Math.min(n,3))}</span>
+      <span class="dots">${wa!=null?'<i class="w"></i>':""}</span>
       <span class="sl"><b style="height:${sh!=null?Math.min(100,sh*10):0}%"></b></span></button>`;
   }
   $("#week").innerHTML=h;
@@ -1381,7 +1393,7 @@ function renderWeek(){
 function weekStats(mon){
   const ds=[...Array(7)].map((_,i)=>days[addDays(mon,i)]).filter(Boolean);
   const sess=ds.flatMap(d=>d.sessions||[]);
-  return { weight:avg(ds.map(d=>d.weight)), steps:avg(ds.map(d=>d.steps)), sleep:avg(ds.map(d=>d.sleepHours)), sq:avg(ds.map(d=>d.sleepQuality)),
+  return { weight:avg(ds.map(d=>d.weight)), steps:avg(ds.map(d=>d.steps)), sleep:avg(ds.map(d=>d.sleepHours)), water:avg(ds.map(d=>d.water)), sq:avg(ds.map(d=>d.sleepQuality)),
     energy:avg(ds.map(d=>d.energy)), stress:avg(ds.map(d=>d.stress)), soreness:avg(ds.map(d=>d.soreness)),
     pleasure:avg(sess.map(s=>s.pleasure)), sessions:sess.length, ecarts:ds.filter(d=>d.ecart).length, ds, sess };
 }
@@ -1392,31 +1404,23 @@ function renderSemainier(){
   const W = weekStats(mon), P = weekStats(addDays(mon,-7));
   let rows="";
   for(let i=0;i<7;i++){
-    const d=addDays(mon,i), x=days[d]||{}, ss=(x.sessions||[]);
-    rows+=`<tr data-d="${d}"><td class="l"><b>${DOWL[i]}</b> ${parseIso(d).getDate()}</td><td>${fmtNum(x.weight,1)}</td>
-      <td class="l">${esc(ss.map(s=>s.title||s.type).join(" + ")||"–")}</td>
-      <td>${ss.length?fmtNum(avg(ss.map(s=>s.pleasure)),1):"–"}</td><td>${esc(x.cardio||"–")}</td><td>${fmtNum(x.steps)}</td>
-      <td>${fmtNum(x.soreness)}</td><td>${fmtNum(x.stress)}</td><td>${fmtNum(x.energy)}</td><td>${fmtH(x.sleepHours)}</td><td>${fmtNum(x.sleepQuality)}</td></tr>`;
+    const d=addDays(mon,i), x=days[d]||{};
+    rows+=`<tr data-d="${d}"><td class="l"><b>${DOWL[i]}</b> ${parseIso(d).getDate()}</td><td>${fmtNum(x.weight,1)}</td><td>${fmtNum(x.steps)}</td><td>${fmtH(x.sleepHours)}</td><td>${x.water!=null?fmtNum(x.water,2)+" L":"–"}</td></tr>`;
   }
-  $("#wk-table").innerHTML = `<thead><tr><th class="l">Jour</th><th>Poids (kg)</th><th class="l">Séance exécutée</th><th>Plaisir (0–5)</th><th>Cardio</th><th>Pas / NEAT</th><th>Courba&shy;tures</th><th>Stress</th><th>Énergie</th><th>Sommeil</th><th>Qualité</th></tr></thead>
+  $("#wk-table").innerHTML = `<thead><tr><th class="l">Jour</th><th>Poids (kg)</th><th>Pas / NEAT</th><th>Sommeil</th><th>Eau</th></tr></thead>
     <tbody>${rows}</tbody>
-    <tfoot><tr><td class="l">Moyenne</td><td>${fmtNum(W.weight,2)}</td><td class="l">${W.sessions} séance(s)</td><td>${fmtNum(W.pleasure,1)}</td><td></td><td>${fmtNum(W.steps)}</td><td>${fmtNum(W.soreness,1)}</td><td>${fmtNum(W.stress,1)}</td><td>${fmtNum(W.energy,1)}</td><td>${fmtH(W.sleep)}</td><td>${fmtNum(W.sq,1)}</td></tr></tfoot>`;
+    <tfoot><tr><td class="l">Moyenne</td><td>${fmtNum(W.weight,2)}</td><td>${fmtNum(W.steps)}</td><td>${fmtH(W.sleep)}</td><td>${W.water!=null?fmtNum(W.water,2)+" L":"–"}</td></tr></tfoot>`;
   $$("#wk-table tbody tr").forEach(tr=>tr.onclick=()=>{ showTab("jour"); switchDay(tr.dataset.d); });
   const dW = W.weight!=null && P.weight!=null ? W.weight-P.weight : null, target = targetFor(mon);
   const dn = d => DOWL[(parseIso(d.date).getDay()+6)%7];
   const notes = W.ds.filter(d=>d.note).map(d=>`- ${dn(d)} : ${d.note}`);
-  const perfL={progres:"progrès",maintien:"maintien",regression:"régression"};
   $("#bilan").value = [
     `Bilan semaine ${w} (${fmtShort(mon)} – ${fmtShort(sun)})`, ``,
     `Poids moyen : ${fmtNum(W.weight,2)} kg${dW!=null?` (${dW>0?"+":""}${fmtNum(dW,2)} kg vs S${w-1})`:""}${target&&W.weight?` · ${remainingTxt(W.weight,target)}`:""}`,
     ...(()=>{ const r=paceInfo(sun<todayIso()?sun:todayIso()); return r?[`Rythme : ${r.actual!=null?kgw(r.actual):"tendance non calculable"}${r.required!=null?` · nécessaire ${kgw(r.required)} pour ~${fmtNum(r.target,1)} kg au ${fmtShort(r.end)}`:""} → ${r.label.toLowerCase()}`]:[]; })(),
-    `Séances : ${W.sessions}${W.pleasure!=null?` · plaisir moyen ${fmtNum(W.pleasure,1)}/5`:""}`,
-    ...W.sess.map(s=>`  · ${s.title||s.type}${s.performance?` — ${perfL[s.performance]}`:""}${s.perfNote?` — ${s.perfNote}`:""}`),
     `Pas / NEAT moyens : ${fmtNum(W.steps)}`,
-    ...(()=>{ const wa=avg(W.ds.map(d=>d.watchKcal)); return wa!=null?[`Montre : ${fmtNum(Math.round(wa/10)*10)} kcal actives/j`]:[]; })(),
-    ...(()=>{ const NT=testInfo(), tw=W.ds.find(d=>d.tests&&Object.values(d.tests).some(v=>v!=null&&v!=="")); return [tw?`Test Murph fait (${dn(tw)}) : ${[tw.tests.pullups!=null?tw.tests.pullups+" tractions":"",tw.tests.pushups!=null?tw.tests.pushups+" pompes":"",tw.tests.squats!=null?tw.tests.squats+" squats/2 min":"",tw.tests.mile?"1,6 km en "+tw.tests.mile:""].filter(Boolean).join(" · ")}`:`Prochain test Murph : ${fmtShort(NT.due)} (${testWhen(NT)})`]; })(),
-    `Sommeil : ${fmtH(W.sleep)} / nuit · qualité ${fmtNum(W.sq,1)}/5`,
-    `Énergie ${fmtNum(W.energy,1)}/5 · Stress ${fmtNum(W.stress,1)}/5 · Courbatures ${fmtNum(W.soreness,1)}/5`,
+    `Sommeil : ${fmtH(W.sleep)} / nuit`,
+    `Eau : ${W.water!=null?fmtNum(W.water,2)+" L / jour":"non renseignée"}`,
     ...(notes.length?[``,`Notes :`,...notes]:[])
   ].join("\n");
 }
@@ -1624,48 +1628,21 @@ function bindEditor(root, key, rerender){
 }
 
 /* ---------- programme : éditeur ---------- */
-function openProgEdit(){ editing.prog = clone(Object.fromEntries(PROG_KEYS.map(k=>[k,S[k]]))); $("#progView").hidden=true; $("#progEdit").hidden=false; renderProgEditor(); }
-function closeProgEdit(){ editing.prog=null; $("#progView").hidden=false; $("#progEdit").hidden=true; renderProgram(); }
+function openProgEdit(){ editing.prog = clone(Object.fromEntries(PROG_KEYS.map(k=>[k,S[k]]))); $("#progView").hidden=true; $("#progEdit").hidden=false; renderProgEditor(); setTimeout(()=>{ const f=$('#ed-objectifs [data-p$=".target"]'); f&&f.focus({preventScroll:true}); },50); }
+function closeProgEdit(){ editing.prog=null; $("#progEdit").hidden=true; showTab("jour"); }
 function renderProgEditor(){
   const E=editing.prog, n=E.templates.length;
   $("#progEditor").innerHTML = `
-  <section class="panel"><h2>Séances</h2>
-    ${E.templates.map((t,ti)=>`<div class="ed-card">
-      <div class="ed-head">${I(`templates.${ti}.label`,t.label,"text",'aria-label="Nom de la séance"')}
-        <label class="chk">${I(`templates.${ti}.run`,t.run,"bool")} Avec distance</label>${MOVE("templates",ti,n,"la séance")}</div>
-      <div class="grid" style="margin-bottom:8px"><label>Catégorie${I(`templates.${ti}.type`,t.type)}</label><label style="grid-column:span 2">Consigne${I(`templates.${ti}.note`,t.note||"")}</label></div>
-      <div class="ed-row ex" style="font-size:.75rem;color:var(--muted);font-weight:600"><span>Exercice</span><span>Prévu (séries, reps, repos…)</span><span></span></div>
-      ${t.ex.map((e,ei)=>`<div class="ed-row ex">${I(`templates.${ti}.ex.${ei}.name`,e.name,"text",'aria-label="Exercice"')}${I(`templates.${ti}.ex.${ei}.target`,e.target,"text",'aria-label="Prévu"')}${MOVE(`templates.${ti}.ex`,ei,t.ex.length,"l'exercice")}</div>`).join("")}
-      ${ADD(`templates.${ti}.ex`,"ex","Ajouter un exercice")}
-    </div>`).join("")}
-    ${ADD("templates","template","Ajouter une séance")}
-  </section>
-  <section class="panel"><h2>Tests de départ</h2>
-    <div class="grid"><label>Tractions strictes${I("baseline.pullups",E.baseline.pullups,"num")}</label><label>Pompes strictes${I("baseline.pushups",E.baseline.pushups,"num")}</label><label>Air squats / 2 min${I("baseline.squats",E.baseline.squats,"num")}</label><label>1,6 km (mm:ss)${I("baseline.mile",E.baseline.mile)}</label></div>
-  </section>
-  <section class="panel" id="ed-objectifs"><h2>Objectifs & phases</h2>
+  <section class="panel" id="ed-objectifs"><h2>Objectif de poids</h2>
     <p class="hint">Le poids visé de chaque phase met à jour le bandeau, le bilan du vendredi et la ligne d'objectif du graphique. Laisse-le vide pour une phase sans objectif de poids (diet break, maintien).</p>
-    <div class="grid"><label>Semaine 1 commence le${I("programStart",E.programStart,"date")}</label><label>Événement${I("eventName",E.eventName)}</label><label>Date de l'événement${I("eventDate",E.eventDate,"date")}</label></div>
+    <div class="grid"><label>Semaine 1 commence le${I("programStart",E.programStart,"date")}</label></div>
     <div class="tbl" style="margin-top:12px">
       <div class="ed-row phase" style="font-size:.75rem;color:var(--muted);font-weight:600"><span>De S</span><span>À S</span><span>Nom</span><span>Poids visé (kg)</span><span>Note (ex. 1 écart / sem.)</span><span></span></div>
       ${E.phases.map((p,pi)=>`<div class="ed-row phase">${I(`phases.${pi}.from`,p.from,"num")}${I(`phases.${pi}.to`,p.to,"num")}${I(`phases.${pi}.name`,p.name)}${I(`phases.${pi}.target`,p.target,"num")}${I(`phases.${pi}.detail`,p.detail)}${MOVE("phases",pi,E.phases.length,"la phase")}</div>`).join("")}
     </div>
     ${ADD("phases","phase","Ajouter une phase")}
   </section>
-  <section class="panel"><h2>Test Murph</h2>
-    <div class="grid"><label>Refaire le test toutes les (semaines)${I("testEvery",E.testEvery,"num")}</label></div>
-    <p class="hint">Un rappel s'affiche en haut de l'app 2 jours avant la date, jusqu'à ce que tu notes le test.</p>
-  </section>
-  <section class="panel"><h2>Critères de passage au bloc suivant</h2>
-    <div class="grid"><label>Bloc visé${I("nextBlock.name",E.nextBlock?.name)}</label><label>Tractions strictes (min.)${I("nextBlock.pullups",E.nextBlock?.pullups,"num")}</label><label>Pompes strictes (min.)${I("nextBlock.pushups",E.nextBlock?.pushups,"num")}</label><label>Air squats / 2 min (min.)${I("nextBlock.squats2",E.nextBlock?.squats2,"num")}</label><label>1,6 km (max., mm:ss)${I("nextBlock.mile",E.nextBlock?.mile)}</label></div>
-  </section>
-  <section class="panel"><h2>Blocs de progression</h2>
-    <div class="tbl">
-      <div class="ed-row block" style="font-size:.75rem;color:var(--muted);font-weight:600"><span>Nom</span><span>Période</span><span>Priorité</span><span>Début</span><span>Fin</span><span></span></div>
-      ${E.blocks.map((b,bi)=>`<div class="ed-row block">${I(`blocks.${bi}.name`,b.name)}${I(`blocks.${bi}.period`,b.period)}${I(`blocks.${bi}.content`,b.content)}${I(`blocks.${bi}.from`,b.from,"date")}${I(`blocks.${bi}.to`,b.to,"date")}${MOVE("blocks",bi,E.blocks.length,"le bloc")}</div>`).join("")}
-    </div>
-    ${ADD("blocks","block","Ajouter un bloc")}
-  </section>`;
+`;
 }
 bindEditor($("#progEditor"),"prog",renderProgEditor);
 $("#progEditBtn").onclick=openProgEdit;
@@ -1773,12 +1750,7 @@ function renderRecords(){
   const w=top("weight","min"); if(w) R.push(["Poids le plus bas", fmtNum(w.v,1)+" kg", w.d, "--weight"]);
   const st=top("steps","max"); if(st) R.push(["Pas en une journée", fmtNum(st.v), st.d, "--steps"]);
   const sl=top("sleepHours","max"); if(sl) R.push(["Plus longue nuit", fmtH(sl.v), sl.d, "--sleep"]);
-  const wk={}; all.forEach(d=>{ const n=(d.sessions||[]).length; if(n){ const m=mondayOf(d.date); wk[m]=(wk[m]||0)+n; } });
-  const bw=Object.entries(wk).sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?1:-1))[0]; if(bw) R.push(["Séances en une semaine", String(bw[1]), bw[0], "--train", "sem. du "]);
-  const tb=(k,mode,f)=>{ let best=null; all.forEach(d=>{ const v=d.tests?.[k]; if(v==null||v==="") return; const n = k==="mile"?parseTime(v):Number(v); if(n==null||isNaN(n)) return; if(!best || (mode==="min"? n<best.v : n>best.v)) best={v:n,d:d.date}; }); return best; };
-  const tr=tb("pullups","max"); if(tr) R.push(["Tractions (test)", String(tr.v), tr.d, "--accent"]);
-  const pu=tb("pushups","max"); if(pu) R.push(["Pompes (test)", String(pu.v), pu.d, "--accent"]);
-  const mi=tb("mile","min"); if(mi) R.push(["1,6 km (test)", fmtSec(mi.v), mi.d, "--gold"]);
+  const wa=top("water","max"); if(wa) R.push(["Eau en une journée", fmtNum(wa.v,2)+" L", wa.d, "--weight"]);
   box.innerHTML = R.length ? R.map(([l,v,d,c,pre])=>`<div class="rec" style="--c:var(${c})"><span>${esc(l)}</span><b>${esc(v)}</b><em>${pre||"le "}${fmtShort(d)}</em></div>`).join("")
     : '<p class="empty" style="grid-column:1/-1">Tes records apparaîtront ici dès tes premières saisies.</p>';
 }
@@ -1804,12 +1776,11 @@ function renderTrends(){
   $("#st-steps").innerHTML = stat(fmtNum(avg(sv)),"pas / jour en moyenne",weekDelta("steps","up"))+stat(fmtNum(sv.length?Math.max(...sv):null),"meilleure journée");
   $("#ch-steps").innerHTML = barChart(s,css("--steps"),"pas",0,{target:10000});
   const sl=series("sleepHours").map(p=>({...p,q:days[p.d]?.sleepQuality})), slv=sl.filter(p=>p.v!=null).map(p=>p.v);
-  $("#st-sleep").innerHTML = stat(fmtH(avg(slv)),"moyenne par nuit",weekDelta("sleepHours","up",1," h"))+stat(fmtNum(avg(sl.map(p=>p.q)),1)+"/5","qualité moyenne")+stat(slv.filter(v=>v<6).length,"nuits sous 6 h");
-  $("#ch-sleep").innerHTML = barChart(sl,css("--sleep"),"h",1,{min:9,target:7,opacity:p=>p.q!=null?.3+p.q*.14:.6,extra:p=>p.q!=null?` · qualité ${p.q}/5`:""});
-  const end=todayIso(), tp=[]; let nb=0, rpes=[], pl=[];
-  for(let i=rangeDays-1;i>=0;i--){ const d=addDays(end,-i), ss=days[d]?.sessions||[]; nb+=ss.length; ss.forEach(x=>{x.rpe&&rpes.push(x.rpe); x.pleasure!=null&&pl.push(x.pleasure);}); tp.push({d,v:ss.length||null}); }
-  $("#st-train").innerHTML = stat(nb,"séances",sessionsDelta())+stat(fmtNum(nb/(rangeDays/7),1),"par semaine")+stat(pl.length?fmtNum(avg(pl),1)+"/5":"–","plaisir moyen")+stat(rpes.length?fmtNum(avg(rpes),1):"–","RPE moyen");
-  $("#ch-train").innerHTML = barChart(tp,css("--train"),"séance(s)",0,{min:2,record:false});
+  $("#st-sleep").innerHTML = stat(fmtH(avg(slv)),"moyenne par nuit",weekDelta("sleepHours","up",1," h"))+stat(slv.filter(v=>v>=7).length,"nuits de 7 h ou plus")+stat(slv.filter(v=>v<6).length,"nuits sous 6 h");
+  $("#ch-sleep").innerHTML = barChart(sl,css("--sleep"),"h",1,{min:9,target:7});
+  const wt=series("water"), wtv=wt.filter(p=>p.v!=null).map(p=>p.v);
+  $("#st-water").innerHTML = stat(wtv.length?fmtNum(avg(wtv),2)+" L":"–","par jour en moyenne",weekDelta("water","up",2," L"))+stat(wtv.filter(v=>v>=2.5).length,"jours à 2,5 L ou plus")+stat(wtv.length,"jours renseignés");
+  $("#ch-water").innerHTML = barChart(wt,css("--weight"),"L",2,{target:2.5,min:3});
 }
 $$("#range button").forEach(b=>b.onclick=()=>{ rangeDays=Number(b.dataset.days); $$("#range button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); renderTrends(); });
 
@@ -1824,7 +1795,8 @@ function renderHistory(){
     const d=days[k], dt=parseIso(k), chips=[];
     if(d.weight!=null) chips.push(`${fmtNum(d.weight,1)} kg`);
     if(d.steps!=null) chips.push(`${fmtNum(d.steps)} pas`);
-    if(d.sleepHours!=null) chips.push(`${fmtH(d.sleepHours)} sommeil${d.sleepQuality!=null?` (${d.sleepQuality}/5)`:""}`);
+    if(d.sleepHours!=null) chips.push(`${fmtH(d.sleepHours)} sommeil`);
+    if(d.water!=null) chips.push(`${fmtNum(d.water,2)} L d'eau`);
     (d.sessions||[]).forEach(s=>chips.push(`${s.title||s.type}`));
     if(d.cardio) chips.push("Cardio "+d.cardio);
     const note = d.note || (d.sessions||[]).map(s=>s.feeling).filter(Boolean).join(" — ");
