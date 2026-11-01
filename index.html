@@ -460,6 +460,21 @@ section.panel h2.b7-title::before{display:none}
 .race-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .race-cd{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:2.4rem;line-height:1;color:var(--steps);font-style:italic}
 
+/* notifications */
+.notif-prefs{display:grid;gap:8px;margin-top:12px}
+.np{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);background:var(--field);border-radius:12px}
+.np .t{flex:1;min-width:0}
+.np .t b{display:block;font-size:.95rem}
+.np .t span{display:block;font-size:.78rem;color:var(--muted)}
+.np input[type=time]{width:96px;flex:none;padding:6px 8px;background:var(--surface);border:1px solid var(--line);border-radius:8px;color:var(--ink);font:inherit;font-size:16px}
+.sw{position:relative;width:46px;height:28px;flex:none}
+.sw input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.sw i{position:absolute;inset:0;border-radius:999px;background:var(--line);transition:background .2s}
+.sw i::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s}
+.sw input:checked + i{background:var(--accent)}
+.sw input:checked + i::after{transform:translateX(18px);background:#0B0D10}
+.sw input:focus-visible + i{outline:2px solid var(--accent);outline-offset:2px}
+
 /* ---------- Mobile (iPhone) ---------- */
 nav.bottom-nav{display:none}
 .wide-only{display:inline}
@@ -896,6 +911,13 @@ nav.bottom-nav{display:none}
       <textarea id="xfer" class="bilan" hidden style="margin-top:12px;width:100%"></textarea>
       <div class="row" id="xferActions" hidden style="margin-top:8px"><button class="btn small" id="xferCopy">Copier</button><button class="btn small" id="xferApply">Importer ce contenu</button><span class="save-msg" id="xferMsg"></span></div>
     </section>
+    <section class="panel" id="notifPanel">
+      <h2>Notifications <small>sur l'iPhone</small></h2>
+      <p id="notifStatus" style="margin:0 0 10px;font-weight:600"></p>
+      <div class="row" id="notifActions"></div>
+      <div id="notifPrefs" class="notif-prefs" hidden></div>
+      <p class="hint" id="notifHint" style="margin:10px 0 0">Chaque rappel n'arrive que s'il est utile : pas de pesée notée, eau en retard, séance pas encore faite.</p>
+    </section>
     <section class="panel" id="remindPanel">
       <h2>Objectifs du jour &amp; rappels</h2>
       <div class="grid">
@@ -907,14 +929,7 @@ nav.bottom-nav{display:none}
       <label class="chk" style="margin-top:12px"><input type="checkbox" id="remWeigh"> Rappel de pesée le matin (dans l'app, avant midi)</label>
       <label class="chk" style="margin-top:6px"><input type="checkbox" id="remWater"> Rappel d'eau l'après-midi (sous 60 % de l'objectif après 16 h)</label>
       <span class="save-msg" id="remMsg"></span>
-      <details class="more" style="margin-top:8px"><summary>Recevoir une vraie notification sur l'iPhone</summary>
-        <ol class="howto">
-          <li>App <b>Raccourcis</b> → <b>Automatisation</b> → <b>+</b> → <b>Heure de la journée</b> (ex. <b>8:00</b>, quotidiennement) → <b>Exécuter immédiatement</b> → <b>Nouveau raccourci vide</b>.</li>
-          <li>Ajoute l'action <b>Afficher une notification</b> : « Pesée du matin 🏋️ ».</li>
-          <li>Refais-en une à <b>16:00</b> pour l'eau (« Eau : où en es-tu ? 💧 »).</li>
-        </ol>
-        <p class="hint" style="margin:6px 0 0">Les rappels dans l'app restent discrets : une ligne dans la carte « Aujourd'hui », jamais de pop-up.</p>
-      </details>
+      <p class="hint" style="margin:8px 0 0">Ces deux rappels-là s'affichent discrètement dans la carte « Aujourd'hui ».</p>
     </section>
     <section class="panel" id="healthPanel">
       <h2>Santé automatique <small>pas et sommeil depuis l'iPhone</small></h2>
@@ -2126,7 +2141,7 @@ function renderHealth(){
 }
 $("#healthCopy").onclick=async()=>{ try{ await navigator.clipboard.writeText($("#healthUrl").textContent); $("#healthCopy").textContent="Copié ✓"; }catch(e){ $("#healthCopy").textContent="Sélectionne l'adresse"; } setTimeout(()=>$("#healthCopy").textContent="Copier",2000); };
 function renderHistory(){
-  renderHealth(); renderRemind();
+  renderHealth(); renderRemind(); renderNotif();
   const missing = Object.keys(HISTORY_SEED).filter(k=>!days[k]);
   $("#importPanel").hidden = !missing.length;
   $("#importText").textContent = `Ton semainier Excel contient ${Object.keys(HISTORY_SEED).length} journées (22 juin → 12 sept. 2026). ${missing.length} ne sont pas encore dans le carnet. L'import n'écrase aucune journée déjà saisie.`;
@@ -2752,6 +2767,60 @@ async function saveRemind(){
 ["#goalWater","#goalSteps","#goalStepsMax","#goalSleep"].forEach(id=>$(id).addEventListener("change",saveRemind));
 ["#remWeigh","#remWater"].forEach(id=>$(id).addEventListener("change",saveRemind));
 
+/* ---------- notifications push ---------- */
+const NOTIF_LBL = {
+  weigh:{t:"⚖️ Pesée du matin", d:"seulement si tu n'es pas encore pesé"},
+  session:{t:"💪 Séance du jour", d:"les jours de séance, si elle n'est pas notée"},
+  water:{t:"💧 Eau", d:"si tu es sous 60 % de ton objectif"},
+  recap:{t:"📊 Récap du dimanche", d:"le dimanche, avec l'image pour le coach"}};
+let pushInfo=null;
+const isStandalone = () => window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true;
+const pushSupported = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+function b64u(s){ const p="=".repeat((4-s.length%4)%4), b=atob((s+p).replace(/-/g,"+").replace(/_/g,"/")); return Uint8Array.from(b,c=>c.charCodeAt(0)); }
+async function mySub(){ try{ const r=await navigator.serviceWorker.ready; return await r.pushManager.getSubscription(); }catch(e){ return null; } }
+async function renderNotif(){
+  const st=$("#notifStatus"), act=$("#notifActions"), pr=$("#notifPrefs");
+  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
+  if(!pushSupported()){
+    st.innerHTML = ios && !isStandalone() ? `<span style="color:var(--gold)">● Ouvre le carnet depuis son icône</span>` : `<span style="color:var(--muted)">○ Non disponible sur ce navigateur</span>`;
+    act.innerHTML = ""; pr.hidden=true;
+    $("#notifHint").innerHTML = ios ? "Sur iPhone, les notifications ne marchent que dans l'app ajoutée à l'écran d'accueil (Safari → Partager → Sur l'écran d'accueil), avec iOS 16.4 ou plus." : "Ce navigateur ne gère pas les notifications web.";
+    return;
+  }
+  try{ pushInfo = await api("GET","push"); }catch(e){ st.innerHTML=`<span style="color:var(--muted)">○ Serveur injoignable pour l'instant</span>`; act.innerHTML=""; return; }
+  const sub = await mySub(), perm = Notification.permission;
+  if(perm==="denied"){ st.innerHTML=`<span style="color:var(--warn)">● Bloquées</span> · réautorise-les dans Réglages → Notifications → Carnet`; act.innerHTML=""; pr.hidden=true; return; }
+  if(sub){
+    st.innerHTML=`<span style="color:var(--good)">● Activées</span> sur cet appareil`;
+    act.innerHTML=`<button type="button" class="btn ghost small" id="notifTest">Envoyer un test</button><button type="button" class="btn danger" id="notifOff">Désactiver ici</button><span class="save-msg" id="notifMsg"></span>`;
+    $("#notifTest").onclick=async()=>{ $("#notifMsg").textContent="Envoi…"; try{ const r=await api("POST","push",{action:"test"}); $("#notifMsg").textContent = r.sent? "Envoyé ✓ (arrive dans quelques secondes)":"Aucun appareil joignable."; }catch(e){ $("#notifMsg").textContent="Échec de l'envoi."; } };
+    $("#notifOff").onclick=async()=>{ try{ await api("POST","push",{action:"unsubscribe", endpoint:sub.endpoint}); }catch(e){} try{ await sub.unsubscribe(); }catch(e){} renderNotif(); };
+  } else {
+    st.innerHTML=`<span style="color:var(--muted)">○ Pas encore activées sur cet appareil</span>`;
+    act.innerHTML=`<button type="button" class="btn" id="notifOn">🔔 Activer les notifications</button><span class="save-msg" id="notifMsg"></span>`;
+    $("#notifOn").onclick=async()=>{
+      $("#notifMsg").textContent="";
+      try{
+        const p = await Notification.requestPermission();
+        if(p!=="granted"){ $("#notifMsg").textContent="Autorisation refusée."; return renderNotif(); }
+        const reg = await navigator.serviceWorker.ready;
+        const s = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64u(pushInfo.publicKey)});
+        await api("POST","push",{action:"subscribe", subscription:s.toJSON(), tz:Intl.DateTimeFormat().resolvedOptions().timeZone});
+        await api("POST","push",{action:"test"}).catch(()=>{});
+        renderNotif();
+      }catch(e){ $("#notifMsg").textContent="Activation impossible : "+(e.message||e); }
+    };
+  }
+  // préférences (communes à tous tes appareils)
+  pr.hidden=false;
+  pr.innerHTML = Object.entries(NOTIF_LBL).map(([k,l])=>{ const p=pushInfo.prefs[k]||{}; return `<div class="np"><label class="sw"><input type="checkbox" data-np="${k}" ${p.on?"checked":""} aria-label="${esc(l.t)}"><i></i></label><div class="t"><b>${l.t}</b><span>${l.d}</span></div><input type="time" data-nt="${k}" value="${p.at||""}" aria-label="Heure ${esc(l.t)}"></div>`; }).join("");
+  const save=async()=>{ const prefs={}; Object.keys(NOTIF_LBL).forEach(k=>prefs[k]={on:pr.querySelector(`[data-np="${k}"]`).checked, at:pr.querySelector(`[data-nt="${k}"]`).value||pushInfo.prefs[k].at});
+    try{ const r=await api("POST","push",{action:"prefs", prefs, tz:Intl.DateTimeFormat().resolvedOptions().timeZone}); pushInfo.prefs=r.prefs; if($("#notifMsg")){ $("#notifMsg").textContent="Enregistré ✓"; setTimeout(()=>{ if($("#notifMsg")) $("#notifMsg").textContent=""; },1500); } }catch(e){} };
+  pr.querySelectorAll("input").forEach(i=>i.addEventListener("change",save));
+}
+// ouverture depuis une notification (ex. ?tab=sem)
+(()=>{ try{ const t=new URLSearchParams(location.search).get("tab"); if(t) window.__openTab=t; }catch(e){} })();
+
 /* ---------- onglets ---------- */
 const TABS=["jour","b7","sem","prog","tend","histo"];
 function showTab(t){
@@ -2785,6 +2854,7 @@ function renderAll(reloadForm){
   loadLocal();
   setStatus("Données enregistrées sur cet appareil.");
   renderAll(true);
+  if(window.__openTab && TABS.includes(window.__openTab)){ showTab(window.__openTab); history.replaceState(null,"","/"); }
   initDb();
 })();
 })();

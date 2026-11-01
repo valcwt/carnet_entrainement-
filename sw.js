@@ -1,6 +1,6 @@
 // Service worker : l'app s'ouvre même sans réseau. Les données passent toujours par /api (jamais mises en cache ici) :
 // hors connexion, le carnet garde tes saisies sur l'appareil et les envoie au retour du réseau.
-const VERSION = "carnet-v14";
+const VERSION = "carnet-v15";
 const SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
@@ -21,4 +21,22 @@ self.addEventListener("fetch", (e) => {
   if (url.origin === location.origin || url.hostname.endsWith("gstatic.com") || url.hostname.endsWith("googleapis.com")) {
     e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((r) => { if (r.ok || r.type === "opaque") { const copy = r.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); } return r; })));
   }
+});
+
+// Notifications push (rappels pesée, eau, séance, récap)
+self.addEventListener("push", (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { title: "Carnet", body: e.data ? e.data.text() : "" }; }
+  e.waitUntil(self.registration.showNotification(d.title || "Carnet", {
+    body: d.body || "", tag: d.tag || "carnet", renotify: true,
+    icon: "/icons/icon-192.png", badge: "/icons/icon-192.png", data: { url: d.url || "/" },
+  }));
+});
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || "/";
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if ("focus" in c) { c.navigate?.(url); return c.focus(); } }
+    return self.clients.openWindow(url);
+  }));
 });
