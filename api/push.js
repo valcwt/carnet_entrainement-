@@ -61,7 +61,8 @@ export function localNow(tz, now = new Date()) {
 const fmt = (n, d = 0) => Number(n).toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d });
 
 // Rappels dus maintenant (fonction pure, testée à part)
-export function dueReminders({ prefs, sent, now, day, goals }) {
+export const isPaused = (pauses, date) => (Array.isArray(pauses) ? pauses : []).some((p) => p && p.from <= date && (!p.to || date <= p.to));
+export function dueReminders({ prefs, sent, now, day, goals, pauses }) {
   const out = [];
   const water = Number(goals?.water) || 2.5;
   for (const [id, p] of Object.entries(prefs)) {
@@ -72,7 +73,7 @@ export function dueReminders({ prefs, sent, now, day, goals }) {
     let msg = null;
     if (id === "weigh" && day?.weight == null) msg = { title: "⚖️ Pesée du matin", body: "Monte sur la balance avant le petit-déj, ça prend 10 secondes.", tag: "weigh" };
     if (id === "water") { const w = Number(day?.water) || 0; if (w < water * 0.6) msg = { title: "💧 Pense à boire", body: `${fmt(w, 1)} L pour l'instant : encore ${fmt(water - w, 1)} L pour ton objectif.`, tag: "water" }; }
-    if (id === "session" && now.date >= B7_START && PLAN[now.dow]) {
+    if (id === "session" && now.date >= B7_START && PLAN[now.dow] && !isPaused(pauses, now.date)) { // programme en pause : pas de rappel de séance
       const done = (day?.sessions || []).some((s) => PLAN_KIND[now.dow].includes(s.b7));
       if (!done) msg = { title: `💪 ${PLAN[now.dow]} aujourd'hui`, body: now.dow === 3 || now.dow === 0 ? "Ta sortie du jour selon Kiprun. Note-la dans le carnet en rentrant." : "Ta séance de renfo t'attend. Le minuteur de repos est prêt.", tag: "session" };
     }
@@ -103,7 +104,7 @@ export default async function handler(req, res) {
     if (req.method === "GET" && url.searchParams.get("run")) {
       const now = localNow(st.tz);
       const [dayRows, setRows] = await Promise.all([sb(`days?date=eq.${now.date}&select=data`), sb("settings?id=eq.main&select=data")]);
-      const due = dueReminders({ prefs: st.prefs, sent: st.sent, now, day: dayRows[0]?.data, goals: setRows[0]?.data?.goals });
+      const due = dueReminders({ prefs: st.prefs, sent: st.sent, now, day: dayRows[0]?.data, goals: setRows[0]?.data?.goals, pauses: setRows[0]?.data?.pauses });
       let sent = 0;
       for (const d of due) { if (d.msg && st.subs.length) sent += (await sendAll(st, d.msg)).ok; st.sent[d.key] = 1; }
       // on ne garde que l'historique des 7 derniers jours
