@@ -85,7 +85,7 @@ export function dueReminders({ prefs, sent, now, day, goals, pauses, settings })
     if (id === "water") { const w = Number(day?.water) || 0; if (w < water * 0.6) msg = { title: "💧 Pense à boire", body: `${fmt(w, 1)} L pour l'instant : encore ${fmt(water - w, 1)} L pour ton objectif.`, tag: "water" }; }
     const pl = id === "session" ? plannedToday(settings || {}, now.date, now.dow) : null;
     if (id === "session" && pl && !isPaused(pauses, now.date)) { // programme en pause : pas de rappel de séance
-      const done = (day?.sessions || []).some((s) => pl.keys.includes(s.b7));
+      const done = (day?.sessions || []).some((s) => pl.keys.includes(s.b7) || pl.keys.includes(s.replaces?.k)); // une activité de remplacement compte
       if (!done) msg = { title: `💪 ${pl.label} aujourd'hui`, body: pl.kind === "run" ? "Ta sortie du jour selon Kiprun. Note-la dans le carnet en rentrant." : "Ta séance de renfo t'attend. Le minuteur de repos est prêt.", tag: "session" };
     }
     if (id === "recap" && now.dow === 0) msg = { title: "📊 Ton récap de la semaine", body: "Séances, km, poids, sommeil : tout est prêt, avec l'image pour ton coach.", tag: "recap", url: "/?tab=sem" };
