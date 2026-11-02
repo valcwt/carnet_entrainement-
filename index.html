@@ -358,6 +358,9 @@ section.panel h2.b7-title::before{display:none}
 .pause-on span{flex:1;min-width:150px;font-size:.88rem;color:var(--muted)}
 .pause-btn{border:1px dashed var(--line);background:none;color:var(--muted);border-radius:999px;padding:6px 12px;font-weight:700;font-size:.82rem;cursor:pointer}
 .b7-day.paused{opacity:.55;border-style:dashed}
+.b7-day.swapped{border-style:dashed;border-color:rgba(160,126,255,.5)}
+.b7-day.swapped .t{color:var(--muted)!important;text-decoration:line-through;text-decoration-thickness:2px}
+.b7-day.swapped .s{color:var(--sleep)}
 .b7-day.paused .t{color:var(--muted)!important}
 .pause-dlg{border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--ink);padding:18px;width:min(420px,calc(100vw - 32px))}
 .pause-dlg::backdrop{background:rgba(0,0,0,.6)}
@@ -2446,7 +2449,10 @@ function builtinProgram(){
 }
 const programs = () => [builtinProgram(), ...((S && Array.isArray(S.programs)) ? S.programs.filter(p=>p && p.id!=="b7") : [])];
 const activeProgram = () => programs().find(p=>p.id===(S?.activeProgram||"b7")) || builtinProgram();
-const slotKind = x => x.replaces?.k && B7[x.replaces.k] ? B7[x.replaces.k].kind : B7[x.b7]?.kind; // remplacement : compte comme la séance remplacée
+// Une séance de remplacement compte pour ce qu'elle est vraiment (un vélo n'est pas un renfo) :
+// la séance prévue est seulement « excusée » (plus de « pas notée », pas de rappel, série non cassée).
+const kindOf = x => B7[x.b7]?.kind;
+const excusedKind = x => x.replaces?.k && B7[x.replaces.k] && B7[x.replaces.k].kind!==kindOf(x) ? B7[x.replaces.k].kind : null;
 const TGT = () => ({ r: B7_PLAN.filter(p=>B7[p.k]?.kind==="renfo").length, c: B7_PLAN.filter(p=>B7[p.k]?.kind==="run").length });
 function applyProgram(){
   const P=activeProgram(), all={};
@@ -2510,15 +2516,16 @@ function renderB7(){
   else $("#b7Week").innerHTML = B7_PLAN.map(p=>{
     const d=addDays(mon,p.dow), P=B7[p.k];
     const done = wk.find(x=>x.b7===p.k || (P.kind==="renfo" && x.b7===("T"+p.k)) || x.replaces?.k===p.k);
-    const pz = !done && pauseOn(d);
-    return `<button type="button" class="b7-day ${P.kind}${d===t?" today":""}${done?" done":""}${pz?" paused":""}" data-k="${p.k}" data-d="${d}"><span class="d">${p.d}</span><span class="t">${P.short}</span><span class="s">${done?(done.replaces?.k===p.k?`↔ ${esc(done.title||"remplacée")}`:done.run?.km?fmtNum(done.run.km,1)+" km":"fait"):pz?"⏸ en pause":d<t?"pas notée":d===t?"aujourd'hui":fmtShort(d)}</span></button>`;
+    const pz = !done && pauseOn(d), swapped = done && done.replaces?.k===p.k;
+    return `<button type="button" class="b7-day ${P.kind}${d===t?" today":""}${done&&!swapped?" done":""}${swapped?" swapped":""}${pz?" paused":""}" data-k="${p.k}" data-d="${d}"><span class="d">${p.d}</span><span class="t">${P.short}</span><span class="s">${done?(done.replaces?.k===p.k?`↔ ${esc(done.title||"remplacée")}`:done.run?.km?fmtNum(done.run.km,1)+" km":"fait"):pz?"⏸ en pause":d<t?"pas notée":d===t?"aujourd'hui":fmtShort(d)}</span></button>`;
   }).join("");
   $$("#b7Week .b7-day").forEach(b=>b.onclick=()=>{ b7Open(b.dataset.d, b.dataset.k, false, (b7DaySessions(b.dataset.d).find(x=>x.b7===b.dataset.k)||{}).id); $("#b7Log").scrollIntoView?.({behavior:"smooth",block:"start"}); });
-  const nR=wk.filter(x=>slotKind(x)==="renfo").length, nC=wk.filter(x=>slotKind(x)==="run").length, km=wk.reduce((a,x)=>a+(x.run?.km||0),0);
-  const nX=wk.filter(x=>B7[x.b7]?.kind==="other" && !x.replaces).length;
+  const nR=wk.filter(x=>kindOf(x)==="renfo").length, nC=wk.filter(x=>kindOf(x)==="run").length, km=wk.reduce((a,x)=>a+(x.run?.km||0),0);
+  const nRep=wk.filter(x=>x.replaces?.k).length;
+  const nX=wk.filter(x=>B7[x.b7]?.kind==="other").length;
   const pd=pausedDays(mon);
   if(pd) { $("#b7WeekHint").textContent = `⏸ ${pd===7?"Semaine en pause":`${pd} jour${pd>1?"s":""} en pause cette semaine`} : rien à rattraper.${nR+nC+nX?` Séances notées quand même : ${nR+nC+nX}${km?` · ${fmtNum(km,1)} km`:""}.`:""}`; }
-  else $("#b7WeekHint").textContent = `Cette semaine : ${nR}/${TGT().r} renfo · ${nC}/${TGT().c} course${TGT().c>1?"s":""}${km?` · ${fmtNum(km,1)} km`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}.${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}`;
+  else $("#b7WeekHint").textContent = `Cette semaine : ${nR}/${TGT().r} renfo · ${nC}/${TGT().c} course${TGT().c>1?"s":""}${km?` · ${fmtNum(km,1)} km`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}${nRep?` · ${nRep} séance${nRep>1?"s":""} remplacée${nRep>1?"s":""} (non comptée${nRep>1?"s":""} comme ${nRep>1?"prévues":"prévue"})`:""}.`;
   if(!b7Kind) b7Open($("#b7Date").value || t, null, true);
   renderB7Hist(); renderStrength(); renderRace(); renderB7Recent();
 }
@@ -2667,7 +2674,7 @@ function renderB7Hist(){
   for(let w=0; w<8; w++){
     const m=addDays(mon,-7*w), e=addDays(m,6), ws=all.filter(x=>x.date>=m&&x.date<=e);
     if(m<B7_START && !ws.length) continue;
-    const nR=ws.filter(x=>slotKind(x)==="renfo").length, nC=ws.filter(x=>slotKind(x)==="run").length;
+    const nR=ws.filter(x=>kindOf(x)==="renfo").length, nC=ws.filter(x=>kindOf(x)==="run").length;
     const km=ws.reduce((a,x)=>a+(x.run?.km||0),0), sec=ws.reduce((a,x)=>a+(parseTime(x.run?.dur)||0),0), fe=avg(ws.map(x=>x.feel));
     const wn=b7WeekNo(m), wp=weekPaused(m);
     const open=b7HistOpen===m, det = open ? `<tr class="wk-open"><td colspan="6" class="l">${weekDetail(m)}</td></tr>` : "";
@@ -2755,13 +2762,13 @@ function renderToday(){
     btn = `<button type="button" class="go ghost" id="todayGo">Voir le programme →</button>`; }
   else if(plan){ const P=B7[plan.k]; k=plan.k; done=list.find(x=>x.b7===plan.k || x.b7==="T"+plan.k || x.replaces?.k===plan.k); cls=P.kind==="run"?"run":"";
     wm=P.short; kick=`${when} · ${dayLbl}${wn>=1?` · S${wn}`:""}`; title=P.short;
-    sub = done && done.replaces?.k===plan.k ? `Remplacée par ${esc(done.title)} · bien joué.` : done ? (done.run?.km ? `${fmtNum(done.run.km,1)} km${done.run.dur?` en ${esc(done.run.dur)}`:""} · bien joué.` : "Séance notée · bien joué.") : P.kind==="run" ? `${esc(P.label)} · selon ton plan Kiprun.` : `${esc(P.label)} · ${P.ex.length} exercices · ~50 min.`;
+    sub = done && done.replaces?.k===plan.k ? `Remplacée par ${esc(done.title)} · pas comptée comme ${esc(B7[plan.k].short)}.` : done ? (done.run?.km ? `${fmtNum(done.run.km,1)} km${done.run.dur?` en ${esc(done.run.dur)}`:""} · bien joué.` : "Séance notée · bien joué.") : P.kind==="run" ? `${esc(P.label)} · selon ton plan Kiprun.` : `${esc(P.label)} · ${P.ex.length} exercices · ~50 min.`;
     btn = `<button type="button" class="go${done?" ghost":""}" id="todayGo">${done?"Voir la séance":"Commencer →"}</button>`; }
   else { cls="recup"; wm="Repos"; k="R"; kick=`${when} · ${dayLbl}${wn>=1?` · S${wn}`:""}`; title="Récup";
     sub = list.length ? list.map(x=>esc(x.title)).join(" · ") : "Pas de séance prévue. Une sortie facile si tu en as envie.";
     btn=`<button type="button" class="go ghost" id="todayGo">+ Ajouter une séance</button>`; }
   $("#todayPlan").className = `hero ${cls}${done?" done":""}`;
-  $("#todayPlan").innerHTML = `<span class="wm" aria-hidden="true">${esc(wm)}</span>${done?`<span class="badge-done">✓ Fait</span>`:""}<div class="kick"><i></i>${kick}</div><h2>${esc(title)}</h2><p class="sub">${sub}</p>${btn}`;
+  $("#todayPlan").innerHTML = `<span class="wm" aria-hidden="true">${esc(wm)}</span>${done?(done.replaces?.k&&done.replaces.k===k?`<span class="badge-done" style="color:var(--sleep);border-color:rgba(160,126,255,.45);background:rgba(160,126,255,.14)">↔ Remplacée</span>`:`<span class="badge-done">✓ Fait</span>`):""}<div class="kick"><i></i>${kick}</div><h2>${esc(title)}</h2><p class="sub">${sub}</p>${btn}`;
   $("#todayGo").onclick=()=>{ showTab("b7"); if(k) b7Open(d<B7_START?B7_START:d, k, false, (list.find(x=>x.b7===k)||{}).id); setTimeout(()=>$(k?"#b7Log":"#b7Week").scrollIntoView?.({behavior:"smooth",block:"start"}),60); };
   // tuiles
   const tile=(key,lbl,val,disp,unit,frac,goalTxt,full,zone)=>`<div class="tile ${key}${full?" hit":""}">${full?'<span class="ok">✓</span>':""}<div class="tl">${TICON[key]}${lbl}</div><div class="tv">${disp}<small>${unit}</small></div><div class="tg">${goalTxt}</div><div class="bar">${zone||""}<b style="width:${Math.round(Math.max(0,Math.min(1,frac))*100)}%"></b></div></div>`;
@@ -2897,9 +2904,9 @@ $("#raceSave").onclick=async()=>{
 };
 
 /* ---- récap de la semaine + série ---- */
-function weekDone(m){ const ws=b7Sessions().filter(x=>x.date>=m&&x.date<=addDays(m,6)); return { r:ws.filter(x=>slotKind(x)==="renfo").length, c:ws.filter(x=>slotKind(x)==="run").length, ws }; }
+function weekDone(m){ const ws=b7Sessions().filter(x=>x.date>=m&&x.date<=addDays(m,6)); return { r:ws.filter(x=>kindOf(x)==="renfo").length, c:ws.filter(x=>kindOf(x)==="run").length, exR:ws.filter(x=>excusedKind(x)==="renfo").length, exC:ws.filter(x=>excusedKind(x)==="run").length, ws }; }
 function streak(){
-  let m=mondayOf(todayIso()), n=0; const T=TGT(), full=w=>w.r>=T.r&&w.c>=T.c&&(T.r+T.c)>0, cur=weekDone(m); if(!full(cur)) m=addDays(m,-7); // la semaine en cours compte seulement si elle est déjà complète
+  let m=mondayOf(todayIso()), n=0; const T=TGT(), full=w=>w.r+(w.exR||0)>=T.r&&w.c+(w.exC||0)>=T.c&&(T.r+T.c)>0, cur=weekDone(m); if(!full(cur)) m=addDays(m,-7); // la semaine en cours compte seulement si elle est déjà complète
   while(m>=B7_START){ const w=weekDone(m); if(full(w)){ n++; m=addDays(m,-7); } else if(weekPaused(m)){ m=addDays(m,-7); } else break; } // semaine en pause : sautée, la série continue
   return n;
 }
@@ -2917,8 +2924,8 @@ function renderRecap(mon){
     + card("Pas / jour", W.steps!=null?fmtNum(W.steps):"–", "")
     + card("Sommeil", W.sleep!=null?fmtH(W.sleep):"–", "par nuit")
     + card("Eau", W.water!=null?fmtNum(W.water,2)+" L":"–", "par jour");
-  const pdays=pausedDays(mon);
-  $("#recapNote").textContent = [pdays?(pdays>=4?`⏸ ${pdays===7?"Semaine en pause":`${pdays} jours en pause`} : pas d'objectif de séances cette semaine.`:`⏸ ${pdays} jour${pdays>1?"s":""} en pause cette semaine.`):"", pains.length ? `Douleurs notées : ${[...new Set(pains.map(p=>p.zone))].join(", ")}.` : ""].filter(Boolean).join(" ");
+  const pdays=pausedDays(mon), nRepW=D.ws.filter(x=>x.replaces?.k).length;
+  $("#recapNote").textContent = [pdays?(pdays>=4?`⏸ ${pdays===7?"Semaine en pause":`${pdays} jours en pause`} : pas d'objectif de séances cette semaine.`:`⏸ ${pdays} jour${pdays>1?"s":""} en pause cette semaine.`):"", nRepW?`↔ ${nRepW} séance${nRepW>1?"s":""} remplacée${nRepW>1?"s":""} par une autre activité.`:"", pains.length ? `Douleurs notées : ${[...new Set(pains.map(p=>p.zone))].join(", ")}.` : ""].filter(Boolean).join(" ");
   recapData={mon, W, D, km, dW, st, pains};
   $("#recapImg").hidden=true; $("#recapMsg").textContent="";
 }
