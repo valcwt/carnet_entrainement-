@@ -86,7 +86,7 @@ export function dueReminders({ prefs, sent, now, day, goals, pauses, settings })
     const pl = id === "session" ? plannedToday(settings || {}, now.date, now.dow) : null;
     if (id === "session" && pl && !isPaused(pauses, now.date)) { // programme en pause : pas de rappel de séance
       const done = (day?.sessions || []).some((s) => pl.keys.includes(s.b7));
-      if (!done) msg = { title: `💪 ${pl.label} aujourd'hui`, body: pl.kind === "run" ? "Ta sortie du jour selon Kiprun. Note-la dans Grit en rentrant." : "Ta séance de renfo t'attend. Le minuteur de repos est prêt.", tag: "session" };
+      if (!done) msg = { title: `💪 ${pl.label} aujourd'hui`, body: pl.kind === "run" ? "Ta sortie du jour selon Kiprun. Note-la dans Varg en rentrant." : "Ta séance de renfo t'attend. Le minuteur de repos est prêt.", tag: "session" };
     }
     if (id === "recap" && now.dow === 0) msg = { title: "📊 Ton récap de la semaine", body: "Séances, km, poids, sommeil : tout est prêt, avec l'image pour ton coach.", tag: "recap", url: "/?tab=sem" };
     out.push({ id, key, msg }); // msg null = condition déjà remplie : on marque quand même pour ne pas revérifier
@@ -95,7 +95,7 @@ export function dueReminders({ prefs, sent, now, day, goals, pauses, settings })
 }
 
 async function sendAll(st, payload) {
-  webpush.setVapidDetails("mailto:grit@example.com", st.vapid.publicKey, st.vapid.privateKey);
+  webpush.setVapidDetails("mailto:varg@example.com", st.vapid.publicKey, st.vapid.privateKey);
   let ok = 0; const keep = [];
   for (const sub of st.subs) {
     try { await webpush.sendNotification(sub, JSON.stringify(payload), { TTL: 3600, urgency: "normal" }); ok++; keep.push(sub); }
@@ -152,7 +152,7 @@ export default async function handler(req, res) {
       }
       if (b.action === "test") {
         if (!st.subs.length) return res.status(400).json({ error: "Aucun appareil abonné." });
-        const r = await sendAll(st, { title: "✅ Notifications activées", body: "Grit pourra te rappeler la pesée, l'eau et tes séances.", tag: "test" });
+        const r = await sendAll(st, { title: "✅ Notifications activées", body: "Varg pourra te rappeler la pesée, l'eau et tes séances.", tag: "test" });
         if (r.changed) await saveState(st);
         return res.status(200).json({ ok: true, sent: r.ok });
       }

@@ -1,6 +1,6 @@
 // Service worker : l'app s'ouvre même sans réseau. Les données passent toujours par /api (jamais mises en cache ici) :
 // hors connexion, le carnet garde tes saisies sur l'appareil et les envoie au retour du réseau.
-const VERSION = "grit-v22";
+const VERSION = "varg-v23";
 const SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
@@ -26,8 +26,8 @@ self.addEventListener("fetch", (e) => {
 // Notifications push (rappels pesée, eau, séance, récap)
 self.addEventListener("push", (e) => {
   let d = {};
-  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { title: "Grit", body: e.data ? e.data.text() : "" }; }
-  e.waitUntil(self.registration.showNotification(d.title || "Grit", {
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { title: "Varg", body: e.data ? e.data.text() : "" }; }
+  e.waitUntil(self.registration.showNotification(d.title || "Varg", {
     body: d.body || "", tag: d.tag || "carnet", renotify: true,
     icon: "/icons/icon-192.png", badge: "/icons/icon-192.png", data: { url: d.url || "/" },
   }));
