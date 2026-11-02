@@ -1,7 +1,7 @@
 {
-  "name": "Carnet d'entraînement",
-  "short_name": "Carnet",
-  "description": "Séances, condition physique et préparation Murph.",
+  "name": "Grit",
+  "short_name": "Grit",
+  "description": "Grit — séances, course, poids, sommeil et eau.",
   "lang": "fr",
   "start_url": "/",
   "scope": "/",
