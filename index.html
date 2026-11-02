@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Varg</title>
+<title>Grit</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Varg">
+<meta name="apple-mobile-web-app-title" content="Grit">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -295,7 +295,6 @@ body.booting{background:radial-gradient(120% 60% at 50% 0%,rgba(198,244,50,.10),
   background:radial-gradient(120% 60% at 50% 0%,rgba(198,244,50,.13),transparent 60%),var(--bg)}
 .lock-in{width:100%;max-width:320px;display:flex;flex-direction:column;align-items:center;text-align:center}
 .lock-mark{width:64px;height:64px;border-radius:18px;background:var(--accent);display:grid;place-items:center;box-shadow:0 10px 30px -10px var(--accent)}
-.lock-logo svg{display:block;border-radius:20px;box-shadow:0 10px 30px -10px rgba(198,244,50,.5)}
 .lock-mark span{font:italic 900 2.6rem/1 "Barlow Condensed",sans-serif;color:var(--on-accent);transform:translateX(-1px)}
 .lock h1{font-size:2.4rem;font-style:italic;margin-top:14px}
 .lock-sub{margin:2px 0 22px;color:var(--muted)}
@@ -604,8 +603,8 @@ nav.bottom-nav{display:none}
 <body class="booting">
 <div id="lock" class="lock" hidden role="dialog" aria-modal="true" aria-labelledby="lockTitle">
   <div class="lock-in">
-    <div class="lock-logo" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="76" height="76" viewBox="0 0 100 100"><defs><radialGradient id="lh" cx="50%" cy="45%" r="55%"><stop offset="0" stop-color="#C6F432" stop-opacity=".25"/><stop offset="1" stop-color="#C6F432" stop-opacity="0"/></radialGradient><filter id="lg" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect width="100" height="100" rx="22" fill="#0B0D10"/><g transform="translate(9,8) scale(.82)"><polygon points="22,6 36,27 17,36" fill="#232931" /><polygon points="78,6 64,27 83,36" fill="#1b1f26" /><polygon points="23,13 32,27 20,32" fill="#262d35" /><polygon points="77,13 68,27 80,32" fill="#1d2329" /><polygon points="36,27 50,33 50,46 30,44" fill="#252b33" /><polygon points="64,27 50,33 50,46 70,44" fill="#1c2127" /><polygon points="17,36 36,27 30,44 14,48" fill="#20252c" /><polygon points="83,36 64,27 70,44 86,48" fill="#181c22" /><polygon points="14,48 30,44 38,60 8,52" fill="#1e242a" /><polygon points="86,48 70,44 62,60 92,52" fill="#171c20" /><polygon points="8,52 38,60 17,58" fill="#1b2026" /><polygon points="92,52 62,60 83,58" fill="#15181d" /><polygon points="17,58 38,60 11,67" fill="#1d2228" /><polygon points="83,58 62,60 89,67" fill="#161a1f" /><polygon points="11,67 38,60 26,72" fill="#1a1e24" /><polygon points="89,67 62,60 74,72" fill="#14171c" /><polygon points="38,60 50,58 50,80 42,78" fill="#232931" /><polygon points="62,60 50,58 50,80 58,78" fill="#1b1f26" /><polygon points="26,72 38,60 42,78 34,85" fill="#181c22" /><polygon points="74,72 62,60 58,78 66,85" fill="#12151a" /><polygon points="34,85 42,78 50,80 50,97" fill="#171a1f" /><polygon points="66,85 58,78 50,80 50,97" fill="#111418" /><polygon points="50,46 50,58 38,60 30,44" fill="#22272f" /><polygon points="50,46 50,58 62,60 70,44" fill="#1a1e24" /><polygon points="44,80 56,80 50,87" fill="#0B0D10" /><polygon points="27,48 44,53 32,57" fill="#C6F432" filter="url(#lg)"/><polygon points="73,48 56,53 68,57" fill="#C6F432" filter="url(#lg)"/></g></svg></div>
-    <h1 id="lockTitle">Varg</h1>
+    <div class="lock-mark" aria-hidden="true"><span>G</span></div>
+    <h1 id="lockTitle">Grit</h1>
     <p class="lock-sub">Entre ton code</p>
     <div class="pin-dots" id="pinDots" aria-live="polite"><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <p class="lock-msg" id="lockMsg" role="status"></p>
@@ -627,7 +626,7 @@ nav.bottom-nav{display:none}
 <div class="wrap">
   <header class="top">
     <div>
-      <h1>Varg<em>.</em></h1>
+      <h1>Grit<em>.</em></h1>
       <div class="status" id="status">Chargement…</div>
     </div>
   </header>
@@ -2341,14 +2340,14 @@ function fillMerge(cur, inc){
 }
 $("#xferApply").onclick=async()=>{
   let o; try{ o=JSON.parse($("#xfer").value); }catch(e){ $("#xferMsg").textContent="Contenu invalide : colle l'export complet."; return; }
-  if(!o || typeof o.days!=="object"){ $("#xferMsg").textContent="Ce contenu ne ressemble pas à un export de Varg."; return; }
+  if(!o || typeof o.days!=="object"){ $("#xferMsg").textContent="Ce contenu ne ressemble pas à un export de Grit."; return; }
   const fill = o.mode==="fill";
   if(fill && typeof pullRemote==="function"){ try{ $("#xferMsg").textContent="Lecture des journées existantes…"; await pullRemote(false); }catch(e){ $("#xferMsg").textContent="Impossible de lire tes journées actuelles : vérifie ta connexion et réessaie."; return; } }
   let list=Object.values(o.days).filter(d=>d&&/^\d{4}-\d{2}-\d{2}$/.test(d.date)).map(d=>normalize(d));
   let existing=0;
   if(fill){ list = list.map(d=>{ if(days[d.date]) existing++; return normalize(fillMerge(days[d.date]?clone(days[d.date]):null, d)); }); }
   const msg = fill
-    ? `Compléter ${list.length} journées (${existing} existent déjà dans Varg : leurs cases remplies ne seront pas modifiées, seules les cases vides seront complétées) ?`
+    ? `Compléter ${list.length} journées (${existing} existent déjà dans Grit : leurs cases remplies ne seront pas modifiées, seules les cases vides seront complétées) ?`
     : `Importer ${list.length} journées${o.settings?" et tes réglages (programme, plans)":""} ? Les journées aux mêmes dates seront remplacées.`;
   if(!confirm(msg)) return;
   const btn=$("#xferApply"); btn.disabled=true;
@@ -2933,7 +2932,7 @@ async function recapCanvas(){
   const lines=D.ws.map(x=>`${DOW[parseIso(x.date).getDay()]} · ${x.title}${x.run?.km?` · ${fmtNum(x.run.km,1)} km`:""}`);
   (lines.length?lines:["Aucune séance notée"]).slice(0,4).forEach(l=>{ X.fillText(l,72,y); y+=44; });
   if(st){ X.fillStyle=col("--gold"); X.font='800 40px "Barlow Condensed", sans-serif'; X.fillText(`🔥 ${st} SEMAINE${st>1?"S":""} COMPLÈTE${st>1?"S":""} D'AFFILÉE`,72,1300); }
-  X.fillStyle="#8D97A3"; X.font='600 26px Barlow, sans-serif'; X.textAlign="right"; X.fillText("VARG",w-70,1300);
+  X.fillStyle="#8D97A3"; X.font='600 26px Barlow, sans-serif'; X.textAlign="right"; X.fillText("GRIT",w-70,1300);
   return c;
 }
 $("#recapShare").onclick=async()=>{
@@ -2980,14 +2979,14 @@ async function renderNotif(){
   const st=$("#notifStatus"), act=$("#notifActions"), pr=$("#notifPrefs");
   const ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
   if(!pushSupported()){
-    st.innerHTML = ios && !isStandalone() ? `<span style="color:var(--gold)">● Ouvre Varg depuis son icône</span>` : `<span style="color:var(--muted)">○ Non disponible sur ce navigateur</span>`;
+    st.innerHTML = ios && !isStandalone() ? `<span style="color:var(--gold)">● Ouvre Grit depuis son icône</span>` : `<span style="color:var(--muted)">○ Non disponible sur ce navigateur</span>`;
     act.innerHTML = ""; pr.hidden=true;
     $("#notifHint").innerHTML = ios ? "Sur iPhone, les notifications ne marchent que dans l'app ajoutée à l'écran d'accueil (Safari → Partager → Sur l'écran d'accueil), avec iOS 16.4 ou plus." : "Ce navigateur ne gère pas les notifications web.";
     return;
   }
   try{ pushInfo = await api("GET","push"); }catch(e){ st.innerHTML=`<span style="color:var(--muted)">○ Serveur injoignable pour l'instant</span>`; act.innerHTML=""; return; }
   const sub = await mySub(), perm = Notification.permission;
-  if(perm==="denied"){ st.innerHTML=`<span style="color:var(--warn)">● Bloquées</span> · réautorise-les dans Réglages → Notifications → Varg`; act.innerHTML=""; pr.hidden=true; return; }
+  if(perm==="denied"){ st.innerHTML=`<span style="color:var(--warn)">● Bloquées</span> · réautorise-les dans Réglages → Notifications → Grit`; act.innerHTML=""; pr.hidden=true; return; }
   if(sub){
     st.innerHTML=`<span style="color:var(--good)">● Activées</span> sur cet appareil`;
     act.innerHTML=`<button type="button" class="btn ghost small" id="notifTest">Envoyer un test</button><button type="button" class="btn danger" id="notifOff">Désactiver ici</button><span class="save-msg" id="notifMsg"></span>`;
@@ -3170,7 +3169,7 @@ async function shareCanvas(date, x){
   const st=streak(); X.textAlign="left";
   if(st){ X.fillStyle=css("--gold")||"#FFC93D"; X.font='800 46px "Barlow Condensed", sans-serif'; X.fillText(`🔥 ${st} SEMAINE${st>1?"S":""} D'AFFILÉE`, L, h-130); }
   X.fillStyle="#8D97A3"; X.font='700 32px Barlow, sans-serif'; X.fillText(activeProgram().name.toUpperCase(), L, h-80);
-  X.textAlign="right"; X.fillStyle="#F3F5F7"; X.font='italic 800 44px "Barlow Condensed", sans-serif'; X.fillText("VARG", w-L, h-80);
+  X.textAlign="right"; X.fillStyle="#F3F5F7"; X.font='italic 800 44px "Barlow Condensed", sans-serif'; X.fillText("GRIT", w-L, h-80);
   return c;
 }
 $("#b7Share").onclick=async()=>{
