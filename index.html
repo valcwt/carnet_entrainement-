@@ -402,6 +402,7 @@ details.fold>summary h2{flex:1;margin:0!important}
 details.fold>summary::after{content:"";width:10px;height:10px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s;margin:0 4px 4px 0;flex:none}
 details.fold[open]>summary::after{transform:rotate(-135deg);margin:4px 4px 0 0}
 details.fold[open]>summary{margin-bottom:12px}
+.share-prev{display:block;width:100%;max-width:240px;border-radius:14px;border:1px solid var(--line);margin:12px 0 0}
 .b7-rules{margin:0;padding-left:18px}
 .rec-msg{color:var(--gold)!important;font-weight:600}
 .howto{margin:10px 0 0;padding-left:20px;font-size:.92rem}
@@ -926,8 +927,10 @@ nav.bottom-nav{display:none}
       <div id="b7Form"></div>
       <div class="b7-feel"><span>Sensations (1 = dur · 5 = top)</span><div class="scale" id="b7Feel" role="group" aria-label="Sensations"></div></div>
       <label style="margin-top:12px">Notes<input type="text" id="b7Notes" placeholder="Douleur, fatigue, ce qui a bien marché…"></label>
+      <img id="b7ShareImg" class="share-prev" alt="Image de la séance" hidden>
       <div class="row" style="margin-top:14px">
         <button class="btn" id="b7Save">Enregistrer la séance</button>
+        <button type="button" class="btn ghost" id="b7Share" hidden>📤 Partager</button>
         <button class="btn danger" id="b7Del" hidden>Supprimer</button>
         <span class="save-msg" id="b7Msg"></span>
       </div>
@@ -2568,7 +2571,7 @@ function renderB7Form(){
   paintB7Move();
   b7Feel = prev?.feel ?? null; paintB7Feel();
   $("#b7Notes").value = prev?.note || "";
-  $("#b7Del").hidden = !prev; $("#b7Msg").textContent = ""; $("#b7Msg").className="save-msg";
+  $("#b7Del").hidden = !prev; $("#b7Share").hidden = !prev; $("#b7ShareImg").hidden = true; $("#b7Msg").textContent = ""; $("#b7Msg").className="save-msg";
 }
 function paintB7Feel(){
   $("#b7Feel").innerHTML = [1,2,3,4,5].map(v=>`<button type="button" data-v="${v}" aria-pressed="${b7Feel===v}">${v}</button>`).join("");
@@ -2611,7 +2614,7 @@ $("#b7Save").onclick=async()=>{
   try{ await b7Write(date, list=>{ if(from && !P.multi) list=list.filter(x=>!(x.b7===b7Kind && x.id!==s.id)); const i=list.findIndex(x=>x.id===s.id); if(i>=0) list[i]=s; else list.push(s); return list; });
     if(from) await b7Write(from, list=>list.filter(x=>x.id!==s.id));
     b7EditId = s.id; b7Orig = {id:s.id, date};
-    $("#b7Msg").textContent="✓ Séance enregistrée"; $("#b7Msg").className="save-msg ok"; $("#b7Del").hidden=false; renderB7Form(); $("#b7Msg").innerHTML = recs.length ? `🏆 <b>Record !</b> ${esc(recs.join(" · "))}` : "✓ Séance enregistrée"; $("#b7Msg").className="save-msg ok"+(recs.length?" rec-msg":""); }
+    $("#b7Msg").textContent="✓ Séance enregistrée"; $("#b7Msg").className="save-msg ok"; $("#b7Del").hidden=false; renderB7Form(); $("#b7Msg").innerHTML = (recs.length ? `🏆 <b>Record !</b> ${esc(recs.join(" · "))}` : "✓ Séance enregistrée") + " · tu peux la partager 📤"; $("#b7Msg").className="save-msg ok"+(recs.length?" rec-msg":""); }
   catch(e){ $("#b7Msg").textContent="Enregistrée sur l'appareil, synchronisation plus tard."; }
   if(from && $("#b7Msg").classList.contains("ok") && !$("#b7Msg").classList.contains("rec-msg")) $("#b7Msg").textContent=`✓ Séance déplacée au ${fmtShort(date)}`;
   btn.disabled=false; renderB7Week(); renderB7Hist(); renderStrength(); renderB7Recent(); renderWeek();
@@ -3109,6 +3112,77 @@ $("#pgSave").onclick=async()=>{
   S.programs=(S.programs||[]).filter(x=>x.id!==P.id); S.programs.push(P); S.activeProgram=P.id;
   pgEdit=null; $("#progEd").hidden=true; $("#progLib").hidden=true;
   await afterProgChange(); $("#b7Week").scrollIntoView?.({behavior:"smooth",block:"start"});
+};
+
+/* ---------- partager une séance (image format story 1080 × 1920) ---------- */
+function sessionShareData(date, x){
+  const P=B7[x.b7]||{}, lines=[]; let big=null, bigLbl="", sub="";
+  if(x.run){
+    const km=x.run.km, sec=parseTime(x.run.dur);
+    big = km ? fmtNum(km, km%1?1:0) : (sec?fmtHMS(sec):"✓"); bigLbl = km ? "KILOMÈTRES" : "DURÉE";
+    if(sec) lines.push(["Durée", fmtHMS(sec)]); if(km&&sec) lines.push(["Allure", fmtPace(sec/km)]);
+  } else if(x.sets){
+    let vol=0, nSets=0;
+    Object.entries(x.sets).forEach(([id,sets])=>{ const e=exInfo(id); const done=sets.filter(z=>z.r!=null); if(!done.length) return; nSets+=done.length;
+      done.forEach(z=>{ if(z.c>0) vol+=z.c*z.r; });
+      const best=done.reduce((a,z)=> (e?.time||e?.bw||!(z.c>0)) ? ((z.r||0)>(a?.r||0)?z:a) : ((e1rm(z.c,z.r)||0)>(e1rm(a?.c,a?.r)||0)?z:a), null);
+      lines.push([ (e?.name||id).split(/ [\/(]/)[0], e?.time ? `${done.length} × ${best.r} s` : best.c>0 ? `${fmtNum(best.c,1)} kg × ${best.r}` : `${done.length} × ${best.r}` ]); });
+    big = vol ? fmtNum(Math.round(vol)) : String(nSets); bigLbl = vol ? "KG SOULEVÉS" : "SÉRIES"; sub = `${nSets} série${nSets>1?"s":""}`;
+  }
+  return { title:(x.title||P.label||"Séance"), kind:P.kind||"renfo", big, bigLbl, sub, lines, feel:x.feel, note:x.note };
+}
+async function shareCanvas(date, x){
+  const D=sessionShareData(date,x), w=1080, h=1920, c=document.createElement("canvas"), X=c.getContext("2d"); c.width=w; c.height=h;
+  try{ await document.fonts.load('italic 800 120px "Barlow Condensed"'); await document.fonts.load('800 80px "Barlow Condensed"'); await document.fonts.load('600 40px Barlow'); }catch(e){}
+  const acc = D.kind==="run" ? (css("--steps")||"#22E3A0") : D.kind==="other" ? (css("--sleep")||"#A07EFF") : (css("--accent")||"#C6F432");
+  X.fillStyle="#0B0D10"; X.fillRect(0,0,w,h);
+  let g=X.createRadialGradient(w*0.9,h*0.08,40,w*0.9,h*0.08,1100); g.addColorStop(0,acc+"55"); g.addColorStop(1,"rgba(0,0,0,0)"); X.fillStyle=g; X.fillRect(0,0,w,h);
+  g=X.createRadialGradient(0,h,40,0,h,900); g.addColorStop(0,acc+"22"); g.addColorStop(1,"rgba(0,0,0,0)"); X.fillStyle=g; X.fillRect(0,0,w,h);
+  // filigrane
+  X.save(); X.font='italic 800 380px "Barlow Condensed", sans-serif'; X.strokeStyle="rgba(255,255,255,.05)"; X.lineWidth=3; X.strokeText((B7[x.b7]?.short||"GO").toUpperCase(), 40, 640); X.restore();
+  const L=90; X.textAlign="left";
+  X.fillStyle=acc; X.font='800 34px Barlow, sans-serif'; X.fillText(`${["DIMANCHE","LUNDI","MARDI","MERCREDI","JEUDI","VENDREDI","SAMEDI"][parseIso(date).getDay()]} ${fmtShort(date).toUpperCase()}${b7WeekNo(date)>=1?`  ·  SEMAINE ${b7WeekNo(date)}`:""}`, L, 200);
+  // titre sur 2 lignes max, taille réduite si un mot est trop long
+  X.fillStyle="#F3F5F7"; let fs=150; const maxW=w-2*L, words=D.title.toUpperCase().split(" ");
+  const setF=()=>X.font=`italic 800 ${fs}px "Barlow Condensed", sans-serif`; setF();
+  while(fs>80 && words.some(wd=>X.measureText(wd).width>maxW)){ fs-=6; setF(); }
+  const tl=[]; let cur=""; words.forEach(wd=>{ const t=cur?cur+" "+wd:wd; if(X.measureText(t).width>maxW && cur){ tl.push(cur); cur=wd; } else cur=t; }); tl.push(cur);
+  const tLines=tl.slice(0,2); tLines.forEach((t,i)=>X.fillText(t, L, 330+i*fs*0.93));
+  let y = 330 + (tLines.length-1)*fs*0.93 + 60;
+  // gros chiffre
+  if(D.big){ X.fillStyle=acc; X.font='800 240px "Barlow Condensed", sans-serif'; X.fillText(D.big, L-8, y+200); X.fillStyle="#8D97A3"; X.font='800 38px Barlow, sans-serif'; X.fillText(D.bigLbl + (D.sub?`  ·  ${D.sub.toUpperCase()}`:""), L, y+262); y+=320; }
+  // record (une ligne)
+  const recs = x.sets ? newRecords(x, date) : [];
+  if(recs.length){ const gold=css("--gold")||"#FFC93D"; X.fillStyle=gold+"22"; X.beginPath(); X.roundRect?X.roundRect(L,y,w-2*L,96,48):X.rect(L,y,w-2*L,96); X.fill();
+    X.fillStyle=gold; X.font='800 46px "Barlow Condensed", sans-serif'; let t=`🏆 RECORD · ${recs[0].replace(/ \(max estimé\)/,"").toUpperCase()}`; while(X.measureText(t).width>w-2*L-60 && t.length>10) t=t.slice(0,-2); X.fillText(t, L+30, y+63); y+=126; }
+  // détail : autant de lignes que la place le permet
+  const footTop=h-210, sensH=D.feel?120:0, room=Math.max(0, Math.floor((footTop - y - sensH)/118));
+  const shown=D.lines.slice(0, room), more=D.lines.length-shown.length;
+  shown.forEach(([a,bv])=>{ X.fillStyle="#1A1F26"; X.beginPath(); X.roundRect?X.roundRect(L,y,w-2*L,100,26):X.rect(L,y,w-2*L,100); X.fill();
+    X.fillStyle="#F3F5F7"; X.textAlign="left"; X.font='600 44px Barlow, sans-serif'; X.fillText(a.length>22?a.slice(0,21)+"…":a, L+34, y+65);
+    X.fillStyle=acc; X.textAlign="right"; X.font='800 52px "Barlow Condensed", sans-serif'; X.fillText(bv, w-L-34, y+67); X.textAlign="left"; y+=118; });
+  if(more>0){ X.fillStyle="#8D97A3"; X.font='600 34px Barlow, sans-serif'; X.fillText(`+ ${more} autre${more>1?"s":""} exercice${more>1?"s":""}`, L, y+30); y+=60; }
+  // sensations
+  if(D.feel){ y+=20; X.fillStyle="#8D97A3"; X.font='700 34px Barlow, sans-serif'; X.fillText("SENSATIONS", L, y+20);
+    for(let i=0;i<5;i++){ X.fillStyle = i<D.feel ? acc : "#262C34"; X.beginPath(); X.roundRect?X.roundRect(L+i*84, y+44, 70, 20, 10):X.rect(L+i*84, y+44, 70, 20); X.fill(); } }
+  // pied
+  const st=streak(); X.textAlign="left";
+  if(st){ X.fillStyle=css("--gold")||"#FFC93D"; X.font='800 46px "Barlow Condensed", sans-serif'; X.fillText(`🔥 ${st} SEMAINE${st>1?"S":""} D'AFFILÉE`, L, h-130); }
+  X.fillStyle="#8D97A3"; X.font='700 32px Barlow, sans-serif'; X.fillText(activeProgram().name.toUpperCase(), L, h-80);
+  X.textAlign="right"; X.fillStyle="#F3F5F7"; X.font='italic 800 44px "Barlow Condensed", sans-serif'; X.fillText("CARNET", w-L, h-80);
+  return c;
+}
+$("#b7Share").onclick=async()=>{
+  const date = b7Orig ? b7Orig.date : $("#b7Date").value, x = b7Orig ? b7ById(b7Orig.date,b7Orig.id) : b7Find(date,b7Kind);
+  if(!x){ $("#b7Msg").textContent="Enregistre la séance d'abord."; return; }
+  $("#b7Msg").textContent="Préparation de l'image…"; $("#b7Msg").className="save-msg";
+  const c=await shareCanvas(date,x), blob=await new Promise(r=>c.toBlob(r,"image/png")), name=`seance-${date}.png`;
+  $("#b7ShareImg").src=URL.createObjectURL(blob); $("#b7ShareImg").hidden=false;
+  const file=new File([blob],name,{type:"image/png"});
+  try{ if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:x.title||"Ma séance"}); $("#b7Msg").textContent="Partagé ✓"; return; } }
+  catch(e){ if(e && e.name==="AbortError"){ $("#b7Msg").textContent=""; return; } }
+  const a=document.createElement("a"); a.href=$("#b7ShareImg").src; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+  $("#b7Msg").textContent="Image prête : appui long dessus → Partager (Instagram, WhatsApp…).";
 };
 
 /* ---------- pause du programme ---------- */
