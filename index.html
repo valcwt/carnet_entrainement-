@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Grit</title>
+<title>Carnet d'entraînement</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Grit">
+<meta name="apple-mobile-web-app-title" content="Carnet">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -295,7 +295,7 @@ body.booting{background:radial-gradient(120% 60% at 50% 0%,rgba(198,244,50,.10),
   background:radial-gradient(120% 60% at 50% 0%,rgba(198,244,50,.13),transparent 60%),var(--bg)}
 .lock-in{width:100%;max-width:320px;display:flex;flex-direction:column;align-items:center;text-align:center}
 .lock-mark{width:64px;height:64px;border-radius:18px;background:var(--accent);display:grid;place-items:center;box-shadow:0 10px 30px -10px var(--accent)}
-.lock-mark span{font:italic 900 2.6rem/1 "Barlow Condensed",sans-serif;color:var(--on-accent);transform:translateX(-1px)}
+.lock-mark svg{width:34px;height:34px;fill:none;stroke:var(--on-accent);stroke-width:2.2;stroke-linecap:round}
 .lock h1{font-size:2.4rem;font-style:italic;margin-top:14px}
 .lock-sub{margin:2px 0 22px;color:var(--muted)}
 .pin-dots{display:flex;gap:14px;height:18px}
@@ -541,7 +541,7 @@ nav.bottom-nav{display:none}
   :root{padding-top:0;padding-bottom:0}
   .wrap{padding:calc(10px + env(safe-area-inset-top,0px)) 14px calc(92px + env(safe-area-inset-bottom,0px))}
   header.top{margin-bottom:6px}
-  header.top h1{font-size:2.4rem;line-height:1}
+  header.top h1{font-size:1.75rem}
   .status{font-size:.78rem}
   .phase{padding:8px 12px;gap:2px 12px;font-size:.85rem;margin:6px 0 10px}
   .phase b{font-size:1.1rem}
@@ -603,8 +603,8 @@ nav.bottom-nav{display:none}
 <body class="booting">
 <div id="lock" class="lock" hidden role="dialog" aria-modal="true" aria-labelledby="lockTitle">
   <div class="lock-in">
-    <div class="lock-mark" aria-hidden="true"><span>G</span></div>
-    <h1 id="lockTitle">Grit</h1>
+    <div class="lock-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10v4M21 10v4M6 7v10M18 7v10M6 12h12"/></svg></div>
+    <h1 id="lockTitle">Carnet</h1>
     <p class="lock-sub">Entre ton code</p>
     <div class="pin-dots" id="pinDots" aria-live="polite"><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <p class="lock-msg" id="lockMsg" role="status"></p>
@@ -626,7 +626,7 @@ nav.bottom-nav{display:none}
 <div class="wrap">
   <header class="top">
     <div>
-      <h1>Grit<em>.</em></h1>
+      <h1>Carnet <em>d'entraînement</em></h1>
       <div class="status" id="status">Chargement…</div>
     </div>
   </header>
@@ -2340,14 +2340,14 @@ function fillMerge(cur, inc){
 }
 $("#xferApply").onclick=async()=>{
   let o; try{ o=JSON.parse($("#xfer").value); }catch(e){ $("#xferMsg").textContent="Contenu invalide : colle l'export complet."; return; }
-  if(!o || typeof o.days!=="object"){ $("#xferMsg").textContent="Ce contenu ne ressemble pas à un export de Grit."; return; }
+  if(!o || typeof o.days!=="object"){ $("#xferMsg").textContent="Ce contenu ne ressemble pas à un export du carnet."; return; }
   const fill = o.mode==="fill";
   if(fill && typeof pullRemote==="function"){ try{ $("#xferMsg").textContent="Lecture des journées existantes…"; await pullRemote(false); }catch(e){ $("#xferMsg").textContent="Impossible de lire tes journées actuelles : vérifie ta connexion et réessaie."; return; } }
   let list=Object.values(o.days).filter(d=>d&&/^\d{4}-\d{2}-\d{2}$/.test(d.date)).map(d=>normalize(d));
   let existing=0;
   if(fill){ list = list.map(d=>{ if(days[d.date]) existing++; return normalize(fillMerge(days[d.date]?clone(days[d.date]):null, d)); }); }
   const msg = fill
-    ? `Compléter ${list.length} journées (${existing} existent déjà dans Grit : leurs cases remplies ne seront pas modifiées, seules les cases vides seront complétées) ?`
+    ? `Compléter ${list.length} journées (${existing} existent déjà dans le carnet : leurs cases remplies ne seront pas modifiées, seules les cases vides seront complétées) ?`
     : `Importer ${list.length} journées${o.settings?" et tes réglages (programme, plans)":""} ? Les journées aux mêmes dates seront remplacées.`;
   if(!confirm(msg)) return;
   const btn=$("#xferApply"); btn.disabled=true;
@@ -2932,7 +2932,7 @@ async function recapCanvas(){
   const lines=D.ws.map(x=>`${DOW[parseIso(x.date).getDay()]} · ${x.title}${x.run?.km?` · ${fmtNum(x.run.km,1)} km`:""}`);
   (lines.length?lines:["Aucune séance notée"]).slice(0,4).forEach(l=>{ X.fillText(l,72,y); y+=44; });
   if(st){ X.fillStyle=col("--gold"); X.font='800 40px "Barlow Condensed", sans-serif'; X.fillText(`🔥 ${st} SEMAINE${st>1?"S":""} COMPLÈTE${st>1?"S":""} D'AFFILÉE`,72,1300); }
-  X.fillStyle="#8D97A3"; X.font='600 26px Barlow, sans-serif'; X.textAlign="right"; X.fillText("GRIT",w-70,1300);
+  X.fillStyle="#8D97A3"; X.font='600 26px Barlow, sans-serif'; X.textAlign="right"; X.fillText("Carnet d'entraînement",w-70,1300);
   return c;
 }
 $("#recapShare").onclick=async()=>{
@@ -2979,14 +2979,14 @@ async function renderNotif(){
   const st=$("#notifStatus"), act=$("#notifActions"), pr=$("#notifPrefs");
   const ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
   if(!pushSupported()){
-    st.innerHTML = ios && !isStandalone() ? `<span style="color:var(--gold)">● Ouvre Grit depuis son icône</span>` : `<span style="color:var(--muted)">○ Non disponible sur ce navigateur</span>`;
+    st.innerHTML = ios && !isStandalone() ? `<span style="color:var(--gold)">● Ouvre le carnet depuis son icône</span>` : `<span style="color:var(--muted)">○ Non disponible sur ce navigateur</span>`;
     act.innerHTML = ""; pr.hidden=true;
     $("#notifHint").innerHTML = ios ? "Sur iPhone, les notifications ne marchent que dans l'app ajoutée à l'écran d'accueil (Safari → Partager → Sur l'écran d'accueil), avec iOS 16.4 ou plus." : "Ce navigateur ne gère pas les notifications web.";
     return;
   }
   try{ pushInfo = await api("GET","push"); }catch(e){ st.innerHTML=`<span style="color:var(--muted)">○ Serveur injoignable pour l'instant</span>`; act.innerHTML=""; return; }
   const sub = await mySub(), perm = Notification.permission;
-  if(perm==="denied"){ st.innerHTML=`<span style="color:var(--warn)">● Bloquées</span> · réautorise-les dans Réglages → Notifications → Grit`; act.innerHTML=""; pr.hidden=true; return; }
+  if(perm==="denied"){ st.innerHTML=`<span style="color:var(--warn)">● Bloquées</span> · réautorise-les dans Réglages → Notifications → Carnet`; act.innerHTML=""; pr.hidden=true; return; }
   if(sub){
     st.innerHTML=`<span style="color:var(--good)">● Activées</span> sur cet appareil`;
     act.innerHTML=`<button type="button" class="btn ghost small" id="notifTest">Envoyer un test</button><button type="button" class="btn danger" id="notifOff">Désactiver ici</button><span class="save-msg" id="notifMsg"></span>`;
@@ -3169,7 +3169,7 @@ async function shareCanvas(date, x){
   const st=streak(); X.textAlign="left";
   if(st){ X.fillStyle=css("--gold")||"#FFC93D"; X.font='800 46px "Barlow Condensed", sans-serif'; X.fillText(`🔥 ${st} SEMAINE${st>1?"S":""} D'AFFILÉE`, L, h-130); }
   X.fillStyle="#8D97A3"; X.font='700 32px Barlow, sans-serif'; X.fillText(activeProgram().name.toUpperCase(), L, h-80);
-  X.textAlign="right"; X.fillStyle="#F3F5F7"; X.font='italic 800 44px "Barlow Condensed", sans-serif'; X.fillText("GRIT", w-L, h-80);
+  X.textAlign="right"; X.fillStyle="#F3F5F7"; X.font='italic 800 44px "Barlow Condensed", sans-serif'; X.fillText("CARNET", w-L, h-80);
   return c;
 }
 $("#b7Share").onclick=async()=>{
