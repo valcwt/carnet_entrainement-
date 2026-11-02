@@ -1,6 +1,6 @@
 {
-  "name": "Carnet d'entraînement",
-  "short_name": "Carnet",
+  "name": "Le Carnet",
+  "short_name": "Le Carnet",
   "description": "Séances, course, poids, sommeil et eau.",
   "lang": "fr",
   "start_url": "/",
