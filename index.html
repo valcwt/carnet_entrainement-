@@ -365,6 +365,14 @@ section.panel h2.b7-title::before{display:none}
 .pause-dlg{border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--ink);padding:18px;width:min(420px,calc(100vw - 32px))}
 .pause-dlg::backdrop{background:rgba(0,0,0,.6)}
 .pause-dlg h3{font-size:1.5rem;margin-bottom:6px}
+.pace-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:4px 0 10px}
+.pace{border:1px solid var(--line);background:var(--field);border-radius:12px;padding:10px 12px}
+.pace span{display:block;font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pace b{display:block;font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:1.5rem;line-height:1.1;color:var(--steps);font-variant-numeric:tabular-nums}
+.pace em{font-style:normal;font-size:.75rem;color:var(--muted)}
+.run-week{display:grid;gap:8px}
+.rw{border:1px solid rgba(34,227,160,.3);background:linear-gradient(100deg,rgba(34,227,160,.08),transparent);border-radius:12px;padding:10px 12px;font-size:.92rem}
+.rw b{display:block;font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:1.1rem;text-transform:uppercase;color:var(--steps)}
 .b7-rep{margin:6px 0 4px}
 .b7-rep select{margin-top:2px}
 .b7-swap{display:block;width:100%;margin:6px 0 8px;padding:10px 12px;border-radius:12px;border:1px dashed var(--line);background:none;color:var(--muted);font-weight:700;font-size:.88rem;text-align:left;cursor:pointer}
@@ -907,6 +915,21 @@ nav.bottom-nav{display:none}
       </form>
     </dialog>
 
+    <section class="panel" id="runPanel">
+      <h2>Plan course <small id="runSub"></small></h2>
+      <div class="stat-row" id="runStats"></div>
+      <div class="pace-grid" id="runPaces"></div>
+      <div class="run-week" id="runWeek"></div>
+      <details class="more" id="runTestBox" style="margin-top:10px"><summary>+ Mettre à jour ma VMA (nouveau test)</summary>
+        <div class="grid" style="margin-top:8px">
+          <label>Test<select id="vmaType"><option value="mile">1,6 km chrono</option><option value="cooper6">6 min à fond (distance)</option><option value="k3">3 km chrono</option></select></label>
+          <label id="vmaValLbl">Temps (mm:ss)<input type="text" id="vmaVal" inputmode="numeric" placeholder="ex. 8:13"></label>
+          <label>Date<input type="date" id="vmaDate"></label>
+        </div>
+        <div class="row" style="margin-top:10px"><button type="button" class="btn small" id="vmaSave">Calculer et enregistrer</button><span class="save-msg" id="vmaMsg"></span></div>
+      </details>
+    </section>
+
     <section class="panel" id="racePanel">
       <h2 id="raceTitle">Objectif course</h2>
       <div id="raceView"></div>
@@ -1122,6 +1145,7 @@ function defaultSettings(){
   return {
     programStart:"2026-06-22", eventName:"Murph", eventDate:"2027-05-01", testEvery:4, testSnooze:"",
     goals:{water:2.5, steps:10000, stepsMax:12000, sleep:8}, reminders:{weigh:true, water:true}, race:{name:"Semi-marathon", date:"", km:21.1, target:""},
+    vmaTests:[{date:"2026-09-20", vma:12.3, label:"1,6 km en 8'13 (estimation)"}],
     phases:[
       {from:1,to:16,name:"Phase 1 — perte de poids",target:97,detail:"1 écart autorisé par semaine"},
       {from:17,to:20,name:"Diet break",target:null,detail:"Reprise d'énergie"},
@@ -2527,7 +2551,7 @@ function renderB7(){
   if(pd) { $("#b7WeekHint").textContent = `⏸ ${pd===7?"Semaine en pause":`${pd} jour${pd>1?"s":""} en pause cette semaine`} : rien à rattraper.${nR+nC+nX?` Séances notées quand même : ${nR+nC+nX}${km?` · ${fmtNum(km,1)} km`:""}.`:""}`; }
   else $("#b7WeekHint").textContent = `Cette semaine : ${nR}/${TGT().r} renfo · ${nC}/${TGT().c} course${TGT().c>1?"s":""}${km?` · ${fmtNum(km,1)} km`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}${nRep?` · ${nRep} séance${nRep>1?"s":""} remplacée${nRep>1?"s":""} (non comptée${nRep>1?"s":""} comme ${nRep>1?"prévues":"prévue"})`:""}.`;
   if(!b7Kind) b7Open($("#b7Date").value || t, null, true);
-  renderB7Hist(); renderStrength(); renderRace(); renderB7Recent();
+  renderB7Hist(); renderStrength(); renderRace(); renderB7Recent(); renderRunPlan();
 }
 function b7Open(date, k, keep, id){
   $("#b7Date").value = date; b7EditId = id || null; b7Orig = null;
@@ -2545,7 +2569,7 @@ function renderB7Form(){
   $("#b7DayList").innerHTML = dl.length ? `<span class="hint" style="margin:0">Déjà noté ce jour-là :</span>`+dl.map(x=>`<button type="button" class="chip b7-chip${(b7EditId===x.id||(!b7EditId&&!B7[b7Kind].multi&&x.b7===b7Kind))?" on":""}" data-id="${x.id}" data-k="${x.b7}">${esc(x.title||B7[x.b7]?.label||"Séance")}${x.run?.km?` · ${fmtNum(x.run.km,1)} km`:""}</button>`).join("") : "";
   $$("#b7DayList [data-id]").forEach(b=>b.onclick=()=>b7Open(date, b.dataset.k, false, b.dataset.id));
   $("#b7LogTitle").innerHTML = `${esc(P.label)}${prev?" <small>déjà notée · modifie ce que tu veux, même la date</small>":""}`;
-  $("#b7Note").textContent = P.note;
+  $("#b7Note").textContent = runPlanFor(b7Kind, date) || P.note;
   const nameField = P.free ? `<label style="margin-bottom:10px">Nom<input type="text" id="b7Title" value="${esc(prev?.title&&prev.title!==P.label?prev.title:"")}" placeholder="${P.kind==="run"?"ex. Footing récup, sortie longue…":"ex. Vélo, padel, mobilité…"}"></label>` : "";
   if(P.kind==="other"){
     const r=prev?.run||{};
@@ -2762,7 +2786,7 @@ function renderToday(){
     btn = `<button type="button" class="go ghost" id="todayGo">Voir le programme →</button>`; }
   else if(plan){ const P=B7[plan.k]; k=plan.k; done=list.find(x=>x.b7===plan.k || x.b7==="T"+plan.k || x.replaces?.k===plan.k); cls=P.kind==="run"?"run":"";
     wm=P.short; kick=`${when} · ${dayLbl}${wn>=1?` · S${wn}`:""}`; title=P.short;
-    sub = done && done.replaces?.k===plan.k ? `Remplacée par ${esc(done.title)} · pas comptée comme ${esc(B7[plan.k].short)}.` : done ? (done.run?.km ? `${fmtNum(done.run.km,1)} km${done.run.dur?` en ${esc(done.run.dur)}`:""} · bien joué.` : "Séance notée · bien joué.") : P.kind==="run" ? `${esc(P.label)} · course du jour.` : `${esc(P.label)} · ${P.ex.length} exercices · ~50 min.`;
+    sub = done && done.replaces?.k===plan.k ? `Remplacée par ${esc(done.title)} · pas comptée comme ${esc(B7[plan.k].short)}.` : done ? (done.run?.km ? `${fmtNum(done.run.km,1)} km${done.run.dur?` en ${esc(done.run.dur)}`:""} · bien joué.` : "Séance notée · bien joué.") : P.kind==="run" ? esc(runPlanFor(plan.k, d) || `${P.label} · course du jour.`) : `${esc(P.label)} · ${P.ex.length} exercices · ~50 min.`;
     btn = `<button type="button" class="go${done?" ghost":""}" id="todayGo">${done?"Voir la séance":"Commencer →"}</button>`; }
   else { cls="recup"; wm="Repos"; k="R"; kick=`${when} · ${dayLbl}${wn>=1?` · S${wn}`:""}`; title="Récup";
     sub = list.length ? list.map(x=>esc(x.title)).join(" · ") : "Pas de séance prévue. Une sortie facile si tu en as envie.";
@@ -3218,6 +3242,58 @@ function paintB7Rep(date, prev){
   wrap.hidden = !opts.length;
   $("#b7Rep").innerHTML = `<option value="">Non, c'est une séance en plus</option>` + opts.map(sl=>`<option value="${sl.k}"${sl.k===cur?" selected":""}>Oui : ${esc(sl.label)}</option>`).join("");
 }
+
+/* ---------- plan course 12 semaines, allures depuis la VMA ---------- */
+const vmaNow = () => { const t=(S?.vmaTests||[]).slice().sort((a,b)=>a.date<b.date?-1:1); return t.at(-1) || {vma:12.3, date:"", label:"estimation"}; };
+const paceAt = pct => { const v=vmaNow().vma*pct; return fmtPace(3600/v); };              // allure mm'ss/km à x % de VMA
+const pr = (lo,hi) => { const a=paceAt(hi).replace("/km",""), b=paceAt(lo).replace("/km",""); return a===b ? a+"/km" : `${a}–${b}/km`; };
+const RUN_Q = [ // mercredi, semaines 1 à 12
+  ()=>`8 × 1 min à ${paceAt(.95)} · récup 2 min trot`, ()=>`8 × 1 min à ${paceAt(.95)} · récup 2 min trot`, ()=>`8 × 1 min à ${paceAt(.95)} · récup 2 min trot`,
+  ()=>`Semaine allégée : 5 × 1 min à ${paceAt(.95)} · récup 2 min`,
+  ()=>`6 × 2 min à ${paceAt(.90)} · récup 2 min trot`,
+  ()=>`TEST : 1,6 km chrono, à fond mais régulier. Ensuite, mets à jour ta VMA dans « Plan course ».`,
+  ()=>`6 × 2 min à ${paceAt(.90)} · récup 2 min trot`,
+  ()=>`Semaine allégée : 4 × 2 min à ${paceAt(.90)} · récup 2 min`,
+  ()=>`4 × 4 min à ${paceAt(.90)} · récup 2 min trot`, ()=>`4 × 4 min à ${paceAt(.90)} · récup 2 min trot`,
+  ()=>`3 × 6 min à ${paceAt(.85)} (seuil) · récup 2 min trot`,
+  ()=>`TEST FINAL : 1,6 km chrono. Compare avec ton 8'13 de septembre 💪`];
+const RUN_E = ["25 min : 5 × (4 min course + 1 min marche)","25 min : 5 × (4 min course + 1 min marche)","30 min, marche autorisée","Semaine allégée : 25 min","30 min en continu","35 min","40 min","Semaine allégée : 30 min","40 min","45 min","50 min","40 min tranquille"];
+function runPlanFor(k, date){
+  const P=activeProgram(); if(!P.builtin || (k!=="Q" && k!=="E")) return null;
+  const w=b7WeekNo(date); if(w<1) return null;
+  const ew=pr(.65,.70);
+  if(w>12) return k==="Q" ? `Plan de 12 semaines terminé : refais un test et on repart sur un nouveau cycle.` : `Endurance libre, 40–50 min à ${ew}.`;
+  return k==="Q" ? `Semaine ${w} · ${RUN_Q[w-1]()}${/TEST/.test(RUN_Q[w-1]())?"":` · échauffement 10 min à ${ew}, retour au calme 5–10 min`}`
+                 : `Semaine ${w} · ${RUN_E[w-1]} à ${ew} (tu dois pouvoir parler)`;
+}
+function renderRunPlan(){
+  const P=activeProgram(), box=$("#runPanel"); if(!box) return;
+  box.hidden = !P.builtin; if(!P.builtin) return;
+  const V=vmaNow(), t=todayIso(), w=b7WeekNo(t<B7_START?B7_START:t);
+  $("#runSub").textContent = `12 semaines · VMA ${fmtNum(V.vma,1)} km/h`;
+  const tests=(S?.vmaTests||[]).slice().sort((a,b)=>a.date<b.date?-1:1), first=tests[0];
+  $("#runStats").innerHTML = stat(fmtNum(V.vma,1)+" km/h", `VMA · ${esc(V.label||"")}${V.date?` · ${fmtShort(V.date)}`:""}`)
+    + (tests.length>1 ? stat(`${V.vma>=first.vma?"+":""}${fmtNum(V.vma-first.vma,1)} km/h`, "depuis le premier test") : "")
+    + stat(w>=1&&w<=12?`S${w}`:w>12?"fini":"S1", w>=1&&w<=12?"semaine du plan":w>12?"plan terminé":"commence le 2 nov.");
+  const tile=(l,v,e)=>`<div class="pace"><span>${l}</span><b>${v}</b><em>${e}</em></div>`;
+  $("#runPaces").innerHTML = tile("Endurance", pr(.65,.70), "65–70 % · tu peux parler") + tile("Fractionné 1 min", paceAt(.95), "95 % · quelques mots max")
+    + tile("Fractionné 2–4 min", paceAt(.90), "90 % · dur mais régulier") + tile("Seuil 6 min", paceAt(.85), "85 % · « confortablement dur »");
+  const wd = t<B7_START ? B7_START : t;
+  const q=runPlanFor("Q", addDays(mondayOf(wd),2)), e=runPlanFor("E", addDays(mondayOf(wd),6));
+  $("#runWeek").innerHTML = (q?`<div class="rw"><b>Mercredi · Fractionné</b>${esc(q)}</div>`:"") + (e?`<div class="rw"><b>Dimanche · Endurance</b>${esc(e)}</div>`:"");
+}
+$("#vmaType").onchange=()=>{ const v=$("#vmaType").value; $("#vmaValLbl").firstChild.textContent = v==="cooper6" ? "Distance (m)" : "Temps (mm:ss)"; $("#vmaVal").placeholder = v==="cooper6" ? "ex. 1250" : v==="k3" ? "ex. 16:30" : "ex. 8:13"; };
+$("#vmaSave").onclick=async()=>{
+  const type=$("#vmaType").value, raw=$("#vmaVal").value.trim(), date=$("#vmaDate").value||todayIso(); let vma=null, label="";
+  if(type==="cooper6"){ const m=num(raw); if(m) { vma=m/100; label=`6 min : ${fmtNum(m)} m`; } }
+  else { const sec=parseTime(raw.includes(":")?raw:raw+":00"); const km=type==="k3"?3:1.6; if(sec){ const v=km/(sec/3600); vma = v/(type==="k3"?0.90:0.95); label=`${type==="k3"?"3 km":"1,6 km"} en ${raw}`; } }
+  if(!vma || vma<6 || vma>25){ $("#vmaMsg").textContent="Valeur invalide."; $("#vmaMsg").className="save-msg err"; return; }
+  vma=Math.round(vma*10)/10;
+  S.vmaTests=[...(S.vmaTests||[]).filter(x=>x.date!==date), {date, vma, label}];
+  try{ await saveSettings(); }catch(e){}
+  $("#vmaMsg").textContent=`VMA ${fmtNum(vma,1)} km/h ✓ — allures mises à jour`; $("#vmaMsg").className="save-msg ok"; $("#vmaVal").value="";
+  renderRunPlan(); renderB7Form();
+};
 
 /* ---------- pause du programme ---------- */
 const PAUSE_REASONS=["Blessure","Malade","Vacances","Boulot","Fatigue","Autre"];
