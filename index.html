@@ -922,7 +922,7 @@ nav.bottom-nav{display:none}
       <div class="run-week" id="runWeek"></div>
       <details class="more" id="runTestBox" style="margin-top:10px"><summary>+ Mettre à jour ma VMA (nouveau test)</summary>
         <div class="grid" style="margin-top:8px">
-          <label>Test<select id="vmaType"><option value="mile">1,6 km chrono</option><option value="cooper6">6 min à fond (distance)</option><option value="k3">3 km chrono</option></select></label>
+          <label>Test<select id="vmaType"><option value="mile">1,6 km chrono</option><option value="cooper6">6 min à fond (distance)</option><option value="k3">3 km chrono</option><option value="vo2">VO2max de la montre</option></select></label>
           <label id="vmaValLbl">Temps (mm:ss)<input type="text" id="vmaVal" inputmode="numeric" placeholder="ex. 8:13"></label>
           <label>Date<input type="date" id="vmaDate"></label>
         </div>
@@ -1190,6 +1190,11 @@ function normalizeSettings(s){
   }
   if(!Array.isArray(o.plans)||!o.plans.length) o.plans = defaultSettings().plans;
   if(!Array.isArray(o.templates)) o.templates = defaultSettings().templates;
+  if(!o.vmaV2){ // VMA de départ retenue : celle de la montre (VO2max 41 → 11,7 km/h), plus prudente que le 1,6 km
+    o.vmaTests = Array.isArray(o.vmaTests) ? o.vmaTests : [{date:"2026-09-20", vma:12.3, label:"1,6 km en 8'13 (estimation)"}];
+    if(!o.vmaTests.some(t=>t.date==="2026-11-04")) o.vmaTests.push({date:"2026-11-04", vma:11.7, label:"VO2max montre : 41"});
+    o.vmaV2=true;
+  }
   if(!o.goals || !o.goals.v2){ o.goals = {...(o.goals||{}), sleep:8, steps:10000, stepsMax:12000, v2:true}; if(o.goals.water==null) o.goals.water=2.5; }
   if(o.targetWeight===undefined){ // ancien réglage par phases → un seul poids cible
     const w = Math.floor(diffDays(todayIso(), o.programStart||todayIso())/7)+1, ph=(o.phases||[]);
@@ -3271,9 +3276,9 @@ function renderRunPlan(){
   box.hidden = !P.builtin; if(!P.builtin) return;
   const V=vmaNow(), t=todayIso(), w=b7WeekNo(t<B7_START?B7_START:t);
   $("#runSub").textContent = `12 semaines · VMA ${fmtNum(V.vma,1)} km/h`;
-  const tests=(S?.vmaTests||[]).slice().sort((a,b)=>a.date<b.date?-1:1), first=tests[0];
+  const tests=(S?.vmaTests||[]).slice().sort((a,b)=>a.date<b.date?-1:1), first=tests.find(t=>t.date>=B7_START)||tests[0]; // base = 1re mesure du programme
   $("#runStats").innerHTML = stat(fmtNum(V.vma,1)+" km/h", `VMA · ${esc(V.label||"")}${V.date?` · ${fmtShort(V.date)}`:""}`)
-    + (tests.length>1 ? stat(`${V.vma>=first.vma?"+":""}${fmtNum(V.vma-first.vma,1)} km/h`, "depuis le premier test") : "")
+    + (first && first!==V && V.date>first.date ? stat(`${V.vma>=first.vma?"+":""}${fmtNum(V.vma-first.vma,1)} km/h`, `depuis le ${fmtShort(first.date)}`) : "")
     + stat(w>=1&&w<=12?`S${w}`:w>12?"fini":"S1", w>=1&&w<=12?"semaine du plan":w>12?"plan terminé":"commence le 2 nov.");
   const tile=(l,v,e)=>`<div class="pace"><span>${l}</span><b>${v}</b><em>${e}</em></div>`;
   $("#runPaces").innerHTML = tile("Endurance", pr(.65,.70), "65–70 % · tu peux parler") + tile("Fractionné 1 min", paceAt(.95), "95 % · quelques mots max")
@@ -3282,10 +3287,11 @@ function renderRunPlan(){
   const q=runPlanFor("Q", addDays(mondayOf(wd),2)), e=runPlanFor("E", addDays(mondayOf(wd),6));
   $("#runWeek").innerHTML = (q?`<div class="rw"><b>Mercredi · Fractionné</b>${esc(q)}</div>`:"") + (e?`<div class="rw"><b>Dimanche · Endurance</b>${esc(e)}</div>`:"");
 }
-$("#vmaType").onchange=()=>{ const v=$("#vmaType").value; $("#vmaValLbl").firstChild.textContent = v==="cooper6" ? "Distance (m)" : "Temps (mm:ss)"; $("#vmaVal").placeholder = v==="cooper6" ? "ex. 1250" : v==="k3" ? "ex. 16:30" : "ex. 8:13"; };
+$("#vmaType").onchange=()=>{ const v=$("#vmaType").value; $("#vmaValLbl").firstChild.textContent = v==="cooper6" ? "Distance (m)" : v==="vo2" ? "VO2max (ml/kg/min)" : "Temps (mm:ss)"; $("#vmaVal").placeholder = v==="cooper6" ? "ex. 1250" : v==="vo2" ? "ex. 41" : v==="k3" ? "ex. 16:30" : "ex. 8:13"; };
 $("#vmaSave").onclick=async()=>{
   const type=$("#vmaType").value, raw=$("#vmaVal").value.trim(), date=$("#vmaDate").value||todayIso(); let vma=null, label="";
   if(type==="cooper6"){ const m=num(raw); if(m) { vma=m/100; label=`6 min : ${fmtNum(m)} m`; } }
+  else if(type==="vo2"){ const v=num(raw.replace(",",".")); if(v){ vma=v/3.5; label=`VO2max montre : ${fmtNum(v)}`; } }
   else { const sec=parseTime(raw.includes(":")?raw:raw+":00"); const km=type==="k3"?3:1.6; if(sec){ const v=km/(sec/3600); vma = v/(type==="k3"?0.90:0.95); label=`${type==="k3"?"3 km":"1,6 km"} en ${raw}`; } }
   if(!vma || vma<6 || vma>25){ $("#vmaMsg").textContent="Valeur invalide."; $("#vmaMsg").className="save-msg err"; return; }
   vma=Math.round(vma*10)/10;
