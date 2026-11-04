@@ -86,7 +86,7 @@ export function dueReminders({ prefs, sent, now, day, goals, pauses, settings })
     const pl = id === "session" ? plannedToday(settings || {}, now.date, now.dow) : null;
     if (id === "session" && pl && !isPaused(pauses, now.date)) { // programme en pause : pas de rappel de séance
       const done = (day?.sessions || []).some((s) => pl.keys.includes(s.b7) || pl.keys.includes(s.replaces?.k)); // une activité de remplacement compte
-      if (!done) msg = { title: `💪 ${pl.label} aujourd'hui`, body: pl.kind === "run" ? "Ta sortie du jour selon Kiprun. Note-la dans le carnet en rentrant." : "Ta séance de renfo t'attend. Le minuteur de repos est prêt.", tag: "session" };
+      if (!done) msg = { title: `💪 ${pl.label} aujourd'hui`, body: pl.kind === "run" ? "Ta sortie du jour t'attend. Note-la dans le carnet en rentrant." : "Ta séance de renfo t'attend. Le minuteur de repos est prêt.", tag: "session" };
     }
     if (id === "recap" && now.dow === 0) msg = { title: "📊 Ton récap de la semaine", body: "Séances, km, poids, sommeil : tout est prêt, avec l'image pour ton coach.", tag: "recap", url: "/?tab=sem" };
     out.push({ id, key, msg }); // msg null = condition déjà remplie : on marque quand même pour ne pas revérifier

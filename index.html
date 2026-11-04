@@ -2421,9 +2421,9 @@ const B7_BUILTIN = {
     {id:"lunge", name:"Fentes arrière (par jambe)", sets:2, lo:8, hi:10},
     {id:"facepull", name:"Face pull / oiseau", sets:2, lo:12, hi:20},
     {id:"deadbug", name:"Dead bug / relevés de genoux", sets:3, min:2, lo:8, hi:12, bw:true}]},
-  Q:{label:"Fractionné", short:"Fractionné", kind:"run", note:"La séance « de qualité » de la semaine : du rythme. Suis Kiprun. À défaut : échauffement 10–15 min, 6 × 2 min soutenues / 2 min faciles, retour au calme 8–10 min. Pas de sprint."},
-  E:{label:"Endurance facile", short:"Endurance", kind:"run", note:"Allure conversationnelle, durée selon Kiprun. Une 3e sortie facile seulement si la récupération suit."},
-  R:{label:"Autre course", short:"+ Course", kind:"run", multi:true, free:true, note:"Une sortie en plus (3e sortie Kiprun, footing, trail…). Donne-lui un nom si tu veux."},
+  Q:{label:"Fractionné", short:"Fractionné", kind:"run", note:"La séance « de qualité » de la semaine : du rythme. Échauffement 10–15 min, 6 × 2 min soutenues / 2 min faciles, retour au calme 8–10 min. Pas de sprint."},
+  E:{label:"Endurance facile", short:"Endurance", kind:"run", note:"Allure conversationnelle : tu dois pouvoir parler. 30 à 45 min. Une 3e sortie facile seulement si la récupération suit."},
+  R:{label:"Autre course", short:"+ Course", kind:"run", multi:true, free:true, note:"Une sortie en plus (footing, trail, sortie longue…). Donne-lui un nom si tu veux."},
   X:{label:"Autre séance", short:"+ Séance", kind:"other", multi:true, free:true, note:"Toute autre activité : vélo, natation, sport co, mobilité…"},
   TA:{label:"Déplacement A (sans matériel)", short:"Dépl. A", kind:"renfo", note:"Version sans matériel de la séance A.", ex:[
     {id:"t_pushup", name:"Pompes", sets:3, lo:8, hi:20, bw:true},
@@ -2445,7 +2445,7 @@ const B7_BUILTIN_PLAN = [{dow:0, k:"A"},{dow:2, k:"Q"},{dow:4, k:"B"},{dow:6, k:
 let B7 = {}, B7_PLAN = [], B7_KINDS = [];
 function builtinProgram(){
   const ses={}; Object.entries(B7_BUILTIN).forEach(([k,v])=>{ if(!v.free) ses[k]=v; });
-  return {id:"b7", builtin:true, name:"Big Seven Athletic", tag:"Plan hybride", desc:"2 séances de renforcement + 2 sorties course minimum. Force, muscle et endurance, sans fatigue inutile. Le plan Kiprun prime pour la course.", start:"2026-11-02", sessions:ses, plan:B7_BUILTIN_PLAN, extra:["TA","TB"]};
+  return {id:"b7", builtin:true, name:"Big Seven Athletic", tag:"Plan hybride", desc:"2 séances de renforcement + 2 sorties course minimum. Force, muscle et endurance, sans fatigue inutile.", start:"2026-11-02", sessions:ses, plan:B7_BUILTIN_PLAN, extra:["TA","TB"]};
 }
 const programs = () => [builtinProgram(), ...((S && Array.isArray(S.programs)) ? S.programs.filter(p=>p && p.id!=="b7") : [])];
 const activeProgram = () => programs().find(p=>p.id===(S?.activeProgram||"b7")) || builtinProgram();
@@ -2762,7 +2762,7 @@ function renderToday(){
     btn = `<button type="button" class="go ghost" id="todayGo">Voir le programme →</button>`; }
   else if(plan){ const P=B7[plan.k]; k=plan.k; done=list.find(x=>x.b7===plan.k || x.b7==="T"+plan.k || x.replaces?.k===plan.k); cls=P.kind==="run"?"run":"";
     wm=P.short; kick=`${when} · ${dayLbl}${wn>=1?` · S${wn}`:""}`; title=P.short;
-    sub = done && done.replaces?.k===plan.k ? `Remplacée par ${esc(done.title)} · pas comptée comme ${esc(B7[plan.k].short)}.` : done ? (done.run?.km ? `${fmtNum(done.run.km,1)} km${done.run.dur?` en ${esc(done.run.dur)}`:""} · bien joué.` : "Séance notée · bien joué.") : P.kind==="run" ? `${esc(P.label)} · selon ton plan Kiprun.` : `${esc(P.label)} · ${P.ex.length} exercices · ~50 min.`;
+    sub = done && done.replaces?.k===plan.k ? `Remplacée par ${esc(done.title)} · pas comptée comme ${esc(B7[plan.k].short)}.` : done ? (done.run?.km ? `${fmtNum(done.run.km,1)} km${done.run.dur?` en ${esc(done.run.dur)}`:""} · bien joué.` : "Séance notée · bien joué.") : P.kind==="run" ? `${esc(P.label)} · course du jour.` : `${esc(P.label)} · ${P.ex.length} exercices · ~50 min.`;
     btn = `<button type="button" class="go${done?" ghost":""}" id="todayGo">${done?"Voir la séance":"Commencer →"}</button>`; }
   else { cls="recup"; wm="Repos"; k="R"; kick=`${when} · ${dayLbl}${wn>=1?` · S${wn}`:""}`; title="Récup";
     sub = list.length ? list.map(x=>esc(x.title)).join(" · ") : "Pas de séance prévue. Une sortie facile si tu en as envie.";
