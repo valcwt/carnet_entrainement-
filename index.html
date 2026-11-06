@@ -389,6 +389,36 @@ section.panel h2.b7-title::before{display:none}
 .b7-chip.on{border-color:var(--accent);color:var(--accent)}
 .b7-kinds button{flex:1 1 30%}
 .b7-kinds button[data-k="R"],.b7-kinds button[data-k="X"]{border-style:dashed}
+.b7-kinds button[data-k="W"]{border-style:dashed;color:var(--train)}
+.wod-prog{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 10px;margin:2px 0 8px}
+.wod-prog b{font-family:"Barlow Condensed",sans-serif;font-size:1.2rem;letter-spacing:.02em;text-transform:uppercase}
+.wod-prog span{font-size:.85rem;color:var(--muted)}
+.wod-prog i{flex-basis:100%;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--train) var(--p),var(--line) var(--p))}
+.wod-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:10px}
+.wod-pal{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(3,minmax(0,1fr));gap:4px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:5px 6px;background:var(--field)}
+.wod-pal.ok{border-color:rgba(255,201,61,.5)}
+.wod-pal span{font-size:.72rem;color:var(--muted);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wod-pal button{font:inherit;font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:1.05rem;padding:4px 0;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.wod-pal button.done{background:rgba(255,122,61,.18);border-color:rgba(255,122,61,.45);color:var(--train)}
+.wod-pal button.on{outline:2px solid var(--train);outline-offset:1px}
+.wod-lv{margin-bottom:10px}
+.wod-card{border:1px solid rgba(255,122,61,.4);border-radius:12px;background:var(--field);padding:10px 12px;margin-bottom:10px}
+.wod-card header{display:flex;justify-content:space-between;align-items:baseline}
+.wod-card h3{font-size:1.5rem;color:var(--train)}
+.wod-card header span{font-size:.8rem;color:var(--muted);font-weight:700}
+.wod-how{margin:2px 0 8px;font-weight:600}
+.wod-ex{margin:0 0 6px;padding-left:22px;display:grid;gap:3px}
+.wod-ex li{padding:3px 0;border-bottom:1px solid var(--line)}
+.wod-ex li>span{display:inline-block;max-width:72%}
+.wod-ex li b{float:right;font-family:"Barlow Condensed",sans-serif;font-size:1.15rem;color:var(--train)}
+.wod-ex li.off{opacity:.4}
+.wod-card .last{font-size:.8rem;color:var(--muted);margin:6px 0 0}
+.wod-chrono{border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;margin-bottom:10px;transition:background .3s}
+.wod-chrono.work{background:rgba(255,122,61,.16);border-color:rgba(255,122,61,.5)}
+.wod-chrono.rest{background:rgba(34,227,160,.12);border-color:rgba(34,227,160,.45)}
+.wod-chrono.done{background:rgba(255,201,61,.14);border-color:rgba(255,201,61,.5)}
+.wod-clock{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:3.2rem;line-height:1;font-variant-numeric:tabular-nums}
+.wod-phase{font-size:.85rem;color:var(--muted);margin-top:4px;min-height:1.2em}
 .b7-ex{border:1px solid var(--line);border-radius:12px;background:var(--field);padding:10px 12px;margin-bottom:10px}
 .b7-ex header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
 .b7-ex h3{font-size:1.15rem}
@@ -2454,6 +2484,7 @@ const B7_BUILTIN = {
   E:{label:"Endurance facile", short:"Endurance", kind:"run", note:"Allure conversationnelle : tu dois pouvoir parler. 30 à 45 min. Une 3e sortie facile seulement si la récupération suit."},
   R:{label:"Autre course", short:"+ Course", kind:"run", multi:true, free:true, note:"Une sortie en plus (footing, trail, sortie longue…). Donne-lui un nom si tu veux."},
   X:{label:"Autre séance", short:"+ Séance", kind:"other", multi:true, free:true, note:"Toute autre activité : vélo, natation, sport co, mobilité…"},
+  W:{label:"WOD Attilius", short:"+ WOD", kind:"wod", multi:true, free:true, note:"Challenge Attilius : 18 WOD courts et intenses (≈ 20 min). Choisis ton WOD et ton niveau, lance le chrono. Tu peux t'en servir pour remplacer un renfo."},
   TA:{label:"Déplacement A (sans matériel)", short:"Dépl. A", kind:"renfo", note:"Version sans matériel de la séance A.", ex:[
     {id:"t_pushup", name:"Pompes", sets:3, lo:8, hi:20, bw:true},
     {id:"t_lunge", name:"Fentes arrière (par jambe)", sets:3, lo:10, hi:10, bw:true},
@@ -2486,11 +2517,11 @@ const TGT = () => ({ r: B7_PLAN.filter(p=>B7[p.k]?.kind==="renfo").length, c: B7
 function applyProgram(){
   const P=activeProgram(), all={};
   programs().forEach(pr=>Object.assign(all, pr.sessions||{}));   // toutes les séances connues (les anciennes restent lisibles)
-  Object.assign(all, P.sessions, {R:B7_BUILTIN.R, X:B7_BUILTIN.X});
+  Object.assign(all, P.sessions, {R:B7_BUILTIN.R, X:B7_BUILTIN.X, W:B7_BUILTIN.W});
   B7 = all;
   B7_PLAN = (P.plan||[]).filter(x=>B7[x.k]).map(x=>({dow:Number(x.dow), k:x.k, d:DOWL[Number(x.dow)]})).sort((a,b)=>a.dow-b.dow);
   const order=[...new Set(B7_PLAN.map(x=>x.k))]; Object.keys(P.sessions||{}).forEach(k=>{ if(!order.includes(k) && !(P.extra||[]).includes(k)) order.push(k); });
-  B7_KINDS = [...order, "R", "X", ...(P.extra||[])].filter(k=>B7[k]);
+  B7_KINDS = [...order, "R", "X", "W", ...(P.extra||[])].filter(k=>B7[k]);
   B7_START = P.start || mondayOf(todayIso());
   if($("#b7Name")){ $("#b7Name").textContent=P.name; $("#b7Tag").textContent=P.tag||"Mon programme"; $("#b7Desc").textContent=P.desc||""; }
   $$('details.fold[data-fold="deplacement"],details.fold[data-fold="regles"]').forEach(d=>d.hidden=!P.builtin);
@@ -2551,15 +2582,15 @@ function renderB7(){
   $$("#b7Week .b7-day").forEach(b=>b.onclick=()=>{ b7Open(b.dataset.d, b.dataset.k, false, (b7DaySessions(b.dataset.d).find(x=>x.b7===b.dataset.k)||{}).id); $("#b7Log").scrollIntoView?.({behavior:"smooth",block:"start"}); });
   const nR=wk.filter(x=>kindOf(x)==="renfo").length, nC=wk.filter(x=>kindOf(x)==="run").length, km=wk.reduce((a,x)=>a+(x.run?.km||0),0);
   const nRep=wk.filter(x=>x.replaces?.k).length;
-  const nX=wk.filter(x=>B7[x.b7]?.kind==="other").length;
+  const nX=wk.filter(x=>B7[x.b7]?.kind==="other").length, nW=wk.filter(x=>kindOf(x)==="wod").length;
   const pd=pausedDays(mon);
-  if(pd) { $("#b7WeekHint").textContent = `⏸ ${pd===7?"Semaine en pause":`${pd} jour${pd>1?"s":""} en pause cette semaine`} : rien à rattraper.${nR+nC+nX?` Séances notées quand même : ${nR+nC+nX}${km?` · ${fmtNum(km,1)} km`:""}.`:""}`; }
-  else $("#b7WeekHint").textContent = `Cette semaine : ${nR}/${TGT().r} renfo · ${nC}/${TGT().c} course${TGT().c>1?"s":""}${km?` · ${fmtNum(km,1)} km`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}${nRep?` · ${nRep} séance${nRep>1?"s":""} remplacée${nRep>1?"s":""} (non comptée${nRep>1?"s":""} comme ${nRep>1?"prévues":"prévue"})`:""}.`;
+  if(pd) { $("#b7WeekHint").textContent = `⏸ ${pd===7?"Semaine en pause":`${pd} jour${pd>1?"s":""} en pause cette semaine`} : rien à rattraper.${nR+nC+nX?` Séances notées quand même : ${nR+nC+nX+nW}${km?` · ${fmtNum(km,1)} km`:""}.`:""}`; }
+  else $("#b7WeekHint").textContent = `Cette semaine : ${nR}/${TGT().r} renfo · ${nC}/${TGT().c} course${TGT().c>1?"s":""}${km?` · ${fmtNum(km,1)} km`:""}${nW?` · ${nW} WOD`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}${nRep?` · ${nRep} séance${nRep>1?"s":""} remplacée${nRep>1?"s":""} (non comptée${nRep>1?"s":""} comme ${nRep>1?"prévues":"prévue"})`:""}.`;
   if(!b7Kind) b7Open($("#b7Date").value || t, null, true);
   renderB7Hist(); renderStrength(); renderRace(); renderB7Recent(); renderRunPlan();
 }
 function b7Open(date, k, keep, id){
-  $("#b7Date").value = date; b7EditId = id || null; b7Orig = null;
+  $("#b7Date").value = date; b7EditId = id || null; b7Orig = null; wodSel = null; wodLvCur = null;
   b7Kind = k || (keep && b7Kind) || (b7Find(date, b7DefaultKind(date)) ? b7DefaultKind(date) : (b7Sessions().filter(x=>x.date===date)[0]?.b7 || b7DefaultKind(date)));
   renderB7Form();
 }
@@ -2569,14 +2600,15 @@ function renderB7Form(){
   const prev = b7Orig ? b7ById(b7Orig.date, b7Orig.id) : b7Find(date,b7Kind);
   b7Orig = prev ? {id:prev.id, date: b7Orig?.date || date} : null;
   $("#b7Kinds").innerHTML = B7_KINDS.map(k=>[k,B7[k]]).map(([k,v])=>`<button type="button" data-k="${k}" aria-pressed="${k===b7Kind}">${v.short}</button>`).join("");
-  $$("#b7Kinds button").forEach(b=>b.onclick=()=>{ b7Kind=b.dataset.k; b7EditId=null; b7Orig=null; renderB7Form(); });
+  $$("#b7Kinds button").forEach(b=>b.onclick=()=>{ b7Kind=b.dataset.k; b7EditId=null; b7Orig=null; wodSel=null; wodLvCur=null; renderB7Form(); });
   const dl=b7DaySessions(date);
   $("#b7DayList").innerHTML = dl.length ? `<span class="hint" style="margin:0">Déjà noté ce jour-là :</span>`+dl.map(x=>`<button type="button" class="chip b7-chip${(b7EditId===x.id||(!b7EditId&&!B7[b7Kind].multi&&x.b7===b7Kind))?" on":""}" data-id="${x.id}" data-k="${x.b7}">${esc(x.title||B7[x.b7]?.label||"Séance")}${x.run?.km?` · ${fmtNum(x.run.km,1)} km`:""}</button>`).join("") : "";
   $$("#b7DayList [data-id]").forEach(b=>b.onclick=()=>b7Open(date, b.dataset.k, false, b.dataset.id));
   $("#b7LogTitle").innerHTML = `${esc(P.label)}${prev?" <small>déjà notée · modifie ce que tu veux, même la date</small>":""}`;
   $("#b7Note").textContent = runPlanFor(b7Kind, date) || P.note;
   const nameField = P.free ? `<label style="margin-bottom:10px">Nom<input type="text" id="b7Title" value="${esc(prev?.title&&prev.title!==P.label?prev.title:"")}" placeholder="${P.kind==="run"?"ex. Footing récup, sortie longue…":"ex. Vélo, padel, mobilité…"}"></label>` : "";
-  if(P.kind==="other"){
+  if(P.kind==="wod") renderWodForm(prev);
+  else if(P.kind==="other"){
     const r=prev?.run||{};
     $("#b7Form").innerHTML = nameField+`<div class="b7-run"><label>Durée (min ou h:mm:ss)<input type="text" id="b7Dur" inputmode="numeric" value="${r.dur?esc(r.dur):""}" placeholder="ex. 45"></label><label>Distance (km, facultatif)<input type="number" id="b7Km" step="0.01" min="0" inputmode="decimal" value="${r.km??""}"></label><div class="b7-pace" id="b7Pace"></div></div>`;
   } else if(P.kind==="run"){
@@ -2644,8 +2676,14 @@ $("#b7Save").onclick=async()=>{
   const from = b7Orig && b7Orig.date!==date ? b7Orig.date : null;
   if(from && !P.multi){ const clash=b7DaySessions(date).find(x=>x.b7===b7Kind && x.id!==prev?.id);
     if(clash && !confirm(`Il y a déjà « ${clash.title||P.label} » le ${fmtShort(date).replace(/\.$/,"")}. La remplacer par celle-ci ?`)) return; }
-  const s = {id: prev?.id || uid(), b7:b7Kind, type: P.kind==="run"?"Course":P.kind==="other"?"Autre":"Renforcement", title: (P.free && $("#b7Title")?.value.trim()) || P.label, feel:b7Feel, note:$("#b7Notes").value.trim()};
-  if(P.kind==="run" || P.kind==="other"){ s.run={km:num($("#b7Km").value), dur:$("#b7Dur").value.trim()||null}; if(s.run.km==null && !s.run.dur){ $("#b7Msg").textContent="Ajoute au moins la distance ou la durée."; $("#b7Msg").className="save-msg err"; return; } }
+  const s = {id: prev?.id || uid(), b7:b7Kind, type: P.kind==="run"?"Course":P.kind==="other"?"Autre":P.kind==="wod"?"WOD":"Renforcement", title: (P.free && $("#b7Title")?.value.trim()) || P.label, feel:b7Feel, note:$("#b7Notes").value.trim()};
+  if(P.kind==="wod"){
+    const t=$("#wodTime").value.trim().replace(/[.,'h]/g,":").replace(/[^\d:]/g,"");
+    if(t && !parseTime(t)){ $("#b7Msg").textContent="Temps illisible : écris-le comme 18:42."; $("#b7Msg").className="save-msg err"; return; }
+    s.wod={n:wodCur.n, lv:wodCur.lv, time:t||null, scaled:!!$("#wodScaled").value}; s.title=`WOD ${wodCur.n} · Attilius`;
+    if(wch && wch.n===wodCur.n && !wch.run){ wch=null; wchSave(); }
+  }
+  else if(P.kind==="run" || P.kind==="other"){ s.run={km:num($("#b7Km").value), dur:$("#b7Dur").value.trim()||null}; if(s.run.km==null && !s.run.dur){ $("#b7Msg").textContent="Ajoute au moins la distance ou la durée."; $("#b7Msg").className="save-msg err"; return; } }
   else {
     s.sets={};
     $$("#b7Form [data-ex]").forEach(i=>{ const e=i.dataset.ex, k=Number(i.dataset.i); (s.sets[e] ||= []); (s.sets[e][k] ||= {c:null,r:null}); s.sets[e][k][i.dataset.f]=num(i.value); });
@@ -2672,7 +2710,7 @@ $("#b7Del").onclick=async()=>{
 };
 function renderB7Recent(){
   const L=b7Sessions().slice(-12).reverse();
-  $("#b7Recent").innerHTML = L.length ? L.map(x=>{ const P=B7[x.b7]||{}; const det = x.run ? [x.run.km?fmtNum(x.run.km,1)+" km":"", x.run.dur ? (/^\d+$/.test(x.run.dur)? x.run.dur+" min" : x.run.dur) : ""].filter(Boolean).join(" · ") : (n=>`${n} série${n>1?"s":""} notée${n>1?"s":""}`)(Object.values(x.sets||{}).reduce((a,v)=>a+v.filter(z=>z.r!=null).length,0));
+  $("#b7Recent").innerHTML = L.length ? L.map(x=>{ const P=B7[x.b7]||{}; const det = x.wod ? wodDet(x) : x.run ? [x.run.km?fmtNum(x.run.km,1)+" km":"", x.run.dur ? (/^\d+$/.test(x.run.dur)? x.run.dur+" min" : x.run.dur) : ""].filter(Boolean).join(" · ") : (n=>`${n} série${n>1?"s":""} notée${n>1?"s":""}`)(Object.values(x.sets||{}).reduce((a,v)=>a+v.filter(z=>z.r!=null).length,0));
     return `<button type="button" data-d="${x.date}" data-k="${x.b7}" data-id="${x.id}"><span class="dt">${DOW[parseIso(x.date).getDay()]} ${parseIso(x.date).getDate()}</span><span class="tt"><b>${esc(x.title||P.label||"Séance")}</b><span>${fmtShort(x.date)} · ${esc(det)}</span></span><span class="ed">Modifier</span></button>`; }).join("")
     : '<p class="empty" style="margin:0">Aucune séance notée pour l\'instant.</p>';
   $$("#b7Recent button").forEach(b=>b.onclick=()=>{ b7Open(b.dataset.d, b.dataset.k, false, b.dataset.id); $("#b7Log").scrollIntoView?.({behavior:"smooth",block:"start"}); });
@@ -2681,7 +2719,7 @@ function renderB7Week(){ const k=b7Kind; renderB7(); b7Kind=k; }
 let b7HistOpen=null; // semaine dépliée dans l'historique
 function weekDetail(m){
   const e=addDays(m,6), ws=b7Sessions().filter(x=>x.date>=m&&x.date<=e), wp=weekPaused(m), pd=pausedDays(m);
-  const list = ws.length ? ws.map(x=>{ const P=B7[x.b7]||{}; const det = x.run ? [x.run.km?fmtNum(x.run.km,1)+" km":"", x.run.dur ? (/^\d+$/.test(x.run.dur)? x.run.dur+" min" : x.run.dur) : ""].filter(Boolean).join(" · ") : (n=>`${n} série${n>1?"s":""}`)(Object.values(x.sets||{}).reduce((a,v)=>a+v.filter(z=>z.r!=null).length,0));
+  const list = ws.length ? ws.map(x=>{ const P=B7[x.b7]||{}; const det = x.wod ? wodDet(x) : x.run ? [x.run.km?fmtNum(x.run.km,1)+" km":"", x.run.dur ? (/^\d+$/.test(x.run.dur)? x.run.dur+" min" : x.run.dur) : ""].filter(Boolean).join(" · ") : (n=>`${n} série${n>1?"s":""}`)(Object.values(x.sets||{}).reduce((a,v)=>a+v.filter(z=>z.r!=null).length,0));
       return `<button type="button" data-d="${x.date}" data-k="${x.b7}" data-id="${x.id}"><span class="dt">${DOW[parseIso(x.date).getDay()]} ${parseIso(x.date).getDate()}</span><span class="tt"><b>${esc(x.title||P.label||"Séance")}</b><span>${esc(det)}</span></span><span class="ed">Modifier</span></button>`; }).join("")
     : `<p class="empty" style="margin:0 0 4px">Aucune séance notée cette semaine.</p>`;
   return `<div class="wk-detail"><div class="b7-recent">${list}</div>
@@ -3158,6 +3196,149 @@ $("#pgSave").onclick=async()=>{
   await afterProgChange(); $("#b7Week").scrollIntoView?.({behavior:"smooth",block:"start"});
 };
 
+/* ---------- WOD : challenge Attilius (Ludus Litobox), 18 WOD en 6 paliers ---------- */
+// ex : [nom, Novicius, Tiro, Veteranus] (null = pas fait à ce niveau). how : consigne par niveau.
+// tm : minuteur d'intervalles {work:[N,T,V], rest:[N,T,V], rounds, tabata?}
+const WOD_LV = ["Novicius","Tiro","Veteranus"];
+let wodSel = null, wodLvCur = null, wodCur = null; // WOD choisi, niveau choisi (modif), état affiché {n, lv}
+const TAB = "Tabata (8 × 20 s / 10 s)";
+const WODS = [
+  {n:1, how:["Tabata 2 et 3, sans repos entre les Tabata","Tabata 1, 2 et 3, sans repos entre les Tabata","Tabata 1, 2, 3 et 4, sans repos entre les Tabata"],
+   tm:{tabata:[[2,3],[1,2,3],[1,2,3,4]]},
+   ex:[["Pompes diamant",null,TAB,TAB],["Squats complets",TAB,TAB,TAB],["Burpees",TAB,TAB,TAB],["Double unders",null,null,TAB]]},
+  {n:2, how:["10 tours","15 tours","20 tours"],
+   ex:[["Tractions","5","5","5"],["Dips","5","5","5"],["Pompes","10","10","10"]]},
+  {n:3, how:["3 tours","3 tours","3 tours"],
+   ex:[["Planche pieds surélevés","40 s","50 s","1 min"],["Abdos torsion (g. et d.)","30","40","50"],["Planche latérale pieds surélevés (g.)","40 s","50 s","1 min"],["Ciseaux","30","40","50"],["Planche latérale pieds surélevés (d.)","40 s","50 s","1 min"],["Abdos groupés","30","40","50"]]},
+  {n:4, how:["3 tours · 2 min de repos entre les tours","3 tours · 2 min de repos entre les tours","3 tours · 2 min de repos entre les tours"],
+   ex:[["Monter sur une chaise (g. et d.)","20","25","30"],["Chaise contre un mur","30 s","35 s","40 s"],["Leg curls au sol","20","25","30"],["Sauts groupés","20","25","30"],["Fentes sur le côté (g. et d.)","10","15","20"],["Squats bulgares (g. et d.)","10","15","20"]]},
+  {n:5, how:["Le circuit, une fois","Le circuit, une fois","Le circuit, une fois"],
+   ex:[["Burpees","30","40","50"],["Mountain climbers","30","40","50"],["Squats sautés","30","40","50"],["Pompes touchés d'épaules (g. et d.)","30","40","50"],["Sauts mogul (g. et d.)","30","40","50"],["Fentes sautées (g. et d.)","30","40","50"]]},
+  {n:6, how:["5 tours · 1 min de repos entre les tours","5 tours · 1 min de repos entre les tours","5 tours · 1 min de repos entre les tours"],
+   ex:[["Banane statique (position haute)","20 s","25 s","30 s"],["Planche spider-man","20 s","25 s","30 s"],["Planche latérale côté droit","20 s","25 s","30 s"],["Planche latérale côté gauche","20 s","25 s","30 s"],["Planche","30 s","45 s","1 min"],["Planche dynamique","30 s","45 s","1 min"]]},
+  {n:7, how:["2 tours","2 tours","2 tours"],
+   ex:[["Double unders","30","40","50"],["Levés de bassin pied surélevé (g. et d.)","30","40","50"],["Double unders","30","40","50"],["Deadlifts sur 1 jambe (g. et d.)","30","40","50"],["Double unders","30","40","50"],["Bird dogs (g. et d.)","30","40","50"]]},
+  {n:8, how:["5 tours · 35 s d'effort / 25 s de repos par exercice","5 tours · 40 s d'effort / 20 s de repos par exercice","5 tours · 45 s d'effort / 15 s de repos par exercice"],
+   tm:{work:[35,40,45], rest:[25,20,15], rounds:5},
+   ex:[["Fentes croisées","35 s","40 s","45 s"],["V-ups","35 s","40 s","45 s"],["Pompes piquées","35 s","40 s","45 s"],["Sortie du dos","35 s","40 s","45 s"],["Patineurs","35 s","40 s","45 s"],["Burpees","35 s","40 s","45 s"]]},
+  {n:9, how:["Le circuit, une fois","Le circuit, une fois","Le circuit, une fois"],
+   ex:[["Sauts à la corde","200","250","300"],["Tractions","30","40","50"],["Sauts à la corde","200","250","300"],["Pompes spider-man","30","40","50"],["Sauts à la corde","200","250","300"],["Dips","30","40","50"]]},
+  {n:10, how:["Pyramide 1 → 8 → 1 répétitions pour chaque exercice","Pyramide 1 → 9 → 1 répétitions pour chaque exercice","Pyramide 1 → 10 → 1 répétitions pour chaque exercice"],
+   ex:[["Squats complets","1-8-1","1-9-1","1-10-1"],["Pompes diamant","1-8-1","1-9-1","1-10-1"],["Tractions","1-8-1","1-9-1","1-10-1"],["Burpees sauts groupés","1-8-1","1-9-1","1-10-1"]]},
+  {n:11, how:["5 tours · 35 s d'effort / 25 s de repos par exercice","5 tours · 40 s d'effort / 20 s de repos par exercice","5 tours · 45 s d'effort / 15 s de repos par exercice"],
+   tm:{work:[35,40,45], rest:[25,20,15], rounds:5},
+   ex:[["Abdos chandelle","35 s","40 s","45 s"],["Monter sur une chaise (à gauche)","35 s","40 s","45 s"],["Planche spider-man","35 s","40 s","45 s"],["Monter sur une chaise (à droite)","35 s","40 s","45 s"],["Abdos essuie-glace","35 s","40 s","45 s"],["Relevés de bassin pieds surélevés","35 s","40 s","45 s"]]},
+  {n:12, how:["Pyramide : à chaque tour tractions, pompes et abdos (+1/+2/+3 jusqu'au sommet, puis on redescend)","Pyramide : à chaque tour tractions, pompes et abdos (+1/+2/+3 jusqu'au sommet, puis on redescend)","Pyramide : à chaque tour tractions, pompes et abdos (+1/+2/+3 jusqu'au sommet, puis on redescend)"],
+   ex:[["Tractions (+1 / −1 à chaque tour)","1-7-1","1-8-1","1-10-1"],["Pompes (+2 / −2 à chaque tour)","2-14-2","2-16-2","2-20-2"],["Abdos kick-out (+3 / −3 à chaque tour)","3-21-3","3-24-3","3-30-3"]]},
+  {n:13, how:["3 tours","3 tours","3 tours"],
+   ex:[["Planche","40 s","50 s","1 min"],["Planche latérale levés de hanche (côté droit)","40 s","50 s","1 min"],["Planche latérale levés de hanche (côté gauche)","40 s","50 s","1 min"],["Triangles","40 s","50 s","1 min"],["Dead bugs","40 s","50 s","1 min"],["Abdos coude-genou croisés","40 s","50 s","1 min"]]},
+  {n:14, how:["3 tours","3 tours","3 tours"],
+   ex:[["Langoustes (g. et d.)","20","30","40"],["Squats sumo","30","40","50"],["Pompes","40","50","60"],["Squats 180°","30","40","50"],["Levés de jambes au sol","20","30","40"]]},
+  {n:15, how:["Tabata 2 et 3, sans repos entre les Tabata","Tabata 1, 2 et 3, sans repos entre les Tabata","Tabata 1, 2, 3 et 4, sans repos entre les Tabata"],
+   tm:{tabata:[[2,3],[1,2,3],[1,2,3,4]]},
+   ex:[["Tractions",null,TAB,TAB],["Pompes mains écartées",TAB,TAB,TAB],["Mountain climbers",TAB,TAB,TAB],["Squats bulgares (g. / d.)",null,null,TAB]]},
+  {n:16, how:["10 tours","10 tours","10 tours"],
+   ex:[["Tractions","6","8","10"],["Dips","6","8","10"],["Pompes mains décollées","6","8","10"],["Levés de jambes à la barre","6","8","10"]]},
+  {n:17, how:["2 tours","2 tours","2 tours"],
+   ex:[["Sauts mogul (g. et d.)","30","40","50"],["Ciseaux","60","80","100"],["Sauts mogul (g. et d.)","30","40","50"],["Abdos chandelle","60","80","100"],["Sauts mogul (g. et d.)","30","40","50"],["Mountain climbers","60","80","100"]]},
+  {n:18, how:["2 tours","2 tours","2 tours"],
+   ex:[["Fentes sautées (g. et d.)","12","16","20"],["Extensions mollets","24","32","40"],["Chaise","36 s","48 s","60 s"],["Relevés de bassin pieds surélevés","48","64","80"],["Squats complets","60","80","100"],["Relevés de bassin épaules surélevées","48","64","80"],["Chaise","36 s","48 s","60 s"],["Extensions mollets","24","32","40"],["Squats levé de jambe (g. et d.)","12","16","20"]]},
+];
+const wodById = n => WODS.find(w=>w.n===Number(n));
+const wodPalier = n => Math.ceil(n/3);
+const wodLv = () => Math.min(2, Math.max(0, Number(S?.wodLevel ?? 0) || 0));
+const wodDone = () => b7Sessions().filter(x=>x.wod?.n);
+function wodNext(){ const d=new Set(wodDone().map(x=>x.wod.n)); return (WODS.find(w=>!d.has(w.n))||WODS[0]).n; }
+const wodTimeTxt = t => t ? (/^\d+$/.test(t) ? t+" min" : t) : "";
+function wodBest(n, lv, beforeId){ // meilleur temps sur ce WOD à ce niveau
+  const L=wodDone().filter(x=>x.wod.n===n && x.wod.lv===lv && x.id!==beforeId && parseTime(x.wod.time));
+  return L.sort((a,b)=>parseTime(a.wod.time)-parseTime(b.wod.time))[0] || null;
+}
+// phases du minuteur d'intervalles : [{lbl, sec, work}]
+function wodPhases(w, lv){
+  const t=w.tm; if(!t) return null; const out=[];
+  if(t.tabata){ t.tabata[lv].forEach(i=>{ const name=w.ex[i-1][0]; for(let r=1;r<=8;r++){ out.push({lbl:`${name} · ${r}/8`, sec:20, work:true}); out.push({lbl:`Repos · ${r<8?name:"Tabata suivant"}`, sec:10, work:false}); } }); }
+  else { for(let r=1;r<=t.rounds;r++) w.ex.forEach((e,i)=>{ out.push({lbl:`${e[0]} · tour ${r}/${t.rounds}`, sec:t.work[lv], work:true}); out.push({lbl:`Repos · ensuite ${(w.ex[i+1]||w.ex[0])[0]}`, sec:t.rest[lv], work:false}); }); }
+  out.pop(); return out; // pas de repos après la dernière
+}
+// chrono / minuteur, gardé même si l'app passe en arrière-plan
+const WCH_KEY="carnet-wod-chrono";
+let wch = (()=>{ try{ return JSON.parse(localStorage.getItem(WCH_KEY))||null; }catch(e){ return null; } })(); // {n, lv, mode:"sw"|"tm", start, acc, run}
+let wchTick=null, wchLastPh=-1;
+const wchSave = () => { try{ wch ? localStorage.setItem(WCH_KEY, JSON.stringify(wch)) : localStorage.removeItem(WCH_KEY); }catch(e){} };
+const wchElapsed = () => wch ? (wch.acc||0) + (wch.run ? Date.now()-wch.start : 0) : 0;
+function wchPaint(){
+  const box=$("#wodChrono"); if(!box || !wch) { clearInterval(wchTick); wchTick=null; return; }
+  const el=wchElapsed(), w=wodById(wch.n);
+  if(wch.mode==="tm"){
+    const ph=wodPhases(w, wch.lv); let t=el/1000, i=0; while(i<ph.length && t>=ph[i].sec){ t-=ph[i].sec; i++; }
+    if(i>=ph.length){ if(wch.run){ beep(); wch.acc=ph.reduce((a,p)=>a+p.sec,0)*1000; wch.run=false; wchSave(); keepAwake(false); paintWodChronoBtns(); }
+      $("#wodClock").textContent="Terminé 💪"; $("#wodPhase").textContent=`${ph.filter(p=>p.work).length} intervalles faits`; box.className="wod-chrono done"; return; }
+    if(wch.run && i!==wchLastPh){ if(wchLastPh>=0) beep(); wchLastPh=i; }
+    const left=Math.ceil(ph[i].sec - t);
+    $("#wodClock").textContent = `${Math.floor(left/60)}:${String(left%60).padStart(2,"0")}`;
+    $("#wodPhase").textContent = `${ph[i].work?"🔥 ":"😮‍💨 "}${ph[i].lbl}`;
+    box.className = "wod-chrono "+(ph[i].work?"work":"rest");
+  } else {
+    const s=Math.floor(el/1000); $("#wodClock").textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+    $("#wodPhase").textContent = wch.run ? "Chrono en cours…" : (s ? "En pause" : ""); box.className="wod-chrono";
+  }
+}
+function paintWodChronoBtns(){
+  const go=$("#wodGo"); if(!go) return;
+  go.textContent = wch?.run ? "⏸ Pause" : (wch && wchElapsed()>0 ? "▶ Reprendre" : "▶ Démarrer");
+  $("#wodReset").hidden = !wch || (!wch.run && !wchElapsed());
+}
+function wodChronoStart(n, lv, mode){
+  unlockAudio();
+  if(!wch || wch.n!==n || wch.lv!==lv || wch.mode!==mode) wch={n, lv, mode, acc:0, run:false};
+  if(wch.run){ wch.acc=wchElapsed(); wch.run=false; keepAwake(false); }
+  else { wch.start=Date.now(); wch.run=true; keepAwake(true); wchLastPh=-1; }
+  wchSave(); paintWodChronoBtns(); wchPaint();
+  clearInterval(wchTick); if(wch.run) wchTick=setInterval(wchPaint,250);
+  if(!wch.run && mode==="sw"){ const s=Math.floor(wchElapsed()/1000); if(s) $("#wodTime").value=`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; }
+}
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && wch?.run){ wchPaint(); keepAwake(true); } });
+
+function renderWodForm(prev){
+  const lv = wodLvCur ?? (prev?.wod ? prev.wod.lv : wodLv());
+  const n = wodSel ?? prev?.wod?.n ?? wodNext(); wodCur = {n, lv};
+  const w = wodById(n), done = wodDone(), doneSet = new Set(done.filter(x=>x.id!==prev?.id).map(x=>x.wod.n));
+  const pal = [1,2,3,4,5,6].map(p=>{ const ws=WODS.filter(x=>wodPalier(x.n)===p), ok=ws.every(x=>doneSet.has(x.n));
+    return `<div class="wod-pal${ok?" ok":""}"><span>${ok?"🏅":""}Palier ${p}</span>${ws.map(x=>`<button type="button" data-wod="${x.n}" class="${x.n===n?"on":""}${doneSet.has(x.n)?" done":""}">${x.n}</button>`).join("")}</div>`; }).join("");
+  const nDone = new Set(done.map(x=>x.wod.n)).size;
+  const best = wodBest(n, lv, prev?.id), last = done.filter(x=>x.wod.n===n && x.id!==prev?.id).at(-1);
+  const ph = w.tm ? wodPhases(w, lv) : null, mode = ph ? "tm" : "sw";
+  const tot = ph ? ph.reduce((a,p)=>a+p.sec,0) : 0;
+  $("#b7Form").innerHTML = `
+    <div class="wod-prog"><b>Challenge Attilius</b><span>${nDone}/18 WOD faits</span><i style="--p:${nDone/18*100}%"></i></div>
+    <div class="wod-grid">${pal}</div>
+    <div class="seg wod-lv" id="wodLv">${WOD_LV.map((l,i)=>`<button type="button" data-lv="${i}" aria-pressed="${i===lv}">${l}</button>`).join("")}</div>
+    <div class="wod-card">
+      <header><h3>WOD ${n}</h3><span>Palier ${wodPalier(n)}</span></header>
+      <p class="wod-how">${esc(w.how[lv])}</p>
+      <ol class="wod-ex">${w.ex.map(e=>e[lv+1]==null ? `<li class="off"><span>${esc(e[0])}</span><b>—</b></li>` : `<li><span>${esc(e[0])}</span><b>${esc(e[lv+1])}</b></li>`).join("")}</ol>
+      ${best||last ? `<p class="last">${best?`🏆 Meilleur temps (${WOD_LV[lv]}) : <b>${esc(wodTimeTxt(best.wod.time))}</b> le ${fmtShort(best.date)}`:""}${best&&last?" · ":""}${last&&last!==best?`Dernière fois : ${fmtShort(last.date)} (${WOD_LV[last.wod.lv]}${last.wod.time?", "+esc(wodTimeTxt(last.wod.time)):""})`:""}</p>` : `<p class="last">Première fois sur ce WOD : bonne technique avant la vitesse.</p>`}
+    </div>
+    <div class="wod-chrono" id="wodChrono">
+      <div class="wod-clock" id="wodClock">${ph?`${Math.floor(tot/60)}:${String(tot%60).padStart(2,"0")}`:"0:00"}</div>
+      <div class="wod-phase" id="wodPhase">${ph?`Minuteur : ${ph.filter(p=>p.work).length} intervalles, bip à chaque changement`:"Chrono : lance-le au début, arrête-le à la fin"}</div>
+      <div class="row" style="justify-content:center;gap:8px;margin-top:8px"><button type="button" class="btn small" id="wodGo">▶ Démarrer</button><button type="button" class="btn ghost small" id="wodReset" hidden>↺ Remettre à zéro</button></div>
+    </div>
+    <div class="b7-run">
+      <label>Temps total (mm:ss)<input type="text" id="wodTime" inputmode="numeric" value="${esc(prev?.wod?.time||"")}" placeholder="${ph?"facultatif":"ex. 18:42"}"></label>
+      <label>Adapté ?<select id="wodScaled"><option value="">Non, comme prévu</option><option value="1"${prev?.wod?.scaled?" selected":""}>Oui (reps, exos…)</option></select></label>
+    </div>`;
+  $$("#b7Form [data-wod]").forEach(b=>b.onclick=()=>{ wodSel=Number(b.dataset.wod); renderWodForm(prev); });
+  $$("#wodLv [data-lv]").forEach(b=>b.onclick=async()=>{ const v=Number(b.dataset.lv); wodLvCur=v; renderWodForm(prev); if(!prev){ S.wodLevel=v; try{ await saveSettings(); }catch(e){} } });
+  if(wch && (wch.n!==n || wch.lv!==lv) && !wch.run && !wchElapsed()) wch=null;
+  $("#wodGo").onclick=()=>wodChronoStart(n, lv, mode);
+  $("#wodReset").onclick=()=>{ wch=null; wchSave(); keepAwake(false); clearInterval(wchTick); renderWodForm(prev); };
+  if(wch && wch.n===n && wch.lv===lv){ wchPaint(); clearInterval(wchTick); if(wch.run) wchTick=setInterval(wchPaint,250); }
+  paintWodChronoBtns();
+}
+const wodDet = x => [WOD_LV[x.wod.lv]+(x.wod.scaled?" adapté":""), wodTimeTxt(x.wod.time)].filter(Boolean).join(" · ");
+
 /* ---------- partager une séance (image format story 1080 × 1920) ---------- */
 function sessionShareData(date, x){
   const P=B7[x.b7]||{}, lines=[]; let big=null, bigLbl="", sub="";
@@ -3165,6 +3346,11 @@ function sessionShareData(date, x){
     const km=x.run.km, sec=parseTime(x.run.dur);
     big = km ? fmtNum(km, km%1?1:0) : (sec?fmtHMS(sec):"✓"); bigLbl = km ? "KILOMÈTRES" : "DURÉE";
     if(sec) lines.push(["Durée", fmtHMS(sec)]); if(km&&sec) lines.push(["Allure", fmtPace(sec/km)]);
+  } else if(x.wod){
+    const w=wodById(x.wod.n), sec=parseTime(x.wod.time);
+    big = sec ? fmtHMS(sec) : "✓"; bigLbl = (sec ? "TEMPS" : "TERMINÉ") + `  ·  ${WOD_LV[x.wod.lv].toUpperCase()}${x.wod.scaled?" (ADAPTÉ)":""}`;
+    (w?.ex||[]).forEach(e=>{ if(e[x.wod.lv+1]!=null) lines.push([e[0].replace(/ \(.*\)$/,""), e[x.wod.lv+1].replace(TAB,"Tabata")]); });
+    if(w) lines.unshift(["Format", w.how[x.wod.lv].split(" · ")[0].replace(/, sans repos.*/,"")]);
   } else if(x.sets){
     let vol=0, nSets=0;
     Object.entries(x.sets).forEach(([id,sets])=>{ const e=exInfo(id); const done=sets.filter(z=>z.r!=null); if(!done.length) return; nSets+=done.length;
@@ -3178,12 +3364,12 @@ function sessionShareData(date, x){
 async function shareCanvas(date, x){
   const D=sessionShareData(date,x), w=1080, h=1920, c=document.createElement("canvas"), X=c.getContext("2d"); c.width=w; c.height=h;
   try{ await document.fonts.load('italic 800 120px "Barlow Condensed"'); await document.fonts.load('800 80px "Barlow Condensed"'); await document.fonts.load('600 40px Barlow'); }catch(e){}
-  const acc = D.kind==="run" ? (css("--steps")||"#22E3A0") : D.kind==="other" ? (css("--sleep")||"#A07EFF") : (css("--accent")||"#C6F432");
+  const acc = D.kind==="run" ? (css("--steps")||"#22E3A0") : D.kind==="wod" ? (css("--train")||"#FF7A3D") : D.kind==="other" ? (css("--sleep")||"#A07EFF") : (css("--accent")||"#C6F432");
   X.fillStyle="#0B0D10"; X.fillRect(0,0,w,h);
   let g=X.createRadialGradient(w*0.9,h*0.08,40,w*0.9,h*0.08,1100); g.addColorStop(0,acc+"55"); g.addColorStop(1,"rgba(0,0,0,0)"); X.fillStyle=g; X.fillRect(0,0,w,h);
   g=X.createRadialGradient(0,h,40,0,h,900); g.addColorStop(0,acc+"22"); g.addColorStop(1,"rgba(0,0,0,0)"); X.fillStyle=g; X.fillRect(0,0,w,h);
   // filigrane
-  X.save(); X.font='italic 800 380px "Barlow Condensed", sans-serif'; X.strokeStyle="rgba(255,255,255,.05)"; X.lineWidth=3; X.strokeText((B7[x.b7]?.short||"GO").toUpperCase(), 40, 640); X.restore();
+  X.save(); X.font='italic 800 380px "Barlow Condensed", sans-serif'; X.strokeStyle="rgba(255,255,255,.05)"; X.lineWidth=3; X.strokeText((x.wod?"WOD "+x.wod.n:(B7[x.b7]?.short||"GO")).toUpperCase(), 40, 640); X.restore();
   const L=90; X.textAlign="left";
   X.fillStyle=acc; X.font='800 34px Barlow, sans-serif'; X.fillText(`${["DIMANCHE","LUNDI","MARDI","MERCREDI","JEUDI","VENDREDI","SAMEDI"][parseIso(date).getDay()]} ${fmtShort(date).toUpperCase()}${b7WeekNo(date)>=1?`  ·  SEMAINE ${b7WeekNo(date)}`:""}`, L, 200);
   // titre sur 2 lignes max, taille réduite si un mot est trop long
@@ -3240,7 +3426,7 @@ function paintB7Rep(date, prev){
   const inPlan = B7_PLAN.some(p=>p.k===b7Kind), wrap=$("#b7RepWrap"), swap=$("#b7Swap");
   // bouton « remplacer » sur une séance prévue pas encore faite
   swap.hidden = !(inPlan && !prev);
-  swap.onclick = ()=>{ b7RepPreset = b7Kind; b7Kind = "X"; b7EditId=null; b7Orig=null; renderB7Form(); $("#b7Msg").textContent="Choisis l'activité faite à la place (+ Course, + Séance, Dépl. A/B…) puis enregistre."; $("#b7Msg").className="save-msg"; };
+  swap.onclick = ()=>{ b7RepPreset = b7Kind; b7Kind = "X"; b7EditId=null; b7Orig=null; renderB7Form(); $("#b7Msg").textContent="Choisis l'activité faite à la place (+ WOD, + Course, + Séance, Dépl. A/B…) puis enregistre."; $("#b7Msg").className="save-msg"; };
   if(inPlan){ wrap.hidden=true; return; }
   const slots=weekSlots(date), cur = prev?.replaces?.k || b7RepPreset || "";
   const opts = slots.filter(sl=>!sl.doneBy || sl.doneBy.id===prev?.id || sl.k===cur);
