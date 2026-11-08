@@ -282,6 +282,9 @@ details.addform>summary,details.more>summary,.addlink{color:var(--accent)}
 .cheat button{border:1px dashed var(--line);background:transparent;color:var(--muted);border-radius:10px;padding:10px 12px;font:inherit;font-weight:700;cursor:pointer;text-align:left}
 .cheat button[aria-pressed="true"]{border-style:solid;border-color:var(--train);background:rgba(255,122,61,.14);color:var(--train)}
 .weight-why{margin:10px 0 0;font-size:.85rem;line-height:1.4;border-left:3px solid var(--train);padding:6px 10px;background:rgba(255,122,61,.08);border-radius:0 8px 8px 0}
+.cheat-tips{margin-top:8px;font-size:.86rem;line-height:1.45}
+.cheat-tips p{margin:6px 0}
+.cheat-tips ul{margin:6px 0;padding-left:18px;display:grid;gap:5px}
 .weight-why.ok{border-color:var(--gold);background:rgba(255,201,61,.08)}
 .water-quick button{flex:1;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:10px;padding:10px 0;font-weight:700;cursor:pointer}
 .water-quick button:active{background:var(--weight);color:#0B0D10;border-color:var(--weight)}
@@ -725,6 +728,18 @@ nav.bottom-nav{display:none}
       <div class="water-quick" id="waterQuick" aria-label="Ajouter de l'eau"><button type="button" data-add="0.25">+ 25 cl</button><button type="button" data-add="0.5">+ 50 cl</button><button type="button" data-add="1">+ 1 L</button></div>
       <div class="cheat"><button type="button" id="cheatBtn" aria-pressed="false">🍔 Cheat / écart aujourd'hui</button><input type="text" id="cheatNote" placeholder="Quoi ? ex. pizza + dessert, resto, apéro…" hidden></div>
       <p class="weight-why" id="weightWhy" hidden></p>
+      <details class="more cheat-tips" id="cheatTips" hidden><summary>💡 Que faire après un cheat ?</summary>
+        <p><b>Le principe :</b> on reprend son rythme normal dès le repas suivant, sans chercher à « rattraper ».</p>
+        <ul>
+          <li><b>Mange normalement</b> : pas de repas sauté ni de jeûne pour compenser, c'est souvent ce qui provoque le craquage suivant.</li>
+          <li><b>Bois bien</b>, au moins ton objectif d'eau : ça aide à évacuer le sel.</li>
+          <li><b>Bouge</b> : tes 10 à 12 000 pas et ta séance normale. Pas de séance « punition » plus longue ou plus dure.</li>
+          <li><b>Un peu moins salé</b>, plus de protéines et de légumes pendant 1 ou 2 jours.</li>
+          <li><b>Ignore la balance 2 à 4 jours</b> : le +1 ou +2 kg, c'est surtout de l'eau et du glycogène, pas du gras. Regarde la moyenne sur 7 jours.</li>
+        </ul>
+        <p><b>Ordre de grandeur :</b> 1 kg de gras ≈ 7 700 kcal en trop. Un gros repas libre, c'est plutôt 1 000 à 2 000 kcal : ça ralentit la semaine, ça ne la ruine pas.</p>
+        <p><b>Ce qui pose problème :</b> la journée entière de cheat (5 000 kcal et plus), les écarts 2 ou 3 fois par semaine, et le cycle culpabilité → restriction → craquage. Un repas plaisir par semaine, prévu à l'avance, ça aide au contraire à tenir.</p>
+      </details>
       <div hidden><div class="scale" data-field="sleepQuality"></div></div>
     </section>
 
@@ -1623,13 +1638,13 @@ $("#weight").addEventListener("input",()=>paintWeightWhy());
 const isCheat = (d) => { const x = d===current?.date ? {ecart: $("#cheatBtn").getAttribute("aria-pressed")==="true", ecartNote:$("#cheatNote").value.trim()} : days[d]; return x?.ecart ? x : null; };
 function paintWeightWhy(){
   const el=$("#weightWhy"), date=current?.date, w=num($("#weight").value), pv=date && prevValue(date,"weight");
-  el.hidden=true; if(w==null || !pv) return;
+  el.hidden=true; $("#cheatTips").hidden = !(isCheat(date)); if(w==null || !pv) return;
   const dlt=w-Number(pv.v); if(dlt<0.8) return;
   let ch=null; for(let i=0;i<=3 && !ch;i++){ const d=addDays(date,-i), c=isCheat(d); if(c) ch={d, i, note:c.ecartNote}; }
   const since = pv.i===1 ? "depuis hier" : `en ${pv.i} jours`, inc=`<b>+${fmtNum(dlt,1)} kg</b> ${since}`;
   if(ch){ el.className="weight-why ok"; el.innerHTML = `${inc} : normal après ton cheat ${ch.i===0?"d'aujourd'hui":ch.i===1?"d'hier":"de "+DOW[parseIso(ch.d).getDay()]}${ch.note?` (${esc(ch.note)})`:""}. C'est surtout de l'eau et du glycogène (sel, glucides) : ça redescend en général en 2 à 4 jours. Juge plutôt la moyenne sur 7 jours.`; }
   else { el.className="weight-why"; el.innerHTML = `${inc}, d'un coup. Un repas plus copieux, salé, de l'alcool, peu de sommeil ? Si c'est un cheat, note-le avec 🍔 (le jour où tu l'as fait) pour t'en souvenir.`; }
-  el.hidden=false;
+  el.hidden=false; $("#cheatTips").hidden=false;
 }
 $$("#waterQuick button").forEach(b=>b.onclick=()=>{ const v=(num($("#water").value)||0)+Number(b.dataset.add); $("#water").value=Math.round(v*100)/100; markDirty(); });
 
