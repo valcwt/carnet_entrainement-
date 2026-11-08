@@ -3512,7 +3512,7 @@ const RUN_Q = [ // mercredi, semaines 1 à 12
   ()=>`4 × 4 min à ${paceAt(.90)} · récup 2 min trot`, ()=>`4 × 4 min à ${paceAt(.90)} · récup 2 min trot`,
   ()=>`3 × 6 min à ${paceAt(.85)} (seuil) · récup 2 min trot`,
   ()=>`TEST FINAL : 1,6 km chrono. Compare avec ton 8'13 de septembre 💪`];
-const RUN_E = ["25 min : 5 × (4 min course + 1 min marche)","25 min : 5 × (4 min course + 1 min marche)","30 min, marche autorisée","Semaine allégée : 25 min","30 min en continu","35 min","40 min","Semaine allégée : 30 min","40 min","45 min","50 min","40 min tranquille"];
+const RUN_E = ["30 min en continu","30 min en continu","35 min","Semaine allégée : 30 min","35 min","40 min","40 min","Semaine allégée : 30 min","45 min","50 min","55 min","40 min tranquille"];
 function runPlanFor(k, date){
   const P=activeProgram(); if(!P.builtin || (k!=="Q" && k!=="E")) return null;
   const w=b7WeekNo(date); if(w<1) return null;
