@@ -285,6 +285,8 @@ details.addform>summary,details.more>summary,.addlink{color:var(--accent)}
 .cheat-tips{margin-top:8px;font-size:.86rem;line-height:1.45}
 .cheat-tips p{margin:6px 0}
 .cheat-tips ul{margin:6px 0;padding-left:18px;display:grid;gap:5px}
+.cheat-warn{margin:8px 0 0;font-size:.86rem;line-height:1.4;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,84,104,.45);background:rgba(255,84,104,.1)}
+.cheat-warn b{color:var(--warn)}
 .weight-why.ok{border-color:var(--gold);background:rgba(255,201,61,.08)}
 .water-quick button{flex:1;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:10px;padding:10px 0;font-weight:700;cursor:pointer}
 .water-quick button:active{background:var(--weight);color:#0B0D10;border-color:var(--weight)}
@@ -727,6 +729,7 @@ nav.bottom-nav{display:none}
       </div>
       <div class="water-quick" id="waterQuick" aria-label="Ajouter de l'eau"><button type="button" data-add="0.25">+ 25 cl</button><button type="button" data-add="0.5">+ 50 cl</button><button type="button" data-add="1">+ 1 L</button></div>
       <div class="cheat"><button type="button" id="cheatBtn" aria-pressed="false">🍔 Cheat / écart aujourd'hui</button><input type="text" id="cheatNote" placeholder="Quoi ? ex. pizza + dessert, resto, apéro…" hidden></div>
+      <p class="cheat-warn" id="cheatWarn" hidden></p>
       <p class="weight-why" id="weightWhy" hidden></p>
       <details class="more cheat-tips" id="cheatTips" hidden><summary>💡 Que faire après un cheat ?</summary>
         <p><b>Le principe :</b> on reprend son rythme normal dès le repas suivant, sans chercher à « rattraper ».</p>
@@ -1632,11 +1635,24 @@ function readForm(){
 ["#weight","#steps","#sleepHours","#water"].forEach((s,i,a)=>$(s).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); if(a[i+1]) $(a[i+1]).focus(); else { e.target.blur(); doSave(); } } }));
 /* ---------- cheat / écart : explique une grosse montée de poids ---------- */
 function paintCheat(on){ $("#cheatBtn").setAttribute("aria-pressed", String(on)); $("#cheatBtn").textContent = on ? "🍔 Cheat noté · touche pour retirer" : "🍔 Cheat / écart aujourd'hui"; $("#cheatNote").hidden = !on; }
-$("#cheatBtn").onclick=()=>{ const on=$("#cheatBtn").getAttribute("aria-pressed")!=="true"; paintCheat(on); if(on) $("#cheatNote").focus(); markDirty(); paintWeightWhy(); };
-$("#cheatNote").addEventListener("input",()=>{ markDirty(); paintWeightWhy(); });
+$("#cheatBtn").onclick=()=>{ const on=$("#cheatBtn").getAttribute("aria-pressed")!=="true"; paintCheat(on); if(on) $("#cheatNote").focus(); markDirty(); paintWeightWhy(); renderToday(); };
+$("#cheatNote").addEventListener("input",()=>{ markDirty(); paintWeightWhy(); renderToday(); });
 $("#weight").addEventListener("input",()=>paintWeightWhy());
 const isCheat = (d) => { const x = d===current?.date ? {ecart: $("#cheatBtn").getAttribute("aria-pressed")==="true", ecartNote:$("#cheatNote").value.trim()} : days[d]; return x?.ecart ? x : null; };
+// cheats de la semaine (lundi → dimanche) de « date », hors « date » elle-même
+const DOWF = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+function weekCheats(date){ const m=mondayOf(date), out=[]; for(let i=0;i<7;i++){ const d=addDays(m,i); if(d===date) continue; const c=isCheat(d); if(c) out.push({d, note:c.ecartNote||""}); } return out; }
+const cheatTxt = c => `${DOWF[parseIso(c.d).getDay()]}${c.note?" · "+esc(c.note):""}`;
+function paintCheatWarn(){
+  const el=$("#cheatWarn"), date=current?.date; if(!el || !date) return;
+  const L=weekCheats(date), on=!!isCheat(date); el.hidden=!L.length; if(!L.length) return;
+  const list=L.map(cheatTxt).join(", ");
+  el.innerHTML = on
+    ? `⚠️ <b>${L.length+1}e cheat cette semaine</b> (déjà : ${list}). Pas de culpabilité : on revient au plan dès le prochain repas, et rien de plus jusqu'à lundi.`
+    : `⚠️ <b>Cheat de la semaine déjà fait</b> (${list}). Aujourd'hui on reste carré : repas normal, pas d'alcool, pas de dessert. Prochain cheat possible à partir de lundi 💪`;
+}
 function paintWeightWhy(){
+  paintCheatWarn();
   const el=$("#weightWhy"), date=current?.date, w=num($("#weight").value), pv=date && prevValue(date,"weight");
   el.hidden=true; $("#cheatTips").hidden = !(isCheat(date)); if(w==null || !pv) return;
   const dlt=w-Number(pv.v); if(dlt<0.8) return;
@@ -2895,6 +2911,9 @@ function renderToday(){
   if(isToday){
     if(R.weigh!==false && v.weight==null && h<12) n.push("⚖️ <span>Pense à ta pesée du matin.</span>");
     if(R.water!==false && h>=16 && (v.water||0) < g.water*0.6) n.push(`💧 <span>${fmtNum(v.water||0,2)} L pour l'instant : encore ${fmtNum(g.water-(v.water||0),2)} L pour l'objectif.</span>`);
+    const wc=weekCheats(d).concat(isCheat(d)?[{d, note:isCheat(d).ecartNote||""}]:[]).sort((a,b)=>a.d<b.d?-1:1);
+    if(wc.length===1) n.push(`🍔 <span>Cheat de la semaine déjà fait (${cheatTxt(wc[0])}). On reste carré jusqu'à lundi.</span>`);
+    else if(wc.length>1) n.push(`🍔 <span><b style="color:var(--warn)">${wc.length} cheats cette semaine</b> (${wc.map(cheatTxt).join(", ")}). Plus rien jusqu'à lundi : repas normaux, pas d'alcool.</span>`);
     if(parseIso(d).getDay()===0) n.push(`📊 <span>C'est dimanche : ton <a href="#" id="toRecap">récap de la semaine</a> est prêt.</span>`);
   }
   $("#nudges").innerHTML = n.map(x=>`<div class="nudge">${x}</div>`).join("");
