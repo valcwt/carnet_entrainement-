@@ -278,6 +278,11 @@ details.addform>summary,details.more>summary,.addlink{color:var(--accent)}
 :focus-visible{outline-color:var(--accent)}
 ::selection{background:var(--accent);color:var(--on-accent)}
 .water-quick{display:flex;gap:8px;margin-top:12px}
+.cheat{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.cheat button{border:1px dashed var(--line);background:transparent;color:var(--muted);border-radius:10px;padding:10px 12px;font:inherit;font-weight:700;cursor:pointer;text-align:left}
+.cheat button[aria-pressed="true"]{border-style:solid;border-color:var(--train);background:rgba(255,122,61,.14);color:var(--train)}
+.weight-why{margin:10px 0 0;font-size:.85rem;line-height:1.4;border-left:3px solid var(--train);padding:6px 10px;background:rgba(255,122,61,.08);border-radius:0 8px 8px 0}
+.weight-why.ok{border-color:var(--gold);background:rgba(255,201,61,.08)}
 .water-quick button{flex:1;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:10px;padding:10px 0;font-weight:700;cursor:pointer}
 .water-quick button:active{background:var(--weight);color:#0B0D10;border-color:var(--weight)}
 .day .dots i.w{background:var(--weight)}
@@ -718,6 +723,8 @@ nav.bottom-nav{display:none}
         <label>Eau (L)<input type="number" id="water" step="0.25" min="0" max="15" inputmode="decimal" enterkeyhint="done"></label>
       </div>
       <div class="water-quick" id="waterQuick" aria-label="Ajouter de l'eau"><button type="button" data-add="0.25">+ 25 cl</button><button type="button" data-add="0.5">+ 50 cl</button><button type="button" data-add="1">+ 1 L</button></div>
+      <div class="cheat"><button type="button" id="cheatBtn" aria-pressed="false">🍔 Cheat / écart aujourd'hui</button><input type="text" id="cheatNote" placeholder="Quoi ? ex. pizza + dessert, resto, apéro…" hidden></div>
+      <p class="weight-why" id="weightWhy" hidden></p>
       <div hidden><div class="scale" data-field="sleepQuality"></div></div>
     </section>
 
@@ -1575,6 +1582,7 @@ function loadDay(date){
   $("#cardio").value = current.cardio || "";
   $("#watchKcal").value = current.watchKcal ?? "";
   $("#water").value = current.water ?? "";
+  paintCheat(!!current.ecart); $("#cheatNote").value = current.ecartNote || "";
   $("#healthTag").hidden = !current.healthAt;
   $("#dayNote").value = current.note || "";
   const t = current.tests||{};
@@ -1584,6 +1592,7 @@ function loadDay(date){
   const ph = (id,field,fmt,fallback) => { const pv=prevValue(date,field); $(id).placeholder = pv ? `${pv.i===1?"hier":"j−"+pv.i} : ${fmt(pv.v)}` : fallback; };
   ph("#weight","weight",v=>fmtNum(v,1),"ex. 105,8"); ph("#steps","steps",v=>fmtNum(v),"ex. 12000"); ph("#sleepHours","sleepHours",v=>fmtNum(v,2),"ex. 7,5");
   // pré-remplissage de ce qui change peu (enregistré seulement si tu modifies quelque chose)
+  paintWeightWhy();
   dirty=false; setSave(days[date]?"ok":"", days[date]?"✓ Enregistré":"Nouvelle journée — tape une valeur, elle s'enregistre toute seule");
   cancelEdit();
   loadBody();
@@ -1596,6 +1605,8 @@ function readForm(){
   current.cardio = $("#cardio").value.trim();
   current.watchKcal = num($("#watchKcal").value);
   current.water = num($("#water").value);
+  current.ecart = $("#cheatBtn").getAttribute("aria-pressed")==="true";
+  current.ecartNote = current.ecart ? $("#cheatNote").value.trim() : "";
   current.note = $("#dayNote").value.trim();
   ["sleepQuality","energy","stress","soreness"].forEach(f=>current[f]=draft[f]);
   const tests = {pullups:num($("#t-pullups").value), pushups:num($("#t-pushups").value), squats:num($("#t-squats").value), mile:$("#t-mile").value.trim()||null};
@@ -1604,6 +1615,22 @@ function readForm(){
 }
 ["#weight","#steps","#sleepHours","#water","#cardio","#watchKcal","#dayNote","#t-pullups","#t-pushups","#t-squats","#t-mile"].forEach(s=>$(s).addEventListener("input",markDirty));
 ["#weight","#steps","#sleepHours","#water"].forEach((s,i,a)=>$(s).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); if(a[i+1]) $(a[i+1]).focus(); else { e.target.blur(); doSave(); } } }));
+/* ---------- cheat / écart : explique une grosse montée de poids ---------- */
+function paintCheat(on){ $("#cheatBtn").setAttribute("aria-pressed", String(on)); $("#cheatBtn").textContent = on ? "🍔 Cheat noté · touche pour retirer" : "🍔 Cheat / écart aujourd'hui"; $("#cheatNote").hidden = !on; }
+$("#cheatBtn").onclick=()=>{ const on=$("#cheatBtn").getAttribute("aria-pressed")!=="true"; paintCheat(on); if(on) $("#cheatNote").focus(); markDirty(); paintWeightWhy(); };
+$("#cheatNote").addEventListener("input",()=>{ markDirty(); paintWeightWhy(); });
+$("#weight").addEventListener("input",()=>paintWeightWhy());
+const isCheat = (d) => { const x = d===current?.date ? {ecart: $("#cheatBtn").getAttribute("aria-pressed")==="true", ecartNote:$("#cheatNote").value.trim()} : days[d]; return x?.ecart ? x : null; };
+function paintWeightWhy(){
+  const el=$("#weightWhy"), date=current?.date, w=num($("#weight").value), pv=date && prevValue(date,"weight");
+  el.hidden=true; if(w==null || !pv) return;
+  const dlt=w-Number(pv.v); if(dlt<0.8) return;
+  let ch=null; for(let i=0;i<=3 && !ch;i++){ const d=addDays(date,-i), c=isCheat(d); if(c) ch={d, i, note:c.ecartNote}; }
+  const since = pv.i===1 ? "depuis hier" : `en ${pv.i} jours`, inc=`<b>+${fmtNum(dlt,1)} kg</b> ${since}`;
+  if(ch){ el.className="weight-why ok"; el.innerHTML = `${inc} : normal après ton cheat ${ch.i===0?"d'aujourd'hui":ch.i===1?"d'hier":"de "+DOW[parseIso(ch.d).getDay()]}${ch.note?` (${esc(ch.note)})`:""}. C'est surtout de l'eau et du glycogène (sel, glucides) : ça redescend en général en 2 à 4 jours. Juge plutôt la moyenne sur 7 jours.`; }
+  else { el.className="weight-why"; el.innerHTML = `${inc}, d'un coup. Un repas plus copieux, salé, de l'alcool, peu de sommeil ? Si c'est un cheat, note-le avec 🍔 (le jour où tu l'as fait) pour t'en souvenir.`; }
+  el.hidden=false;
+}
 $$("#waterQuick button").forEach(b=>b.onclick=()=>{ const v=(num($("#water").value)||0)+Number(b.dataset.add); $("#water").value=Math.round(v*100)/100; markDirty(); });
 
 /* ---------- calories & objectif réaliste ---------- */
@@ -2212,12 +2239,14 @@ function lineChart(pts,color,unit,dec,opts={}){
   const last=raw[raw.length-1], gold=css("--gold"), ink=css("--on-accent");
   const recMark = rec && rec!==last ? `<circle cx="${rec[0]}" cy="${rec[1]}" r="6" fill="none" stroke="${gold}" stroke-width="2"/>${bubble(rec[0],rec[1],"record "+F(rec[2].v),gold,"#0B0D10",W,pl,pr,bestMode==="min")}` : "";
   const lastMark = `<circle cx="${last[0]}" cy="${last[1]}" r="9" fill="${color}" opacity=".25"/><circle cx="${last[0]}" cy="${last[1]}" r="4.5" fill="${color}" stroke="${css("--surface")}" stroke-width="2"/>${bubble(last[0],last[1],(rec===last?"record ":"")+F(last[2].v)+(unit&&unit.length<4?" "+unit:""),rec===last?gold:color,"#0B0D10",W,pl,pr,false)}`;
+  const cheatMarks = opts.marks ? pts.map((p,i)=>{ if(!opts.marks[p.d]) return ""; const y = p.v!=null ? Math.min(base-4, Y(p.v)+20) : base-8;
+    return `<text x="${X(i)}" y="${y}" text-anchor="middle" font-size="13">🍔${tip(p.d,"Cheat"+(opts.marks[p.d]!==true?" : "+esc(opts.marks[p.d]):""))}</text>`; }).join("") : "";
   const dots=raw.map(q=>`<circle cx="${q[0]}" cy="${q[1]}" r="${opts.connect===false?4:2.4}" fill="${color}" opacity="${opts.ma?.55:1}">${tip(q[2].d,F(q[2].v)+" "+unit)}</circle>`).join("");
-  if(opts.connect===false) return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Courbe">${g}${dots}${recMark}${lastMark}${axisLabels(pts,W,pl,pr,H)}</svg>`;
+  if(opts.connect===false) return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Courbe">${g}${dots}${cheatMarks}${recMark}${lastMark}${axisLabels(pts,W,pl,pr,H)}</svg>`;
   const area = main.length>1 ? `<path d="${toPath(main)} L${main[main.length-1][0].toFixed(1)} ${base} L${main[0][0].toFixed(1)} ${base} Z" fill="url(#${id})"/>` : "";
   const rawLine = opts.ma ? `<path d="${toPath(raw)}" fill="none" stroke="${color}" stroke-width="1.2" opacity=".4"/>` : "";
   const mainLine = `<path d="${toPath(main)}" fill="none" stroke="${color}" stroke-width="${opts.ma?3.5:2.5}" stroke-linejoin="round" stroke-linecap="round"/>`;
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Courbe">${g}${area}${rawLine}${mainLine}${dots}${recMark}${lastMark}${axisLabels(pts,W,pl,pr,H)}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Courbe">${g}${area}${rawLine}${mainLine}${dots}${cheatMarks}${recMark}${lastMark}${axisLabels(pts,W,pl,pr,H)}</svg>`;
 }
 function barChart(pts,color,unit,dec,opts={}){
   const W=chartW(),H=230,pl=44,pr=12,pt=30,pb=26, id="bg"+(++chartSeq);
@@ -2286,7 +2315,7 @@ function renderTrends(){
   const diff = wv.length>1 ? wv.at(-1)-wv[0] : null;
   const allW = Object.values(days).filter(d=>d.weight!=null).sort((a,b)=>a.date<b.date?-1:1), startW = allW[0]?.weight;
   $("#st-weight").innerHTML = stat(fmtNum(wv.at(-1),1)+" kg","dernière pesée",weekDelta("weight","down",1," kg"))+stat(diff==null?"–":(diff>0?"+":"")+fmtNum(diff,1)+" kg","sur la période")+stat(startW&&wv.length?(wv.at(-1)-startW>0?"+":"")+fmtNum(wv.at(-1)-startW,1)+" kg":"–","depuis le début")+(target&&wv.length?stat(fmtNum(Math.abs(wv.at(-1)-target),1)+" kg",(wv.at(-1)>=target?"à perdre":"à prendre")+" jusqu'à ~"+fmtNum(target,1)+" kg"):"");
-  $("#ch-weight").innerHTML = lineChart(w,css("--weight"),"kg",1,{target,ma:true,best:"min"});
+  $("#ch-weight").innerHTML = lineChart(w,css("--weight"),"kg",1,{target,ma:true,best:"min",marks:Object.fromEntries(w.filter(p=>days[p.d]?.ecart).map(p=>[p.d, days[p.d].ecartNote||true]))});
   const s=series("steps"), sv=s.filter(p=>p.v!=null).map(p=>p.v);
   $("#st-steps").innerHTML = stat(fmtNum(avg(sv)),"pas / jour en moyenne",weekDelta("steps","up"))+stat(fmtNum(sv.length?Math.max(...sv):null),"meilleure journée");
   $("#ch-steps").innerHTML = barChart(s,css("--steps"),"pas",0,{target:G().steps});
@@ -2322,6 +2351,7 @@ function renderHistory(){
     if(d.steps!=null) chips.push(`${fmtNum(d.steps)} pas`);
     if(d.sleepHours!=null) chips.push(`${fmtH(d.sleepHours)} sommeil`);
     if(d.water!=null) chips.push(`${fmtNum(d.water,2)} L d'eau`);
+    if(d.ecart) chips.push(`🍔 Cheat${d.ecartNote?" : "+d.ecartNote:""}`);
     if(d.measures?.waist!=null) chips.push(`taille ${fmtNum(d.measures.waist,1)} cm`);
     if(d.photo) chips.push("📷 photo");
     (d.pains||[]).forEach(p=>chips.push(`⚠ ${p.zone}`));
