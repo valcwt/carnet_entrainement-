@@ -81,7 +81,7 @@ export function dueReminders({ prefs, sent, now, day, goals, pauses, settings })
     const key = `${now.date}:${id}`;
     if (sent[key] || now.min < at || now.min > at + WINDOW_MIN) continue;
     let msg = null;
-    if (id === "weigh" && day?.weight == null) msg = { title: "⚖️ Pesée du matin", body: "Monte sur la balance avant le petit-déj, ça prend 10 secondes.", tag: "weigh" };
+    if (id === "weigh" && day?.weight == null && !settings?.scaleOff && !day?.noScale) msg = { title: "⚖️ Pesée du matin", body: "Monte sur la balance avant le petit-déj, ça prend 10 secondes.", tag: "weigh" };
     if (id === "water") { const w = Number(day?.water) || 0; if (w < water * 0.6) msg = { title: "💧 Pense à boire", body: `${fmt(w, 1)} L pour l'instant : encore ${fmt(water - w, 1)} L pour ton objectif.`, tag: "water" }; }
     const pl = id === "session" ? plannedToday(settings || {}, now.date, now.dow) : null;
     if (id === "session" && pl && !isPaused(pauses, now.date)) { // programme en pause : pas de rappel de séance

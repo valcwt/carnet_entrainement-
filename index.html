@@ -278,6 +278,9 @@ details.addform>summary,details.more>summary,.addlink{color:var(--accent)}
 :focus-visible{outline-color:var(--accent)}
 ::selection{background:var(--accent);color:var(--on-accent)}
 .water-quick{display:flex;gap:8px;margin-top:12px}
+.scale-off{display:block;width:100%;margin-top:10px;border:1px dashed var(--line);background:transparent;color:var(--muted);border-radius:10px;padding:9px 12px;font:inherit;font-size:.9rem;font-weight:700;cursor:pointer;text-align:left}
+.scale-off[aria-pressed="true"]{border-style:solid;border-color:var(--weight);background:rgba(61,178,255,.12);color:var(--weight)}
+#weight:disabled{opacity:.45}
 .cheat{display:flex;flex-direction:column;gap:8px;margin-top:10px}
 .cheat button{border:1px dashed var(--line);background:transparent;color:var(--muted);border-radius:10px;padding:10px 12px;font:inherit;font-weight:700;cursor:pointer;text-align:left}
 .cheat button[aria-pressed="true"]{border-style:solid;border-color:var(--train);background:rgba(255,122,61,.14);color:var(--train)}
@@ -727,6 +730,7 @@ nav.bottom-nav{display:none}
         <label>Sommeil (h)<input type="number" id="sleepHours" step="0.05" min="0" max="24" inputmode="decimal" enterkeyhint="next"></label>
         <label>Eau (L)<input type="number" id="water" step="0.25" min="0" max="15" inputmode="decimal" enterkeyhint="done"></label>
       </div>
+      <button type="button" class="scale-off" id="scaleOff" aria-pressed="false">⚖️ Balance indispo</button>
       <div class="water-quick" id="waterQuick" aria-label="Ajouter de l'eau"><button type="button" data-add="0.25">+ 25 cl</button><button type="button" data-add="0.5">+ 50 cl</button><button type="button" data-add="1">+ 1 L</button></div>
       <div class="cheat"><button type="button" id="cheatBtn" aria-pressed="false">🍔 Cheat / écart aujourd'hui</button><input type="text" id="cheatNote" placeholder="Quoi ? ex. pizza + dessert, resto, apéro…" hidden></div>
       <p class="cheat-warn" id="cheatWarn" hidden></p>
@@ -1610,7 +1614,7 @@ function loadDay(date){
   const ph = (id,field,fmt,fallback) => { const pv=prevValue(date,field); $(id).placeholder = pv ? `${pv.i===1?"hier":"j−"+pv.i} : ${fmt(pv.v)}` : fallback; };
   ph("#weight","weight",v=>fmtNum(v,1),"ex. 105,8"); ph("#steps","steps",v=>fmtNum(v),"ex. 12000"); ph("#sleepHours","sleepHours",v=>fmtNum(v,2),"ex. 7,5");
   // pré-remplissage de ce qui change peu (enregistré seulement si tu modifies quelque chose)
-  paintWeightWhy();
+  paintWeightWhy(); paintScale();
   dirty=false; setSave(days[date]?"ok":"", days[date]?"✓ Enregistré":"Nouvelle journée — tape une valeur, elle s'enregistre toute seule");
   cancelEdit();
   loadBody();
@@ -1623,6 +1627,7 @@ function readForm(){
   current.cardio = $("#cardio").value.trim();
   current.watchKcal = num($("#watchKcal").value);
   current.water = num($("#water").value);
+  current.noScale = !!S.scaleOff && current.weight==null;
   current.ecart = $("#cheatBtn").getAttribute("aria-pressed")==="true";
   current.ecartNote = current.ecart ? $("#cheatNote").value.trim() : "";
   current.note = $("#dayNote").value.trim();
@@ -1633,6 +1638,22 @@ function readForm(){
 }
 ["#weight","#steps","#sleepHours","#water","#cardio","#watchKcal","#dayNote","#t-pullups","#t-pushups","#t-squats","#t-mile"].forEach(s=>$(s).addEventListener("input",markDirty));
 ["#weight","#steps","#sleepHours","#water"].forEach((s,i,a)=>$(s).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); if(a[i+1]) $(a[i+1]).focus(); else { e.target.blur(); doSave(); } } }));
+/* ---------- balance indisponible : mode qui reste actif jusqu'à la prochaine pesée ---------- */
+function paintScale(){
+  const on=!!S.scaleOff, b=$("#scaleOff"); if(!b) return;
+  b.setAttribute("aria-pressed", String(on));
+  b.textContent = on ? `⚖️ Balance indispo${S.scaleOff!==true?" depuis le "+fmtShort(S.scaleOff).replace(/\.$/,""):""} · touche quand tu l'as retrouvée` : "⚖️ Balance indispo";
+  const w=$("#weight"); w.disabled = on && num(w.value)==null;
+  if(on && num(w.value)==null) w.placeholder="balance indispo";
+}
+$("#scaleOff").onclick=async()=>{
+  S.scaleOff = S.scaleOff ? false : (current?.date || todayIso());
+  if(!S.scaleOff){ const pv=current && prevValue(current.date,"weight"); $("#weight").placeholder = pv ? `${pv.i===1?"hier":"j−"+pv.i} : ${fmtNum(pv.v,1)}` : "ex. 105,8"; }
+  paintScale(); markDirty(); renderToday();
+  try{ await saveSettings(); }catch(e){}
+};
+$("#weight").addEventListener("change",async()=>{ if(S.scaleOff && num($("#weight").value)!=null){ S.scaleOff=false; paintScale(); renderToday(); try{ await saveSettings(); }catch(e){} } });
+
 /* ---------- cheat / écart : explique une grosse montée de poids ---------- */
 function paintCheat(on){ $("#cheatBtn").setAttribute("aria-pressed", String(on)); $("#cheatBtn").textContent = on ? "🍔 Cheat noté · touche pour retirer" : "🍔 Cheat / écart aujourd'hui"; $("#cheatNote").hidden = !on; }
 $("#cheatBtn").onclick=()=>{ const on=$("#cheatBtn").getAttribute("aria-pressed")!=="true"; paintCheat(on); if(on) $("#cheatNote").focus(); markDirty(); paintWeightWhy(); renderToday(); };
@@ -2382,6 +2403,7 @@ function renderHistory(){
     if(d.steps!=null) chips.push(`${fmtNum(d.steps)} pas`);
     if(d.sleepHours!=null) chips.push(`${fmtH(d.sleepHours)} sommeil`);
     if(d.water!=null) chips.push(`${fmtNum(d.water,2)} L d'eau`);
+    if(d.noScale && d.weight==null) chips.push("⚖️ balance indispo");
     if(d.ecart) chips.push(`🍔 Cheat${d.ecartNote?" : "+d.ecartNote:""}`);
     if(d.measures?.waist!=null) chips.push(`taille ${fmtNum(d.measures.waist,1)} cm`);
     if(d.photo) chips.push("📷 photo");
@@ -2909,7 +2931,7 @@ function renderToday(){
   // rappels discrets
   const n=[], h=new Date().getHours(), R=S.reminders||{};
   if(isToday){
-    if(R.weigh!==false && v.weight==null && h<12) n.push("⚖️ <span>Pense à ta pesée du matin.</span>");
+    if(R.weigh!==false && v.weight==null && !S.scaleOff && h<12) n.push("⚖️ <span>Pense à ta pesée du matin.</span>");
     if(R.water!==false && h>=16 && (v.water||0) < g.water*0.6) n.push(`💧 <span>${fmtNum(v.water||0,2)} L pour l'instant : encore ${fmtNum(g.water-(v.water||0),2)} L pour l'objectif.</span>`);
     const wc=weekCheats(d).concat(isCheat(d)?[{d, note:isCheat(d).ecartNote||""}]:[]).sort((a,b)=>a.d<b.d?-1:1);
     if(wc.length===1) n.push(`🍔 <span>Cheat de la semaine déjà fait (${cheatTxt(wc[0])}). On reste carré jusqu'à lundi.</span>`);
