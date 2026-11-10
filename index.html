@@ -178,6 +178,19 @@ tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
 /* Tendances */
 .chart{overflow-x:auto}
 .chart svg{display:block;width:100%;height:auto}
+.km-big{display:flex;align-items:baseline;gap:8px;line-height:.9}
+.km-big b{font-family:"Barlow Condensed",sans-serif;font-style:italic;font-weight:800;font-size:4.6rem;color:var(--steps);letter-spacing:-.01em}
+.km-big span{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.6rem;color:var(--muted)}
+.km-next{margin-top:10px;display:grid;gap:5px;font-size:.85rem;color:var(--muted)}
+.km-next b{color:var(--ink)}
+.km-bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.km-bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,rgba(34,227,160,.5),var(--steps))}
+.km-trip{margin:10px 0 0;font-size:.88rem}
+.km-months{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;align-items:end;height:130px;margin-top:6px}
+.km-months>div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.km-months i{display:block;width:70%;min-height:2px;border-radius:6px 6px 2px 2px;background:var(--steps)}
+.km-months .v{font-size:.75rem;font-weight:700;color:var(--ink)}
+.km-months .l{font-size:.72rem;color:var(--muted)}
 .stat-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:10px}
 .stat b{font-family:"Barlow Condensed",sans-serif;font-size:1.8rem;display:block;line-height:1}
 .stat span{font-size:.8rem;color:var(--muted)}
@@ -973,6 +986,11 @@ nav.bottom-nav{display:none}
         <div class="row" style="margin-top:14px;justify-content:flex-end"><button type="button" class="btn ghost small" id="pauseCancel">Annuler</button><button type="button" class="btn small" id="pauseOk">⏸ Mettre en pause</button></div>
       </form>
     </dialog>
+
+    <section class="panel km-panel" id="kmPanel">
+      <h2>Compteur km <small id="kmSince"></small></h2>
+      <div id="kmView"></div>
+    </section>
 
     <section class="panel" id="runPanel">
       <h2>Plan course <small id="runSub"></small></h2>
@@ -2670,7 +2688,7 @@ function renderB7(){
   if(pd) { $("#b7WeekHint").textContent = `⏸ ${pd===7?"Semaine en pause":`${pd} jour${pd>1?"s":""} en pause cette semaine`} : rien à rattraper.${nR+nC+nX?` Séances notées quand même : ${nR+nC+nX+nW}${km?` · ${fmtNum(km,1)} km`:""}.`:""}`; }
   else $("#b7WeekHint").textContent = `Cette semaine : ${nR}/${TGT().r} renfo · ${nC}/${TGT().c} course${TGT().c>1?"s":""}${km?` · ${fmtNum(km,1)} km`:""}${nW?` · ${nW} WOD`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}${nRep?` · ${nRep} séance${nRep>1?"s":""} remplacée${nRep>1?"s":""} (non comptée${nRep>1?"s":""} comme ${nRep>1?"prévues":"prévue"})`:""}.`;
   if(!b7Kind) b7Open($("#b7Date").value || t, null, true);
-  renderB7Hist(); renderStrength(); renderRace(); renderB7Recent(); renderRunPlan();
+  renderB7Hist(); renderStrength(); renderRace(); renderB7Recent(); renderRunPlan(); renderKm();
 }
 function b7Open(date, k, keep, id){
   $("#b7Date").value = date; b7EditId = id || null; b7Orig = null; wodSel = null; wodLvCur = null;
@@ -3019,6 +3037,48 @@ function renderBodyTrends(){
   z.forEach(([k,c])=>{ if(c.recent>=3) alerts.push(k); });
   $("#painSummary").innerHTML = (alerts.length?`<p class="pain-alert"><b>${esc(alerts.join(", "))}</b> : la gêne revient (3 jours ou plus en 2 semaines). Allège ou retire l'exercice qui la déclenche, et si elle persiste, demande un avis à un professionnel.</p>`:"")
     + z.map(([k,c])=>`<div class="pain-row"><span><b>${esc(k)}</b> · ${c.n} jour${c.n>1?"s":""}</span><span style="color:var(--muted)">max ${c.max||"–"}/5 · dernière le ${fmtShort(c.last)}</span></div>`).join("");
+}
+
+/* ---- compteur km depuis le début (courses du programme + anciennes séances « Course ») ---- */
+const KM_STEPS = [10,25,50,75,100,150,200,250,300,400,500,750,1000,1250,1500,2000,2500,3000,4000,5000];
+const KM_TRIPS = [[5,"un 5 km"],[10,"un 10 km"],[20,"Paris → Versailles"],[42.2,"un marathon"],[60,"Paris → Fontainebleau"],[135,"Paris → Rouen"],[225,"Paris → Lille"],[465,"Paris → Lyon"],[775,"Paris → Marseille"],[1050,"Paris → Barcelone"],[1450,"Paris → Rome"]];
+function kmRuns(){
+  const out=[];
+  Object.values(days).forEach(d=>(d.sessions||[]).forEach(x=>{
+    if(x.b7){ if(B7[x.b7]?.kind==="run" && x.run?.km>0) out.push({date:d.date, km:+x.run.km, sec:parseTime(x.run.dur)||null}); }
+    else if(x.type==="Course" && x.distance>0) out.push({date:d.date, km:+x.distance, sec:parseTime(x.time)||null});
+  }));
+  return out.sort((a,b)=>a.date<b.date?-1:1);
+}
+function renderKm(){
+  if(!$("#kmView")) return;
+  const R=kmRuns(), t=todayIso();
+  if(!R.length){ $("#kmSince").textContent=""; $("#kmView").innerHTML='<p class="empty" style="margin:0">Note ta première sortie avec sa distance : le compteur démarre.</p>'; return; }
+  const tot=R.reduce((a,x)=>a+x.km,0), sec=R.reduce((a,x)=>a+(x.sec||0),0);
+  const mon=mondayOf(t), m1=t.slice(0,8)+"01";
+  const wk=R.filter(x=>x.date>=mon).reduce((a,x)=>a+x.km,0), mo=R.filter(x=>x.date>=m1).reduce((a,x)=>a+x.km,0);
+  const longest=R.reduce((a,x)=>x.km>a.km?x:a), paced=R.filter(x=>x.sec&&x.km>=3), best=paced.length?paced.reduce((a,x)=>x.sec/x.km<a.sec/a.km?x:a):null;
+  const next=KM_STEPS.find(v=>v>tot+1e-9)||Math.ceil((tot+1)/1000)*1000, prevS=[0,...KM_STEPS].filter(v=>v<=tot).at(-1)||0;
+  const pct=Math.min(100,(tot-prevS)/(next-prevS)*100);
+  const trip=KM_TRIPS.filter(x=>x[0]<=tot).at(-1), nextTrip=KM_TRIPS.find(x=>x[0]>tot);
+  // km par mois (6 derniers mois)
+  const months=[]; { const d0=parseIso(m1); for(let i=5;i>=0;i--){ const d=new Date(d0.getFullYear(), d0.getMonth()-i, 1); const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; months.push({k, l:MONTHS[d.getMonth()], v:R.filter(x=>x.date.slice(0,7)===k).reduce((a,x)=>a+x.km,0)}); } }
+  const mx=Math.max(...months.map(m=>m.v),1);
+  $("#kmSince").textContent = `depuis le ${fmtShort(R[0].date).replace(/\.$/,"")} ${R[0].date.slice(0,4)}`;
+  $("#kmView").innerHTML = `
+    <div class="km-big"><b>${fmtNum(tot, tot<100?1:0)}</b><span>km</span></div>
+    <div class="km-next"><div class="km-bar"><i style="width:${pct.toFixed(1)}%"></i></div><span>${tot>=next?"":`encore <b>${fmtNum(next-tot,1)} km</b> avant les ${fmtNum(next)} km`}</span></div>
+    ${trip||nextTrip?`<p class="km-trip">${trip?`🗺️ Tu as couru l'équivalent de <b>${esc(trip[1])}</b>${trip[0]>=20?` (${fmtNum(trip[0],0)} km)`:""}.`:""}${nextTrip?` Prochaine étape : ${esc(nextTrip[1])} (${fmtNum(nextTrip[0],nextTrip[0]%1?1:0)} km).`:""}</p>`:""}
+    <div class="stat-row" style="margin-top:12px">
+      ${stat(R.length, `sortie${R.length>1?"s":""}`)}
+      ${stat(sec?fmtH(sec/3600):"–", "de course")}
+      ${stat(fmtNum(wk,1)+" km", "cette semaine")}
+      ${stat(fmtNum(mo,1)+" km", "ce mois-ci")}
+      ${stat(fmtNum(longest.km,1)+" km", `plus longue · ${fmtShort(longest.date)}`)}
+      ${best?stat(fmtPace(best.sec/best.km), `meilleure allure · ${fmtNum(best.km,1)} km`):""}
+    </div>
+    <div class="perf-sub">Kilomètres par mois</div>
+    <div class="km-months">${months.map(m=>`<div><span class="v">${m.v?fmtNum(m.v,m.v<100?1:0):""}</span><i style="height:${(m.v/mx*100).toFixed(1)}%"></i><span class="l">${m.l}</span></div>`).join("")}</div>`;
 }
 
 /* ---- objectif course ---- */
