@@ -294,6 +294,15 @@ details.addform>summary,details.more>summary,.addlink{color:var(--accent)}
 .scale-off{display:block;width:100%;margin-top:10px;border:1px dashed var(--line);background:transparent;color:var(--muted);border-radius:10px;padding:9px 12px;font:inherit;font-size:.9rem;font-weight:700;cursor:pointer;text-align:left}
 .scale-off[aria-pressed="true"]{border-style:solid;border-color:var(--weight);background:rgba(61,178,255,.12);color:var(--weight)}
 #weight:disabled{opacity:.45}
+.week-adj{margin-top:6px}
+.adj-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.adj-row span{font-weight:700}
+.stepper{display:flex;align-items:center;gap:12px}
+.stepper button{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--field);color:var(--ink);font-size:1.3rem;font-weight:700;cursor:pointer}
+.stepper b{font-family:"Barlow Condensed",sans-serif;font-size:1.6rem;min-width:22px;text-align:center}
+.kcal-grid{margin-top:10px}
+.kcal-day{margin:8px 0 0;font-size:.86rem;line-height:1.45;color:var(--muted)}
+.kcal-day b.good{color:var(--good)} .kcal-day b.bad{color:var(--warn)} .kcal-day b{color:var(--ink)}
 .cheat{display:flex;flex-direction:column;gap:8px;margin-top:10px}
 .cheat button{border:1px dashed var(--line);background:transparent;color:var(--muted);border-radius:10px;padding:10px 12px;font:inherit;font-weight:700;cursor:pointer;text-align:left}
 .cheat button[aria-pressed="true"]{border-style:solid;border-color:var(--train);background:rgba(255,122,61,.14);color:var(--train)}
@@ -743,6 +752,11 @@ nav.bottom-nav{display:none}
         <label>Sommeil (h)<input type="number" id="sleepHours" step="0.05" min="0" max="24" inputmode="decimal" enterkeyhint="next"></label>
         <label>Eau (L)<input type="number" id="water" step="0.25" min="0" max="15" inputmode="decimal" enterkeyhint="done"></label>
       </div>
+      <div class="xgrid kcal-grid">
+        <label>Mangé (kcal)<input type="number" id="kcalIn" step="50" min="0" inputmode="numeric" placeholder="ex. 2100"></label>
+        <label>Actives montre (kcal)<input type="number" id="watchKcal" step="10" min="0" inputmode="numeric" placeholder="ex. 650"></label>
+      </div>
+      <p class="kcal-day" id="kcalDay" hidden></p>
       <button type="button" class="scale-off" id="scaleOff" aria-pressed="false">⚖️ Balance indispo</button>
       <div class="water-quick" id="waterQuick" aria-label="Ajouter de l'eau"><button type="button" data-add="0.25">+ 25 cl</button><button type="button" data-add="0.5">+ 50 cl</button><button type="button" data-add="1">+ 1 L</button></div>
       <div class="cheat"><button type="button" id="cheatBtn" aria-pressed="false">🍔 Cheat / écart aujourd'hui</button><input type="text" id="cheatNote" placeholder="Quoi ? ex. pizza + dessert, resto, apéro…" hidden></div>
@@ -799,7 +813,7 @@ nav.bottom-nav{display:none}
       <h2>Condition physique</h2>
       <div class="grid">
         <label>Cardio / activité<input type="text" id="cardio" placeholder="ex. 30 min vélo, 60 marche"></label>
-        <label>Calories actives (montre)<input type="number" id="watchKcal" min="0" step="10" inputmode="numeric" placeholder="facultatif"></label>
+
       </div>
       <div class="grid2" style="margin-top:12px">
         <label>Énergie (0–5)<div class="scale" data-field="energy"></div></label>
@@ -974,6 +988,12 @@ nav.bottom-nav{display:none}
       <div class="pause-bar" id="pauseBar"></div>
       <div class="b7-week" id="b7Week"></div>
       <p class="hint" id="b7WeekHint" style="margin:10px 0 0"></p>
+      <details class="more week-adj" id="weekAdj"><summary>✎ Plus ou moins de séances cette semaine ?</summary>
+        <p class="hint" style="margin:6px 0 10px">Le programme ne change pas : seul l'objectif de cette semaine est ajusté (bilan, série de semaines, récap).</p>
+        <div class="adj-row"><span id="adjRLbl">Force</span><div class="stepper"><button type="button" data-adj="r" data-d="-1" aria-label="Moins">−</button><b id="adjR">2</b><button type="button" data-adj="r" data-d="1" aria-label="Plus">+</button></div></div>
+        <div class="adj-row"><span>Course</span><div class="stepper"><button type="button" data-adj="c" data-d="-1" aria-label="Moins">−</button><b id="adjC">2</b><button type="button" data-adj="c" data-d="1" aria-label="Plus">+</button></div></div>
+        <div class="row" style="margin-top:10px;gap:8px"><button type="button" class="btn ghost small" id="adjReset" hidden>↺ Revenir au programme</button><span class="save-msg" id="adjMsg"></span></div>
+      </details>
     </section>
 
     <dialog class="pause-dlg" id="pauseDlg">
@@ -1094,6 +1114,12 @@ nav.bottom-nav{display:none}
     </div>
     <section class="panel"><h2>Records <small>depuis le début</small></h2><div class="records" id="records"></div></section>
     <section class="panel pace-panel" id="pacePanel"><h2>Rythme vers l'objectif <small>tendance des 3 dernières semaines</small></h2><div class="stat-row" id="st-pace"></div><div id="paceText"></div></section>
+    <section class="panel" id="kcalPanel"><h2>Calories &amp; objectif <small>ce que tu manges et dépenses, moyenne des 14 derniers jours</small></h2>
+      <div class="stat-row" id="st-kcal"></div><div id="kcalText"></div>
+      <details class="more" id="kcalBody"><summary>Taille &amp; âge (pour le métabolisme de base)</summary>
+        <div class="grid" style="margin-top:8px"><label>Taille (cm)<input type="number" id="bodyH" min="120" max="230" inputmode="numeric"></label><label>Âge<input type="number" id="bodyA" min="14" max="99" inputmode="numeric"></label></div>
+        <p class="hint" style="margin:8px 0 0" id="bmrHint"></p>
+      </details></section>
     <section class="panel" id="goalPanel"><h2>Objectif réaliste <small>d'après ce que tu as déjà perdu et ta tendance récente</small></h2><div class="stat-row" id="st-goal"></div><div id="goalText"></div><div class="row" id="goalActions" style="margin-top:12px"></div></section>
     <section class="panel"><h2>Poids <small>trait pointillé : objectif · courbe épaisse : moyenne 7 j</small></h2><div class="stat-row" id="st-weight"></div><div class="chart" id="ch-weight"></div></section>
     <section class="panel"><h2>Pas / NEAT</h2><div class="stat-row" id="st-steps"></div><div class="chart" id="ch-steps"></div></section>
@@ -1629,7 +1655,7 @@ function loadDay(date){
   $("#steps").value = current.steps ?? "";
   $("#sleepHours").value = current.sleepHours ?? "";
   $("#cardio").value = current.cardio || "";
-  $("#watchKcal").value = current.watchKcal ?? "";
+  $("#watchKcal").value = current.watchKcal ?? ""; $("#kcalIn").value = current.kcalIn ?? "";
   $("#water").value = current.water ?? "";
   paintCheat(!!current.ecart); $("#cheatNote").value = current.ecartNote || "";
   $("#healthTag").hidden = !current.healthAt;
@@ -1641,7 +1667,7 @@ function loadDay(date){
   const ph = (id,field,fmt,fallback) => { const pv=prevValue(date,field); $(id).placeholder = pv ? `${pv.i===1?"hier":"j−"+pv.i} : ${fmt(pv.v)}` : fallback; };
   ph("#weight","weight",v=>fmtNum(v,1),"ex. 105,8"); ph("#steps","steps",v=>fmtNum(v),"ex. 12000"); ph("#sleepHours","sleepHours",v=>fmtNum(v,2),"ex. 7,5");
   // pré-remplissage de ce qui change peu (enregistré seulement si tu modifies quelque chose)
-  paintWeightWhy(); paintScale();
+  paintWeightWhy(); paintScale(); paintKcalDay();
   dirty=false; setSave(days[date]?"ok":"", days[date]?"✓ Enregistré":"Nouvelle journée — tape une valeur, elle s'enregistre toute seule");
   cancelEdit();
   loadBody();
@@ -1652,7 +1678,7 @@ function readForm(){
   current.steps = num($("#steps").value);
   current.sleepHours = num($("#sleepHours").value);
   current.cardio = $("#cardio").value.trim();
-  current.watchKcal = num($("#watchKcal").value);
+  current.watchKcal = num($("#watchKcal").value); current.kcalIn = num($("#kcalIn").value);
   current.water = num($("#water").value);
   current.noScale = !!S.scaleOff && current.weight==null;
   current.ecart = $("#cheatBtn").getAttribute("aria-pressed")==="true";
@@ -1663,7 +1689,7 @@ function readForm(){
   current.tests = Object.values(tests).some(v=>v!=null) ? tests : null;
   current.updatedAt = new Date().toISOString();
 }
-["#weight","#steps","#sleepHours","#water","#cardio","#watchKcal","#dayNote","#t-pullups","#t-pushups","#t-squats","#t-mile"].forEach(s=>$(s).addEventListener("input",markDirty));
+["#weight","#steps","#sleepHours","#water","#cardio","#watchKcal","#kcalIn","#dayNote","#t-pullups","#t-pushups","#t-squats","#t-mile"].forEach(s=>$(s).addEventListener("input",markDirty));
 ["#weight","#steps","#sleepHours","#water"].forEach((s,i,a)=>$(s).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); if(a[i+1]) $(a[i+1]).focus(); else { e.target.blur(); doSave(); } } }));
 /* ---------- balance indisponible : mode qui reste actif jusqu'à la prochaine pesée ---------- */
 function paintScale(){
@@ -1711,6 +1737,58 @@ function paintWeightWhy(){
   el.hidden=false; $("#cheatTips").hidden=false;
 }
 $$("#waterQuick button").forEach(b=>b.onclick=()=>{ const v=(num($("#water").value)||0)+Number(b.dataset.add); $("#water").value=Math.round(v*100)/100; markDirty(); });
+
+/* ---------- bilan calorique : mangé vs dépensé (métabolisme de base + calories actives de la montre) ---------- */
+const bodyOk = () => S?.body?.height>0 && S?.body?.age>0;
+function bmrFor(w){ if(!bodyOk() || !w) return null; return Math.round(10*w + 6.25*S.body.height - 5*S.body.age + 5); } // Mifflin-St Jeor (homme)
+function lastWeight(before){ const L=Object.values(days).filter(d=>d.weight!=null && (!before || d.date<=before)).sort((a,b)=>a.date<b.date?-1:1); return L.at(-1)?.weight ?? null; }
+const dayOut = (d, w) => { const b=bmrFor(w); return b!=null && d?.watchKcal!=null ? b + Number(d.watchKcal) : null; };
+function kcalInfo(){
+  const t=todayIso(), w=lastWeight(), L=[];
+  for(let i=0;i<14;i++){ const d0=addDays(t,-i), d = d0===current?.date ? {...days[d0], kcalIn:num($("#kcalIn").value), watchKcal:num($("#watchKcal").value)} : days[d0];
+    if(d && d.kcalIn!=null && d.watchKcal!=null){ const o=dayOut(d, lastWeight(d0)||w); if(o!=null) L.push({d:d0, in:Number(d.kcalIn), out:o}); } }
+  if(!L.length) return {n:0, w};
+  const inA=avg(L.map(x=>x.in)), outA=avg(L.map(x=>x.out)), def=outA-inA, kgw=def*7/KCAL_KG;
+  const target = S.targetWeight!=null && S.targetWeight!=="" ? Number(S.targetWeight) : null;
+  const R={n:L.length, w, inA, outA, def, kgw, target};
+  if(target!=null && w!=null && w>target && kgw>0.02){ R.weeks=(w-target)/kgw; R.date=addDays(t, Math.ceil(R.weeks*7)); }
+  return R;
+}
+const fmtWeeks = wk => wk<8 ? `${Math.round(wk)} semaine${Math.round(wk)>1?"s":""}` : wk<104 ? `${Math.round(wk/4.345)} mois` : `${fmtNum(wk/52,1)} ans`;
+const dateLong = d => `${fmtShort(d).replace(/\.$/,"")}${parseIso(d).getFullYear()!==new Date().getFullYear()?" "+parseIso(d).getFullYear():""}`;
+function paintKcalDay(){
+  const el=$("#kcalDay"); if(!el || !current) return;
+  const kin=num($("#kcalIn").value), act=num($("#watchKcal").value);
+  if(kin==null && act==null){ el.hidden=true; return; }
+  el.hidden=false;
+  if(!bodyOk()){ el.innerHTML=`Pour calculer ta dépense totale, renseigne ta <b>taille</b> et ton <b>âge</b> dans Tendances → Calories &amp; objectif.`; return; }
+  const out = act!=null ? bmrFor(lastWeight(current.date)) + act : null;
+  const parts=[]; if(kin!=null) parts.push(`${fmtNum(kin)} mangées`); if(out!=null) parts.push(`${fmtNum(out)} dépensées`);
+  let html = parts.join(" · ");
+  if(kin!=null && out!=null){ const b=out-kin; html += ` → <b class="${b>=0?"good":"bad"}">${b>=0?"−":"+"}${fmtNum(Math.abs(b))} kcal</b> ${b>=0?"de déficit":"de surplus"}`; }
+  const R=kcalInfo();
+  if(R.date) html += `<br>À ce rythme (${R.n} j) : ${fmtNum(R.target,0)} kg vers le <b>${dateLong(R.date)}</b>, dans ${fmtWeeks(R.weeks)}.`;
+  el.innerHTML = html;
+}
+["#kcalIn","#watchKcal"].forEach(x=>$(x).addEventListener("input",paintKcalDay));
+function renderKcal(){
+  const R=kcalInfo(), E=energyInfo();
+  $("#bodyH").value=S.body?.height??""; $("#bodyA").value=S.body?.age??"";
+  const b=bmrFor(R.w); $("#bmrHint").textContent = b ? `Métabolisme de base estimé : ${fmtNum(b)} kcal/jour (ce que ton corps dépense au repos, à ${fmtNum(R.w,1)} kg). La dépense du jour = ce chiffre + les calories actives de ta montre.` : "Nécessaire pour estimer ce que tu dépenses au repos.";
+  if(!bodyOk()){ $("#kcalBody").open=true; $("#st-kcal").innerHTML=""; $("#kcalText").innerHTML=`<p>Renseigne ta taille et ton âge ci-dessous, puis note chaque jour dans la Journée tes calories mangées et les calories actives de ta montre.</p>`; return; }
+  if(!R.n){ $("#st-kcal").innerHTML=""; $("#kcalText").innerHTML=`<p>Note chaque jour dans la Journée tes <b>calories mangées</b> et les <b>calories actives</b> de ta montre : la projection apparaît dès le premier jour, et devient fiable après une semaine.</p>`; return; }
+  $("#st-kcal").innerHTML = stat(fmtNum(Math.round(R.inA/10)*10),"kcal mangées / jour")+stat(fmtNum(Math.round(R.outA/10)*10),"kcal dépensées / jour")+stat(`${R.def>=0?"−":"+"}${fmtNum(Math.round(Math.abs(R.def)/10)*10)}`, R.def>=0?"déficit / jour":"surplus / jour")+stat(R.kgw>0?`−${fmtNum(R.kgw,2)} kg`:"–","par semaine (théorique)");
+  const s=[];
+  if(R.target==null) s.push(`Fixe ton poids cible dans les réglages pour voir quand tu l'atteindras.`);
+  else if(R.w!=null && R.w<=R.target) s.push(`Tu es déjà à ton objectif de ${fmtNum(R.target,1)} kg.`);
+  else if(R.date) s.push(`<b>Si tu continues comme ça</b>, tu atteins ${fmtNum(R.target,1)} kg vers le <b>${dateLong(R.date)}</b>, soit dans ${fmtWeeks(R.weeks)} (il reste ${fmtNum(R.w-R.target,1)} kg).`);
+  else s.push(`Avec ces chiffres, tu n'es pas en déficit : ton poids ne baissera pas. Il faut manger un peu moins ou bouger un peu plus.`);
+  if(R.kgw>0.01*(R.w||100)) s.push(`⚠️ Plus de 1 % de ton poids par semaine : c'est rapide, attention à garder assez de protéines pour ne pas perdre de muscle.`);
+  if(E?.recentRate!=null) s.push(`Pour comparer, ta balance dit ${kgw(E.recentRate)} sur 4 semaines. ${E.recentRate<0 && R.kgw>0 && -E.recentRate < R.kgw*0.6 ? "C'est nettement moins que le calcul : les montres surestiment souvent les calories actives, et on oublie facilement des grignotages. Fie-toi d'abord à la balance." : "Les deux concordent à peu près : la projection est crédible."}`);
+  if(R.n<7) s.push(`Calculé sur ${R.n} jour${R.n>1?"s":""} seulement : attends une semaine de saisies pour une projection fiable.`);
+  $("#kcalText").innerHTML = s.map(x=>`<p>${x}</p>`).join("");
+}
+["#bodyH","#bodyA"].forEach(x=>$(x).addEventListener("change",async()=>{ S.body={height:num($("#bodyH").value), age:num($("#bodyA").value)}; renderKcal(); paintKcalDay(); try{ await saveSettings(); }catch(e){} }));
 
 /* ---------- calories & objectif réaliste ---------- */
 const KCAL_KG = 7700;
@@ -2380,7 +2458,7 @@ function renderTrends(){
   if($("#tab-tend").hidden) return;
   renderRecords();
   renderBodyTrends();
-  renderGoal();
+  renderGoal(); renderKcal();
   const r = paceInfo();
   $("#pacePanel").hidden = !r;
   if(r){
@@ -2626,7 +2704,9 @@ const kindOf = x => B7[x.b7]?.kind;
 const bucket = k => k==="wod" ? "renfo" : k;
 const isForce = x => bucket(kindOf(x))==="renfo";
 const excusedKind = x => x.replaces?.k && B7[x.replaces.k] && bucket(B7[x.replaces.k].kind)!==bucket(kindOf(x)) ? bucket(B7[x.replaces.k].kind) : null;
-const TGT = () => ({ r: B7_PLAN.filter(p=>bucket(B7[p.k]?.kind)==="renfo").length, c: B7_PLAN.filter(p=>B7[p.k]?.kind==="run").length });
+const TGT_PLAN = () => ({ r: B7_PLAN.filter(p=>bucket(B7[p.k]?.kind)==="renfo").length, c: B7_PLAN.filter(p=>B7[p.k]?.kind==="run").length });
+// objectif de la semaine du lundi m : celui du programme, sauf si la semaine a été ajustée (S.weekAdj[m] = {r, c})
+const TGT = m => { const a = m && S?.weekAdj?.[m]; return a ? {r:Number(a.r)||0, c:Number(a.c)||0, adj:true} : TGT_PLAN(); };
 // nom de la case « force » selon le programme : WOD, Renfo, ou Force si les deux sont prévus
 const forceLbl = () => { const ks=B7_PLAN.map(p=>B7[p.k]?.kind); return ks.includes("wod") ? (ks.includes("renfo")?"Force":"WOD") : "Renfo"; };
 const slotHit = (x,p,d) => { const P=B7[p.k]; return x.b7===p.k || (P.kind==="renfo" && x.b7==="T"+p.k) || (P.kind==="wod" && x.b7==="W" && (!d || x.date===d)); };
@@ -2701,7 +2781,8 @@ function renderB7(){
   const nX=wk.filter(x=>B7[x.b7]?.kind==="other").length, nW=wk.filter(x=>kindOf(x)==="wod").length;
   const pd=pausedDays(mon);
   if(pd) { $("#b7WeekHint").textContent = `⏸ ${pd===7?"Semaine en pause":`${pd} jour${pd>1?"s":""} en pause cette semaine`} : rien à rattraper.${nR+nC+nX?` Séances notées quand même : ${nR+nC+nX+nW}${km?` · ${fmtNum(km,1)} km`:""}.`:""}`; }
-  else $("#b7WeekHint").textContent = `Cette semaine : ${nR}/${TGT().r} ${forceLbl()==="Renfo"?"renfo":forceLbl()} · ${nC}/${TGT().c} course${TGT().c>1?"s":""}${km?` · ${fmtNum(km,1)} km`:""}${nW&&forceLbl()==="Renfo"?` (dont ${nW} WOD)`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}${nRep?` · ${nRep} séance${nRep>1?"s":""} remplacée${nRep>1?"s":""} (non comptée${nRep>1?"s":""} comme ${nRep>1?"prévues":"prévue"})`:""}.`;
+  else $("#b7WeekHint").textContent = `${TGT(mon).adj?"Semaine ajustée · ":""}Cette semaine : ${nR}/${TGT(mon).r} ${forceLbl()==="Renfo"?"renfo":forceLbl()} · ${nC}/${TGT(mon).c} course${TGT(mon).c>1?"s":""}${km?` · ${fmtNum(km,1)} km`:""}${nW&&forceLbl()==="Renfo"?` (dont ${nW} WOD)`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}${nRep?` · ${nRep} séance${nRep>1?"s":""} remplacée${nRep>1?"s":""} (non comptée${nRep>1?"s":""} comme ${nRep>1?"prévues":"prévue"})`:""}.`;
+  renderWeekAdj(mon);
   if(!b7Kind) b7Open($("#b7Date").value || t, null, true);
   renderB7Hist(); renderStrength(); renderRace(); renderB7Recent(); renderRunPlan(); renderKm();
 }
@@ -2862,7 +2943,7 @@ function renderB7Hist(){
     const wn=b7WeekNo(m), wp=weekPaused(m);
     const open=b7HistOpen===m, det = open ? `<tr class="wk-open"><td colspan="6" class="l">${weekDetail(m)}</td></tr>` : "";
     if(wp){ rows+=`<tr data-m="${m}" class="wk-row${open?" on":""}"><td class="l">⏸ ${fmtShort(m)}</td><td colspan="5" class="l" style="color:var(--muted)">En pause${ws.length?` · ${ws.length} séance${ws.length>1?"s":""} notée${ws.length>1?"s":""}`:""} <span class="chev">${open?"▲":"▼"}</span></td></tr>`+det; continue; }
-    rows+=`<tr data-m="${m}" class="wk-row${open?" on":""}"><td class="l"><span class="chev">${open?"▲":"▼"}</span> ${wn>=1?`<b>S${wn}</b> · `:""}${fmtShort(m)}</td><td class="${nR>=TGT().r?"ok":""}">${nR}/${TGT().r}</td><td class="${nC>=TGT().c?"ok":""}">${nC}/${TGT().c}</td><td>${km?fmtNum(km,1):"–"}</td><td>${sec?Math.round(sec/60)+" min":"–"}</td><td>${fe!=null?fmtNum(fe,1)+"/5":"–"}</td></tr>`+det;
+    rows+=`<tr data-m="${m}" class="wk-row${open?" on":""}"><td class="l"><span class="chev">${open?"▲":"▼"}</span> ${wn>=1?`<b>S${wn}</b> · `:""}${fmtShort(m)}</td><td class="${nR>=TGT(m).r?"ok":""}">${nR}/${TGT(m).r}</td><td class="${nC>=TGT(m).c?"ok":""}">${nC}/${TGT(m).c}</td><td>${km?fmtNum(km,1):"–"}</td><td>${sec?Math.round(sec/60)+" min":"–"}</td><td>${fe!=null?fmtNum(fe,1)+"/5":"–"}</td></tr>`+det;
   }
   if(!rows) rows=`<tr><td colspan="6" class="l" style="color:var(--muted);white-space:normal">Le programme commence le lundi ${fmtShort(B7_START).replace(/\.$/,"")}. Tes semaines apparaîtront ici.</td></tr>`;
   $("#b7Hist").innerHTML = `<thead><tr><th class="l">Semaine du</th><th>${forceLbl()}</th><th>Course</th><th>km</th><th>Durée</th><th>Sensations</th></tr></thead><tbody>${rows}</tbody>`;
@@ -3134,8 +3215,8 @@ $("#raceSave").onclick=async()=>{
 /* ---- récap de la semaine + série ---- */
 function weekDone(m){ const ws=b7Sessions().filter(x=>x.date>=m&&x.date<=addDays(m,6)); return { r:ws.filter(isForce).length, c:ws.filter(x=>kindOf(x)==="run").length, exR:ws.filter(x=>excusedKind(x)==="renfo").length, exC:ws.filter(x=>excusedKind(x)==="run").length, ws }; }
 function streak(){
-  let m=mondayOf(todayIso()), n=0; const T=TGT(), full=w=>w.r+(w.exR||0)>=T.r&&w.c+(w.exC||0)>=T.c&&(T.r+T.c)>0, cur=weekDone(m); if(!full(cur)) m=addDays(m,-7); // la semaine en cours compte seulement si elle est déjà complète
-  while(m>=B7_START){ const w=weekDone(m); if(full(w)){ n++; m=addDays(m,-7); } else if(weekPaused(m)){ m=addDays(m,-7); } else break; } // semaine en pause : sautée, la série continue
+  let m=mondayOf(todayIso()), n=0; const full=(w,wm)=>{ const T=TGT(wm); return w.r+(w.exR||0)>=T.r&&w.c+(w.exC||0)>=T.c&&(T.r+T.c)>0; }, cur=weekDone(m); if(!full(cur,m)) m=addDays(m,-7); // la semaine en cours compte seulement si elle est déjà complète
+  while(m>=B7_START){ const w=weekDone(m); if(full(w,m)){ n++; m=addDays(m,-7); } else if(weekPaused(m)){ m=addDays(m,-7); } else break; } // semaine en pause : sautée, la série continue
   return n;
 }
 let recapData=null;
@@ -3146,8 +3227,8 @@ function renderRecap(mon){
   const card=(l,v,e,ok)=>`<div class="rc${ok?" ok":""}"><span>${l}</span><b>${v}</b>${e?`<em>${e}</em>`:""}</div>`;
   $("#recapStreak").innerHTML = st ? `<span class="streak">🔥 ${st} semaine${st>1?"s":""} complète${st>1?"s":""} d'affilée</span>` : "";
   $("#recapGrid").innerHTML =
-      card(forceLbl(), pausedDays(mon)>=4 ? `${D.r}` : `${D.r}/${TGT().r}`, D.ws.filter(isForce).map(x=>x.wod?"WOD "+x.wod.n:B7[x.b7].short).join(", "), D.r>=TGT().r&&TGT().r>0)
-    + card("Course", pausedDays(mon)>=4 ? `${D.c}` : `${D.c}/${TGT().c}`, km?`${fmtNum(km,1)} km`:"", D.c>=TGT().c&&TGT().c>0)
+      card(forceLbl(), pausedDays(mon)>=4 ? `${D.r}` : `${D.r}/${TGT(mon).r}`, D.ws.filter(isForce).map(x=>x.wod?"WOD "+x.wod.n:B7[x.b7].short).join(", "), D.r>=TGT(mon).r&&TGT(mon).r>0)
+    + card("Course", pausedDays(mon)>=4 ? `${D.c}` : `${D.c}/${TGT(mon).c}`, km?`${fmtNum(km,1)} km`:"", D.c>=TGT(mon).c&&TGT(mon).c>0)
     + card("Poids moyen", W.weight!=null?fmtNum(W.weight,1)+" kg":"–", dW!=null?`${dW>0?"+":""}${fmtNum(dW,2)} kg vs sem. préc.`:"")
     + card("Pas / jour", W.steps!=null?fmtNum(W.steps):"–", "")
     + card("Sommeil", W.sleep!=null?fmtH(W.sleep):"–", "par nuit")
@@ -3165,7 +3246,7 @@ async function recapCanvas(){
   const g=X.createRadialGradient(w,0,50,w,0,900); g.addColorStop(0,"rgba(198,244,50,.22)"); g.addColorStop(1,"rgba(198,244,50,0)"); X.fillStyle=g; X.fillRect(0,0,w,h);
   X.fillStyle=col("--accent"); X.font='italic 800 92px "Barlow Condensed", sans-serif'; X.fillText("MA SEMAINE",70,150);
   X.fillStyle="#F3F5F7"; X.font='500 36px Barlow, sans-serif'; X.fillText(`${fmtShort(mon)} – ${fmtShort(addDays(mon,6))}${b7WeekNo(mon)>=1?`  ·  semaine ${b7WeekNo(mon)}`:""}`,72,210);
-  const cells=[["RENFO",`${D.r}/${TGT().r}`,D.r>=TGT().r&&TGT().r>0],["COURSE",`${D.c}/${TGT().c}`,D.c>=TGT().c&&TGT().c>0],["KILOMÈTRES",km?fmtNum(km,1):"–"],["POIDS MOYEN",W.weight!=null?fmtNum(W.weight,1)+" kg":"–"],["PAS / JOUR",W.steps!=null?fmtNum(W.steps):"–"],["SOMMEIL",W.sleep!=null?fmtH(W.sleep):"–"],["EAU / JOUR",W.water!=null?fmtNum(W.water,2)+" L":"–"],["VS SEM. PRÉC.",dW!=null?`${dW>0?"+":""}${fmtNum(dW,2)} kg`:"–"]];
+  const cells=[["RENFO",`${D.r}/${TGT(mon).r}`,D.r>=TGT(mon).r&&TGT(mon).r>0],["COURSE",`${D.c}/${TGT(mon).c}`,D.c>=TGT(mon).c&&TGT(mon).c>0],["KILOMÈTRES",km?fmtNum(km,1):"–"],["POIDS MOYEN",W.weight!=null?fmtNum(W.weight,1)+" kg":"–"],["PAS / JOUR",W.steps!=null?fmtNum(W.steps):"–"],["SOMMEIL",W.sleep!=null?fmtH(W.sleep):"–"],["EAU / JOUR",W.water!=null?fmtNum(W.water,2)+" L":"–"],["VS SEM. PRÉC.",dW!=null?`${dW>0?"+":""}${fmtNum(dW,2)} kg`:"–"]];
   cells.forEach((cl,i)=>{ const cx=70+(i%2)*480, cy=280+Math.floor(i/2)*190;
     X.fillStyle="#1A1F26"; X.beginPath(); X.roundRect?X.roundRect(cx,cy,460,170,24):X.rect(cx,cy,460,170); X.fill();
     X.fillStyle="#8D97A3"; X.font='700 28px Barlow, sans-serif'; X.fillText(cl[0],cx+30,cy+52);
@@ -3499,6 +3580,24 @@ function renderWodForm(prev){
   paintWodChronoBtns();
 }
 const wodDet = x => [WOD_LV[x.wod.lv]+(x.wod.scaled?" adapté":""), wodTimeTxt(x.wod.time)].filter(Boolean).join(" · ");
+
+/* ---------- ajuster l'objectif d'une semaine ---------- */
+let adjMon=null;
+function renderWeekAdj(mon){
+  adjMon=mon; const T=TGT(mon), P=TGT_PLAN();
+  $("#adjRLbl").textContent=forceLbl(); $("#adjR").textContent=T.r; $("#adjC").textContent=T.c;
+  $("#adjReset").hidden=!T.adj;
+  $("#weekAdj summary").textContent = T.adj ? `✎ Semaine ajustée : ${T.r+T.c} séance${T.r+T.c>1?"s":""} au lieu de ${P.r+P.c}` : "✎ Plus ou moins de séances cette semaine ?";
+}
+$$("#weekAdj [data-adj]").forEach(b=>b.onclick=async()=>{
+  const m=adjMon, T=TGT(m), k=b.dataset.adj, v={r:T.r, c:T.c}; v[k]=Math.max(0,Math.min(7,v[k]+Number(b.dataset.d)));
+  const P=TGT_PLAN(); S.weekAdj = {...(S.weekAdj||{})};
+  if(v.r===P.r && v.c===P.c) delete S.weekAdj[m]; else S.weekAdj[m]=v;
+  renderB7Week(); $("#weekAdj").open=true;
+  try{ await saveSettings(); $("#adjMsg").textContent="✓"; }catch(e){ $("#adjMsg").textContent="Enregistré sur l'appareil"; }
+  setTimeout(()=>$("#adjMsg").textContent="",1500);
+});
+$("#adjReset").onclick=async()=>{ if(S.weekAdj) delete S.weekAdj[adjMon]; renderB7Week(); try{ await saveSettings(); }catch(e){} };
 
 /* ---------- partager une séance (image format story 1080 × 1920) ---------- */
 function sessionShareData(date, x){
