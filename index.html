@@ -350,7 +350,7 @@ section.panel h2.b7-title::before{display:none}
 .b7-day .d{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .b7-day .t{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:1.15rem;line-height:1.05;text-transform:uppercase}
 .b7-day .s{font-size:.78rem;color:var(--muted)}
-.b7-day.run .t{color:var(--steps)} .b7-day.renfo .t{color:var(--accent)}
+.b7-day.run .t{color:var(--steps)} .b7-day.renfo .t{color:var(--accent)} .b7-day.wod .t{color:var(--train)}
 .b7-day.today{border-color:var(--accent);box-shadow:0 0 18px -8px var(--accent)}
 .b7-day.done{background:linear-gradient(180deg,rgba(34,227,160,.14),var(--field))}
 .b7-day.done::after{content:"✓";position:absolute;top:8px;right:9px;width:20px;height:20px;border-radius:50%;background:var(--good);color:#0B0D10;font-weight:800;font-size:.8rem;display:grid;place-items:center}
@@ -367,7 +367,7 @@ section.panel h2.b7-title::before{display:none}
 .pg-ses{border:1px solid var(--line);background:var(--field);border-radius:14px;padding:12px;margin-bottom:10px}
 .pg-ses-head{display:grid;grid-template-columns:1fr 110px auto;gap:8px;align-items:end}
 .pg-kind{font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;display:block}
-.pg-kind.run{color:var(--steps)} .pg-kind.other{color:var(--sleep)}
+.pg-kind.run{color:var(--steps)} .pg-kind.wod{color:var(--train)} .pg-kind.other{color:var(--sleep)}
 .pg-ex{display:grid;grid-template-columns:minmax(0,1fr) 52px 52px 52px auto;gap:6px;align-items:center;margin-top:6px}
 .pg-ex.hd{font-size:.7rem;color:var(--muted);font-weight:700;margin-top:10px}
 .pg-ex input,.pg-ex select,.pg-ses input,.pg-ses select{padding:8px;font-size:16px}
@@ -962,7 +962,7 @@ nav.bottom-nav{display:none}
       </div>
       <h3 class="pg-h">Séances</h3>
       <div id="pgSessions"></div>
-      <div class="row" style="gap:8px"><button type="button" class="btn ghost small" data-pgadd="renfo">+ Séance muscu</button><button type="button" class="btn ghost small" data-pgadd="run">+ Course</button><button type="button" class="btn ghost small" data-pgadd="other">+ Autre</button></div>
+      <div class="row" style="gap:8px"><button type="button" class="btn ghost small" data-pgadd="renfo">+ Séance muscu</button><button type="button" class="btn ghost small" data-pgadd="wod">+ WOD</button><button type="button" class="btn ghost small" data-pgadd="run">+ Course</button><button type="button" class="btn ghost small" data-pgadd="other">+ Autre</button></div>
       <h3 class="pg-h">Semaine type</h3>
       <p class="hint">Choisis la séance prévue chaque jour. Les jours sans séance sont du repos.</p>
       <div class="pg-week" id="pgWeek"></div>
@@ -1267,6 +1267,15 @@ function normalizeSettings(s){
   }
   if(!Array.isArray(o.plans)||!o.plans.length) o.plans = defaultSettings().plans;
   if(!Array.isArray(o.templates)) o.templates = defaultSettings().templates;
+  if(!o.wodProgV1){
+    const att={id:"att", name:"Attilius hybride", tag:"WOD + course", desc:"2 WOD Attilius + 2 sorties course par semaine. Le Big Seven (Renfo A/B, Dépl. A/B) reste dispo en séance libre.", start:"2026-11-02", runPlan:true,
+      sessions:{
+        WA:{label:"WOD du lundi", short:"WOD lun", kind:"wod", note:"Challenge Attilius : choisis ton WOD (le suivant est proposé), ton niveau, et lance le chrono."},
+        Q:{label:"Fractionné", short:"Fractionné", kind:"run", note:"Échauffement 10–15 min, fractionné du plan course, retour au calme 8–10 min."},
+        WB:{label:"WOD du vendredi", short:"WOD ven", kind:"wod", note:"Challenge Attilius : choisis ton WOD (le suivant est proposé), ton niveau, et lance le chrono."},
+        E:{label:"Endurance facile", short:"Endurance", kind:"run", note:"Allure conversationnelle : tu dois pouvoir parler."}},
+      plan:[{dow:0,k:"WA"},{dow:2,k:"Q"},{dow:4,k:"WB"},{dow:6,k:"E"}], extra:["A","B","TA","TB"]};
+    o.programs=(Array.isArray(o.programs)?o.programs:[]).filter(p=>p&&p.id!=="att"); o.programs.push(att); o.activeProgram="att"; o.wodProgV1=true; }
   if(!o.vmaV2){ // VMA de départ retenue : celle de la montre (VO2max 41 → 11,7 km/h), plus prudente que le 1,6 km
     o.vmaTests = Array.isArray(o.vmaTests) ? o.vmaTests : [{date:"2026-09-20", vma:12.3, label:"1,6 km en 8'13 (estimation)"}];
     if(!o.vmaTests.some(t=>t.date==="2026-11-04")) o.vmaTests.push({date:"2026-11-04", vma:11.7, label:"VO2max montre : 41"});
@@ -2613,8 +2622,14 @@ const activeProgram = () => programs().find(p=>p.id===(S?.activeProgram||"b7")) 
 // Une séance de remplacement compte pour ce qu'elle est vraiment (un vélo n'est pas un renfo) :
 // la séance prévue est seulement « excusée » (plus de « pas notée », pas de rappel, série non cassée).
 const kindOf = x => B7[x.b7]?.kind;
-const excusedKind = x => x.replaces?.k && B7[x.replaces.k] && B7[x.replaces.k].kind!==kindOf(x) ? B7[x.replaces.k].kind : null;
-const TGT = () => ({ r: B7_PLAN.filter(p=>B7[p.k]?.kind==="renfo").length, c: B7_PLAN.filter(p=>B7[p.k]?.kind==="run").length });
+// renfo et WOD comptent ensemble comme « séance de force » (un WOD remplace un renfo, et inversement)
+const bucket = k => k==="wod" ? "renfo" : k;
+const isForce = x => bucket(kindOf(x))==="renfo";
+const excusedKind = x => x.replaces?.k && B7[x.replaces.k] && bucket(B7[x.replaces.k].kind)!==bucket(kindOf(x)) ? bucket(B7[x.replaces.k].kind) : null;
+const TGT = () => ({ r: B7_PLAN.filter(p=>bucket(B7[p.k]?.kind)==="renfo").length, c: B7_PLAN.filter(p=>B7[p.k]?.kind==="run").length });
+// nom de la case « force » selon le programme : WOD, Renfo, ou Force si les deux sont prévus
+const forceLbl = () => { const ks=B7_PLAN.map(p=>B7[p.k]?.kind); return ks.includes("wod") ? (ks.includes("renfo")?"Force":"WOD") : "Renfo"; };
+const slotHit = (x,p,d) => { const P=B7[p.k]; return x.b7===p.k || (P.kind==="renfo" && x.b7==="T"+p.k) || (P.kind==="wod" && x.b7==="W" && (!d || x.date===d)); };
 function applyProgram(){
   const P=activeProgram(), all={};
   programs().forEach(pr=>Object.assign(all, pr.sessions||{}));   // toutes les séances connues (les anciennes restent lisibles)
@@ -2676,17 +2691,17 @@ function renderB7(){
   if(!B7_PLAN.length) $("#b7Week").innerHTML = `<p class="empty" style="margin:0">Aucun jour prévu dans ce programme. Ajoute des séances à ta semaine type avec « Mes programmes ».</p>`;
   else $("#b7Week").innerHTML = B7_PLAN.map(p=>{
     const d=addDays(mon,p.dow), P=B7[p.k];
-    const done = wk.find(x=>x.b7===p.k || (P.kind==="renfo" && x.b7===("T"+p.k)) || x.replaces?.k===p.k);
+    const done = wk.find(x=>slotHit(x,p,d) || x.replaces?.k===p.k);
     const pz = !done && pauseOn(d), swapped = done && done.replaces?.k===p.k;
-    return `<button type="button" class="b7-day ${P.kind}${d===t?" today":""}${done&&!swapped?" done":""}${swapped?" swapped":""}${pz?" paused":""}" data-k="${p.k}" data-d="${d}"><span class="d">${p.d}</span><span class="t">${P.short}</span><span class="s">${done?(done.replaces?.k===p.k?`↔ ${esc(done.title||"remplacée")}`:done.run?.km?fmtNum(done.run.km,1)+" km":"fait"):pz?"⏸ en pause":d<t?"pas notée":d===t?"aujourd'hui":fmtShort(d)}</span></button>`;
+    return `<button type="button" class="b7-day ${P.kind}${d===t?" today":""}${done&&!swapped?" done":""}${swapped?" swapped":""}${pz?" paused":""}" data-k="${p.k}" data-d="${d}"><span class="d">${p.d}</span><span class="t">${P.short}</span><span class="s">${done?(done.replaces?.k===p.k?`↔ ${esc(done.title||"remplacée")}`:done.wod?`WOD ${done.wod.n}`:done.run?.km?fmtNum(done.run.km,1)+" km":"fait"):pz?"⏸ en pause":d<t?"pas notée":d===t?"aujourd'hui":fmtShort(d)}</span></button>`;
   }).join("");
   $$("#b7Week .b7-day").forEach(b=>b.onclick=()=>{ b7Open(b.dataset.d, b.dataset.k, false, (b7DaySessions(b.dataset.d).find(x=>x.b7===b.dataset.k)||{}).id); $("#b7Log").scrollIntoView?.({behavior:"smooth",block:"start"}); });
-  const nR=wk.filter(x=>kindOf(x)==="renfo").length, nC=wk.filter(x=>kindOf(x)==="run").length, km=wk.reduce((a,x)=>a+(x.run?.km||0),0);
+  const nR=wk.filter(isForce).length, nC=wk.filter(x=>kindOf(x)==="run").length, km=wk.reduce((a,x)=>a+(x.run?.km||0),0);
   const nRep=wk.filter(x=>x.replaces?.k).length;
   const nX=wk.filter(x=>B7[x.b7]?.kind==="other").length, nW=wk.filter(x=>kindOf(x)==="wod").length;
   const pd=pausedDays(mon);
   if(pd) { $("#b7WeekHint").textContent = `⏸ ${pd===7?"Semaine en pause":`${pd} jour${pd>1?"s":""} en pause cette semaine`} : rien à rattraper.${nR+nC+nX?` Séances notées quand même : ${nR+nC+nX+nW}${km?` · ${fmtNum(km,1)} km`:""}.`:""}`; }
-  else $("#b7WeekHint").textContent = `Cette semaine : ${nR}/${TGT().r} renfo · ${nC}/${TGT().c} course${TGT().c>1?"s":""}${km?` · ${fmtNum(km,1)} km`:""}${nW?` · ${nW} WOD`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}${nRep?` · ${nRep} séance${nRep>1?"s":""} remplacée${nRep>1?"s":""} (non comptée${nRep>1?"s":""} comme ${nRep>1?"prévues":"prévue"})`:""}.`;
+  else $("#b7WeekHint").textContent = `Cette semaine : ${nR}/${TGT().r} ${forceLbl()==="Renfo"?"renfo":forceLbl()} · ${nC}/${TGT().c} course${TGT().c>1?"s":""}${km?` · ${fmtNum(km,1)} km`:""}${nW&&forceLbl()==="Renfo"?` (dont ${nW} WOD)`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}${nRep?` · ${nRep} séance${nRep>1?"s":""} remplacée${nRep>1?"s":""} (non comptée${nRep>1?"s":""} comme ${nRep>1?"prévues":"prévue"})`:""}.`;
   if(!b7Kind) b7Open($("#b7Date").value || t, null, true);
   renderB7Hist(); renderStrength(); renderRace(); renderB7Recent(); renderRunPlan(); renderKm();
 }
@@ -2842,7 +2857,7 @@ function renderB7Hist(){
   for(let w=0; w<8; w++){
     const m=addDays(mon,-7*w), e=addDays(m,6), ws=all.filter(x=>x.date>=m&&x.date<=e);
     if(m<B7_START && !ws.length) continue;
-    const nR=ws.filter(x=>kindOf(x)==="renfo").length, nC=ws.filter(x=>kindOf(x)==="run").length;
+    const nR=ws.filter(isForce).length, nC=ws.filter(x=>kindOf(x)==="run").length;
     const km=ws.reduce((a,x)=>a+(x.run?.km||0),0), sec=ws.reduce((a,x)=>a+(parseTime(x.run?.dur)||0),0), fe=avg(ws.map(x=>x.feel));
     const wn=b7WeekNo(m), wp=weekPaused(m);
     const open=b7HistOpen===m, det = open ? `<tr class="wk-open"><td colspan="6" class="l">${weekDetail(m)}</td></tr>` : "";
@@ -2850,7 +2865,7 @@ function renderB7Hist(){
     rows+=`<tr data-m="${m}" class="wk-row${open?" on":""}"><td class="l"><span class="chev">${open?"▲":"▼"}</span> ${wn>=1?`<b>S${wn}</b> · `:""}${fmtShort(m)}</td><td class="${nR>=TGT().r?"ok":""}">${nR}/${TGT().r}</td><td class="${nC>=TGT().c?"ok":""}">${nC}/${TGT().c}</td><td>${km?fmtNum(km,1):"–"}</td><td>${sec?Math.round(sec/60)+" min":"–"}</td><td>${fe!=null?fmtNum(fe,1)+"/5":"–"}</td></tr>`+det;
   }
   if(!rows) rows=`<tr><td colspan="6" class="l" style="color:var(--muted);white-space:normal">Le programme commence le lundi ${fmtShort(B7_START).replace(/\.$/,"")}. Tes semaines apparaîtront ici.</td></tr>`;
-  $("#b7Hist").innerHTML = `<thead><tr><th class="l">Semaine du</th><th>Renfo</th><th>Course</th><th>km</th><th>Durée</th><th>Sensations</th></tr></thead><tbody>${rows}</tbody>`;
+  $("#b7Hist").innerHTML = `<thead><tr><th class="l">Semaine du</th><th>${forceLbl()}</th><th>Course</th><th>km</th><th>Durée</th><th>Sensations</th></tr></thead><tbody>${rows}</tbody>`;
 
   $$("#b7Hist tr.wk-row").forEach(tr=>tr.onclick=()=>{ b7HistOpen = b7HistOpen===tr.dataset.m ? null : tr.dataset.m; renderB7Hist(); });
   $$("#b7Hist .wk-detail [data-id]").forEach(b=>b.onclick=e=>{ e.stopPropagation(); b7Open(b.dataset.d, b.dataset.k, false, b.dataset.id); $("#b7Log").scrollIntoView?.({behavior:"smooth",block:"start"}); });
@@ -2928,9 +2943,9 @@ function renderToday(){
   else if(pauseOn(d) && !list.length){ const pz=pauseOn(d); cls="recup"; wm="Pause"; k="R"; kick=`${when} · ${dayLbl}`; title="En pause";
     sub = `${pz.reason?esc(pz.reason)+" · ":""}aucune séance attendue. Reprends quand tu es prêt.`;
     btn = `<button type="button" class="go ghost" id="todayGo">Voir le programme →</button>`; }
-  else if(plan){ const P=B7[plan.k]; k=plan.k; done=list.find(x=>x.b7===plan.k || x.b7==="T"+plan.k || x.replaces?.k===plan.k); cls=P.kind==="run"?"run":"";
+  else if(plan){ const P=B7[plan.k]; k=plan.k; done=list.find(x=>slotHit({...x,date:d},plan,d) || x.replaces?.k===plan.k); cls=P.kind==="run"?"run":"";
     wm=P.short; kick=`${when} · ${dayLbl}${wn>=1?` · S${wn}`:""}`; title=P.short;
-    sub = done && done.replaces?.k===plan.k ? `Remplacée par ${esc(done.title)} · pas comptée comme ${esc(B7[plan.k].short)}.` : done ? (done.run?.km ? `${fmtNum(done.run.km,1)} km${done.run.dur?` en ${esc(done.run.dur)}`:""} · bien joué.` : "Séance notée · bien joué.") : P.kind==="run" ? esc(runPlanFor(plan.k, d) || `${P.label} · course du jour.`) : `${esc(P.label)} · ${P.ex.length} exercices · ~50 min.`;
+    sub = done && done.replaces?.k===plan.k ? `Remplacée par ${esc(done.title)} · pas comptée comme ${esc(B7[plan.k].short)}.` : done ? (done.run?.km ? `${fmtNum(done.run.km,1)} km${done.run.dur?` en ${esc(done.run.dur)}`:""} · bien joué.` : "Séance notée · bien joué.") : P.kind==="run" ? esc(runPlanFor(plan.k, d) || `${P.label} · course du jour.`) : P.kind==="wod" ? `Challenge Attilius · WOD ${wodNext()} proposé · ~20 min.` : `${esc(P.label)} · ${(P.ex||[]).length} exercices · ~50 min.`;
     btn = `<button type="button" class="go${done?" ghost":""}" id="todayGo">${done?"Voir la séance":"Commencer →"}</button>`; }
   else { cls="recup"; wm="Repos"; k="R"; kick=`${when} · ${dayLbl}${wn>=1?` · S${wn}`:""}`; title="Récup";
     sub = list.length ? list.map(x=>esc(x.title)).join(" · ") : "Pas de séance prévue. Une sortie facile si tu en as envie.";
@@ -3117,7 +3132,7 @@ $("#raceSave").onclick=async()=>{
 };
 
 /* ---- récap de la semaine + série ---- */
-function weekDone(m){ const ws=b7Sessions().filter(x=>x.date>=m&&x.date<=addDays(m,6)); return { r:ws.filter(x=>kindOf(x)==="renfo").length, c:ws.filter(x=>kindOf(x)==="run").length, exR:ws.filter(x=>excusedKind(x)==="renfo").length, exC:ws.filter(x=>excusedKind(x)==="run").length, ws }; }
+function weekDone(m){ const ws=b7Sessions().filter(x=>x.date>=m&&x.date<=addDays(m,6)); return { r:ws.filter(isForce).length, c:ws.filter(x=>kindOf(x)==="run").length, exR:ws.filter(x=>excusedKind(x)==="renfo").length, exC:ws.filter(x=>excusedKind(x)==="run").length, ws }; }
 function streak(){
   let m=mondayOf(todayIso()), n=0; const T=TGT(), full=w=>w.r+(w.exR||0)>=T.r&&w.c+(w.exC||0)>=T.c&&(T.r+T.c)>0, cur=weekDone(m); if(!full(cur)) m=addDays(m,-7); // la semaine en cours compte seulement si elle est déjà complète
   while(m>=B7_START){ const w=weekDone(m); if(full(w)){ n++; m=addDays(m,-7); } else if(weekPaused(m)){ m=addDays(m,-7); } else break; } // semaine en pause : sautée, la série continue
@@ -3131,7 +3146,7 @@ function renderRecap(mon){
   const card=(l,v,e,ok)=>`<div class="rc${ok?" ok":""}"><span>${l}</span><b>${v}</b>${e?`<em>${e}</em>`:""}</div>`;
   $("#recapStreak").innerHTML = st ? `<span class="streak">🔥 ${st} semaine${st>1?"s":""} complète${st>1?"s":""} d'affilée</span>` : "";
   $("#recapGrid").innerHTML =
-      card("Renfo", pausedDays(mon)>=4 ? `${D.r}` : `${D.r}/${TGT().r}`, D.ws.filter(x=>B7[x.b7]?.kind==="renfo").map(x=>B7[x.b7].short).join(", "), D.r>=TGT().r&&TGT().r>0)
+      card(forceLbl(), pausedDays(mon)>=4 ? `${D.r}` : `${D.r}/${TGT().r}`, D.ws.filter(isForce).map(x=>x.wod?"WOD "+x.wod.n:B7[x.b7].short).join(", "), D.r>=TGT().r&&TGT().r>0)
     + card("Course", pausedDays(mon)>=4 ? `${D.c}` : `${D.c}/${TGT().c}`, km?`${fmtNum(km,1)} km`:"", D.c>=TGT().c&&TGT().c>0)
     + card("Poids moyen", W.weight!=null?fmtNum(W.weight,1)+" kg":"–", dW!=null?`${dW>0?"+":""}${fmtNum(dW,2)} kg vs sem. préc.`:"")
     + card("Pas / jour", W.steps!=null?fmtNum(W.steps):"–", "")
@@ -3286,7 +3301,7 @@ function openPgEdit(p){
   $("#pgName").value=p.name||""; $("#pgDesc").value=p.desc||""; $("#pgTag").value=p.tag||""; $("#pgStart").value=p.start||"";
   $("#pgMsg").textContent=""; renderPgEdit(); $("#progEd").scrollIntoView?.({behavior:"smooth",block:"start"});
 }
-const KLBL={renfo:"Muscu / renfo",run:"Course",other:"Autre activité"};
+const KLBL={renfo:"Muscu / renfo",run:"Course",other:"Autre activité",wod:"WOD Attilius"};
 function renderPgEdit(){
   const S_=pgEdit.sessions, keys=Object.keys(S_);
   $("#pgSessions").innerHTML = keys.length ? keys.map(k=>{ const v=S_[k];
@@ -3565,7 +3580,7 @@ $("#b7Share").onclick=async()=>{
 function weekSlots(date){ // séances prévues de la semaine de « date » : [{k, date, label, doneBy}]
   const mon=mondayOf(date), wk=b7Sessions().filter(x=>x.date>=mon && x.date<=addDays(mon,6));
   return B7_PLAN.map(p=>{ const d=addDays(mon,p.dow), P=B7[p.k];
-    const doneBy = wk.find(x=>x.b7===p.k || (P.kind==="renfo" && x.b7==="T"+p.k)) || wk.find(x=>x.replaces?.k===p.k);
+    const doneBy = wk.find(x=>slotHit(x,p,d)) || wk.find(x=>x.replaces?.k===p.k);
     return {k:p.k, date:d, label:`${P.short} (${DOW[parseIso(d).getDay()]} ${parseIso(d).getDate()})`, doneBy}; });
 }
 function paintB7Rep(date, prev){
@@ -3596,7 +3611,7 @@ const RUN_Q = [ // mercredi, semaines 1 à 12
   ()=>`TEST FINAL : 1,6 km chrono. Compare avec ton 8'13 de septembre 💪`];
 const RUN_E = ["30 min en continu","30 min en continu","35 min","Semaine allégée : 30 min","35 min","40 min","40 min","Semaine allégée : 30 min","45 min","50 min","55 min","40 min tranquille"];
 function runPlanFor(k, date){
-  const P=activeProgram(); if(!P.builtin || (k!=="Q" && k!=="E")) return null;
+  const P=activeProgram(); if(!(P.builtin || P.runPlan) || (k!=="Q" && k!=="E")) return null;
   const w=b7WeekNo(date); if(w<1) return null;
   const ew=pr(.65,.70);
   if(w>12) return k==="Q" ? `Plan de 12 semaines terminé : refais un test et on repart sur un nouveau cycle.` : `Endurance libre, 40–50 min à ${ew}.`;
