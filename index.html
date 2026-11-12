@@ -397,6 +397,11 @@ section.panel h2.b7-title::before{display:none}
 .b7-day.swapped .t{color:var(--muted)!important;text-decoration:line-through;text-decoration-thickness:2px}
 .b7-day.swapped .s{color:var(--sleep)}
 .b7-day.paused .t{color:var(--muted)!important}
+.b7-day.skipped{opacity:.6;border-style:dashed}
+.b7-day.skipped .t{color:var(--muted)!important;text-decoration:line-through;text-decoration-thickness:2px}
+.b7-day.carried{border-style:dashed;border-color:rgba(255,201,61,.55)}
+.b7-day.carried .d{color:var(--gold)}
+.b7-swap.skip{border-color:rgba(255,201,61,.45);color:var(--gold)}
 .pause-dlg{border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--ink);padding:18px;width:min(420px,calc(100vw - 32px))}
 .pause-dlg::backdrop{background:rgba(0,0,0,.6)}
 .pause-dlg h3{font-size:1.5rem;margin-bottom:6px}
@@ -1050,6 +1055,7 @@ nav.bottom-nav{display:none}
       <p class="b7-move" id="b7Move" hidden></p>
       <div class="b7-daylist" id="b7DayList"></div>
       <div class="b7-rep" id="b7RepWrap" hidden><span class="flabel" style="margin-top:4px">Remplace une séance prévue ?</span><select id="b7Rep"></select></div>
+      <button type="button" class="b7-swap skip" id="b7Skip" hidden>⏭ Pas fait ? Reporter à la semaine prochaine</button>
       <button type="button" class="b7-swap" id="b7Swap" hidden>↔ Impossible aujourd'hui ? Remplacer par une autre activité</button>
       <p class="hint" id="b7Note" style="margin:6px 0 10px"></p>
       <div id="b7Form"></div>
@@ -2706,7 +2712,15 @@ const isForce = x => bucket(kindOf(x))==="renfo";
 const excusedKind = x => x.replaces?.k && B7[x.replaces.k] && bucket(B7[x.replaces.k].kind)!==bucket(kindOf(x)) ? bucket(B7[x.replaces.k].kind) : null;
 const TGT_PLAN = () => ({ r: B7_PLAN.filter(p=>bucket(B7[p.k]?.kind)==="renfo").length, c: B7_PLAN.filter(p=>B7[p.k]?.kind==="run").length });
 // objectif de la semaine du lundi m : celui du programme, sauf si la semaine a été ajustée (S.weekAdj[m] = {r, c})
-const TGT = m => { const a = m && S?.weekAdj?.[m]; return a ? {r:Number(a.r)||0, c:Number(a.c)||0, adj:true} : TGT_PLAN(); };
+// séances reportées : S.moved = [{k, from:lundi, to:lundi suivant}] (la séance prévue passe à la semaine d'après)
+const moved = () => (S && Array.isArray(S.moved)) ? S.moved : [];
+const isSkipped = (mon,k) => moved().some(x=>x.from===mon && x.k===k);
+const carriedIn = mon => moved().filter(x=>x.to===mon && B7[x.k]);
+const TGT = m => { const a = m && S?.weekAdj?.[m]; if(a) return {r:Number(a.r)||0, c:Number(a.c)||0, adj:true};
+  const T={...TGT_PLAN()}; if(!m) return T;
+  moved().forEach(x=>{ const b=bucket(B7[x.k]?.kind), f=b==="renfo"?"r":b==="run"?"c":null; if(!f) return;
+    if(x.from===m && B7_PLAN.some(p=>p.k===x.k)) T[f]=Math.max(0,T[f]-1); if(x.to===m) T[f]++; });
+  return T; };
 // nom de la case « force » selon le programme : WOD, Renfo, ou Force si les deux sont prévus
 const forceLbl = () => { const ks=B7_PLAN.map(p=>B7[p.k]?.kind); return ks.includes("wod") ? (ks.includes("renfo")?"Force":"WOD") : "Renfo"; };
 const slotHit = (x,p,d) => { const P=B7[p.k]; return x.b7===p.k || (P.kind==="renfo" && x.b7==="T"+p.k) || (P.kind==="wod" && x.b7==="W" && (!d || x.date===d)); };
@@ -2769,19 +2783,28 @@ function renderB7(){
   const wk=b7Sessions().filter(x=>x.date>=mon && x.date<=addDays(mon,6));
   $("#b7Week").style.setProperty("--cols", Math.min(4,Math.max(1,B7_PLAN.length)));
   if(!B7_PLAN.length) $("#b7Week").innerHTML = `<p class="empty" style="margin:0">Aucun jour prévu dans ce programme. Ajoute des séances à ta semaine type avec « Mes programmes ».</p>`;
-  else $("#b7Week").innerHTML = B7_PLAN.map(p=>{
+  else { const used=new Set(), pre={};
+    // 1) chaque jour prévu prend d'abord la séance notée CE jour-là ; 2) les séances reportées prennent les autres ; 3) puis le reste
+    B7_PLAN.forEach(p=>{ const d=addDays(mon,p.dow); if(isSkipped(mon,p.k)) return; const x=wk.find(x=>!used.has(x.id) && x.date===d && (slotHit(x,p,d) || x.replaces?.k===p.k)); if(x){ used.add(x.id); pre[p.k+d]=x; } });
+    const carried = carriedIn(mon).map(c=>{ const b=bucket(B7[c.k].kind); const x=wk.find(s=>!used.has(s.id) && bucket(kindOf(s))===b && !s.replaces?.k && !B7_PLAN.some(p=>!isSkipped(mon,p.k) && !pre[p.k+addDays(mon,p.dow)] && addDays(mon,p.dow)===s.date && slotHit(s,p,s.date))); if(x) used.add(x.id); return {c, x}; });
+    $("#b7Week").innerHTML = B7_PLAN.map(p=>{
     const d=addDays(mon,p.dow), P=B7[p.k];
-    const done = wk.find(x=>slotHit(x,p,d) || x.replaces?.k===p.k);
+    if(isSkipped(mon,p.k)) return `<button type="button" class="b7-day ${P.kind} skipped" data-k="${p.k}" data-d="${d}"><span class="d">${p.d}</span><span class="t">${P.short}</span><span class="s">↪ semaine pro</span></button>`;
+    let done = pre[p.k+d]; if(!done){ done = wk.find(x=>!used.has(x.id) && (slotHit(x,p,d) || x.replaces?.k===p.k)); if(done) used.add(done.id); }
     const pz = !done && pauseOn(d), swapped = done && done.replaces?.k===p.k;
     return `<button type="button" class="b7-day ${P.kind}${d===t?" today":""}${done&&!swapped?" done":""}${swapped?" swapped":""}${pz?" paused":""}" data-k="${p.k}" data-d="${d}"><span class="d">${p.d}</span><span class="t">${P.short}</span><span class="s">${done?(done.replaces?.k===p.k?`↔ ${esc(done.title||"remplacée")}`:done.wod?`WOD ${done.wod.n}`:done.run?.km?fmtNum(done.run.km,1)+" km":"fait"):pz?"⏸ en pause":d<t?"pas notée":d===t?"aujourd'hui":fmtShort(d)}</span></button>`;
-  }).join("");
-  $$("#b7Week .b7-day").forEach(b=>b.onclick=()=>{ b7Open(b.dataset.d, b.dataset.k, false, (b7DaySessions(b.dataset.d).find(x=>x.b7===b.dataset.k)||{}).id); $("#b7Log").scrollIntoView?.({behavior:"smooth",block:"start"}); });
+  }).join("") + carried.map(({c:x, x:done})=>{ const P=B7[x.k];
+    const d = t>=mon && t<=addDays(mon,6) ? t : mon;
+    return `<button type="button" class="b7-day ${P.kind} carried${done?" done":""}" data-k="${x.k}" data-d="${done?done.date:d}"${done?` data-id="${done.id}"`:""}><span class="d">↪ Reportée</span><span class="t">${P.short}</span><span class="s">${done?(done.wod?`WOD ${done.wod.n}`:done.run?.km?fmtNum(done.run.km,1)+" km":"fait"):"à caser cette semaine"}</span></button>`; }).join(""); }
+  $("#b7Week").style.setProperty("--cols", Math.min(4,Math.max(1,B7_PLAN.length+carriedIn(mon).length)));
+  $$("#b7Week .b7-day.carried").forEach(b=>b.onclick=()=>{ b7Open(b.dataset.d, b.dataset.k, false, b.dataset.id); $("#b7Log").scrollIntoView?.({behavior:"smooth",block:"start"}); });
+  $$("#b7Week .b7-day:not(.carried)").forEach(b=>b.onclick=()=>{ b7Open(b.dataset.d, b.dataset.k, false, (b7DaySessions(b.dataset.d).find(x=>x.b7===b.dataset.k)||{}).id); $("#b7Log").scrollIntoView?.({behavior:"smooth",block:"start"}); });
   const nR=wk.filter(isForce).length, nC=wk.filter(x=>kindOf(x)==="run").length, km=wk.reduce((a,x)=>a+(x.run?.km||0),0);
   const nRep=wk.filter(x=>x.replaces?.k).length;
   const nX=wk.filter(x=>B7[x.b7]?.kind==="other").length, nW=wk.filter(x=>kindOf(x)==="wod").length;
   const pd=pausedDays(mon);
   if(pd) { $("#b7WeekHint").textContent = `⏸ ${pd===7?"Semaine en pause":`${pd} jour${pd>1?"s":""} en pause cette semaine`} : rien à rattraper.${nR+nC+nX?` Séances notées quand même : ${nR+nC+nX+nW}${km?` · ${fmtNum(km,1)} km`:""}.`:""}`; }
-  else $("#b7WeekHint").textContent = `${TGT(mon).adj?"Semaine ajustée · ":""}Cette semaine : ${nR}/${TGT(mon).r} ${forceLbl()==="Renfo"?"renfo":forceLbl()} · ${nC}/${TGT(mon).c} course${TGT(mon).c>1?"s":""}${km?` · ${fmtNum(km,1)} km`:""}${nW&&forceLbl()==="Renfo"?` (dont ${nW} WOD)`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}${nRep?` · ${nRep} séance${nRep>1?"s":""} remplacée${nRep>1?"s":""} (non comptée${nRep>1?"s":""} comme ${nRep>1?"prévues":"prévue"})`:""}.`;
+  else $("#b7WeekHint").textContent = `${TGT(mon).adj?"Semaine ajustée · ":""}Cette semaine : ${nR}/${TGT(mon).r} ${forceLbl()==="Renfo"?"renfo":forceLbl()} · ${nC}/${TGT(mon).c} course${TGT(mon).c>1?"s":""}${km?` · ${fmtNum(km,1)} km`:""}${nW&&forceLbl()==="Renfo"?` (dont ${nW} WOD)`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}${wn>1&&(wn-1)%5===0?" Semaine allégée conseillée : 30 à 40 % de séries en moins.":""}${nRep?` · ${nRep} séance${nRep>1?"s":""} remplacée${nRep>1?"s":""} (non comptée${nRep>1?"s":""} comme ${nRep>1?"prévues":"prévue"})`:""}${(n=>n?` · ${n} reportée${n>1?"s":""} à la semaine pro`:"")(moved().filter(x=>x.from===mon).length)}${(n=>n?` · dont ${n} reportée${n>1?"s":""} de la semaine dernière`:"")(carriedIn(mon).length)}.`;
   renderWeekAdj(mon);
   if(!b7Kind) b7Open($("#b7Date").value || t, null, true);
   renderB7Hist(); renderStrength(); renderRace(); renderB7Recent(); renderRunPlan(); renderKm();
@@ -3024,6 +3047,9 @@ function renderToday(){
   else if(pauseOn(d) && !list.length){ const pz=pauseOn(d); cls="recup"; wm="Pause"; k="R"; kick=`${when} · ${dayLbl}`; title="En pause";
     sub = `${pz.reason?esc(pz.reason)+" · ":""}aucune séance attendue. Reprends quand tu es prêt.`;
     btn = `<button type="button" class="go ghost" id="todayGo">Voir le programme →</button>`; }
+  else if(plan && isSkipped(mondayOf(d),plan.k) && !list.length){ const P=B7[plan.k]; cls="recup"; wm=P.short; k=plan.k; kick=`${when} · ${dayLbl}${wn>=1?` · S${wn}`:""}`; title=P.short;
+    sub="↪ Reportée à la semaine prochaine. Rien à faire aujourd'hui.";
+    btn=`<button type="button" class="go ghost" id="todayGo">Voir le programme →</button>`; }
   else if(plan){ const P=B7[plan.k]; k=plan.k; done=list.find(x=>slotHit({...x,date:d},plan,d) || x.replaces?.k===plan.k); cls=P.kind==="run"?"run":"";
     wm=P.short; kick=`${when} · ${dayLbl}${wn>=1?` · S${wn}`:""}`; title=P.short;
     sub = done && done.replaces?.k===plan.k ? `Remplacée par ${esc(done.title)} · pas comptée comme ${esc(B7[plan.k].short)}.` : done ? (done.run?.km ? `${fmtNum(done.run.km,1)} km${done.run.dur?` en ${esc(done.run.dur)}`:""} · bien joué.` : "Séance notée · bien joué.") : P.kind==="run" ? esc(runPlanFor(plan.k, d) || `${P.label} · course du jour.`) : P.kind==="wod" ? `Challenge Attilius · WOD ${wodNext()} proposé · ~20 min.` : `${esc(P.label)} · ${(P.ex||[]).length} exercices · ~50 min.`;
@@ -3678,7 +3704,7 @@ $("#b7Share").onclick=async()=>{
 /* ---------- remplacer une séance prévue ---------- */
 function weekSlots(date){ // séances prévues de la semaine de « date » : [{k, date, label, doneBy}]
   const mon=mondayOf(date), wk=b7Sessions().filter(x=>x.date>=mon && x.date<=addDays(mon,6));
-  return B7_PLAN.map(p=>{ const d=addDays(mon,p.dow), P=B7[p.k];
+  return B7_PLAN.filter(p=>!isSkipped(mon,p.k)).map(p=>{ const d=addDays(mon,p.dow), P=B7[p.k];
     const doneBy = wk.find(x=>slotHit(x,p,d)) || wk.find(x=>x.replaces?.k===p.k);
     return {k:p.k, date:d, label:`${P.short} (${DOW[parseIso(d).getDay()]} ${parseIso(d).getDate()})`, doneBy}; });
 }
@@ -3687,6 +3713,18 @@ function paintB7Rep(date, prev){
   // bouton « remplacer » sur une séance prévue pas encore faite
   swap.hidden = !(inPlan && !prev);
   swap.onclick = ()=>{ b7RepPreset = b7Kind; b7Kind = "X"; b7EditId=null; b7Orig=null; renderB7Form(); $("#b7Msg").textContent="Choisis l'activité faite à la place (+ WOD, + Course, + Séance, Dépl. A/B…) puis enregistre."; $("#b7Msg").className="save-msg"; };
+  const mon=mondayOf(date), sk=$("#b7Skip"), skipped=inPlan && isSkipped(mon,b7Kind);
+  sk.hidden = !(inPlan && !prev) || mon<mondayOf(todayIso());
+  sk.textContent = skipped ? "↩ Annuler le report : je la fais cette semaine" : "⏭ Pas fait ? Reporter à la semaine prochaine";
+  if(skipped) swap.hidden=true;
+  sk.onclick = async()=>{
+    const k=b7Kind;
+    if(isSkipped(mon,k)) S.moved=moved().filter(x=>!(x.from===mon && x.k===k));
+    else S.moved=[...moved(), {k, from:mon, to:addDays(mon,7)}];
+    renderB7Week(); b7Kind=k; renderB7Form();
+    $("#b7Msg").textContent = isSkipped(mon,k) ? `↪ ${B7[k].short} reportée à la semaine prochaine : elle t'attendra là-bas, à caser quand tu veux.` : "↩ Report annulé."; $("#b7Msg").className="save-msg ok";
+    renderToday(); try{ await saveSettings(); }catch(e){}
+  };
   if(inPlan){ wrap.hidden=true; return; }
   const slots=weekSlots(date), cur = prev?.replaces?.k || b7RepPreset || "";
   const opts = slots.filter(sl=>!sl.doneBy || sl.doneBy.id===prev?.id || sl.k===cur);

@@ -28,6 +28,9 @@ export function plannedToday(settings, date, dowJs) {
   const dow = (dowJs + 6) % 7, item = (prog.plan || []).find((x) => Number(x.dow) === dow);
   const ses = item && prog.sessions?.[item.k];
   if (!ses) return null;
+  // séance reportée à la semaine suivante : pas de rappel
+  const mon = new Date(Date.parse(date + "T12:00:00Z") - dow * 864e5).toISOString().slice(0, 10);
+  if ((Array.isArray(settings?.moved) ? settings.moved : []).some((x) => x && x.from === mon && x.k === item.k)) return null;
   return { label: ses.short || ses.label || "Séance", kind: ses.kind, keys: [item.k, "T" + item.k] };
 }
 const WINDOW_MIN = 180; // un rappel manqué n'est plus envoyé 3 h après son heure
