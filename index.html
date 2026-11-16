@@ -1295,7 +1295,8 @@ function normalizeSettings(s){
   }
   if(!Array.isArray(o.plans)||!o.plans.length) o.plans = defaultSettings().plans;
   if(!Array.isArray(o.templates)) o.templates = defaultSettings().templates;
-  if(!o.w30V1){ o.activeProgram="w30"; o.w30Start = o.w30Start || "2026-11-16"; o.w30V1=true; o.wodProgV1=true; }
+  if(!o.w30V1){ o.activeProgram="w30"; o.w30V1=true; o.wodProgV1=true; }
+  if(!o.w30V2){ o.w30Start="2026-11-23"; o.w30V2=true; } // le 30 WOD démarre le lundi 23 novembre
   if(!o.wodProgV1){
     const att={id:"att", name:"Attilius hybride", tag:"WOD + course", desc:"2 WOD Attilius + 2 sorties course par semaine. Le Big Seven (Renfo A/B, Dépl. A/B) reste dispo en séance libre.", start:"2026-11-02", runPlan:true,
       sessions:{
@@ -2646,7 +2647,7 @@ function builtinProgram(){
   return {id:"b7", builtin:true, name:"Big Seven Athletic", tag:"Plan hybride", desc:"2 séances de renforcement + 2 sorties course minimum. Force, muscle et endurance, sans fatigue inutile.", start:"2026-11-02", sessions:ses, plan:B7_BUILTIN_PLAN, extra:["TA","TB"]};
 }
 const W30_NOTE = "Échauffement 7 min, 4 rounds (~28 min), retour au calme 5 min. Le WOD de la semaine est proposé, tu peux en choisir un autre.";
-function w30Program(){ return {id:"w30", builtin:true, name:"30 WOD · 8 semaines", tag:"Cross training maison", desc:"4 WOD par semaine (lundi, mardi, jeudi, samedi), 4 rounds, 40 à 45 min. Mercredi, vendredi et dimanche : repos ou activité douce.", start: S?.w30Start || "2026-11-16",
+function w30Program(){ return {id:"w30", builtin:true, name:"30 WOD · 8 semaines", tag:"Cross training maison", desc:"4 WOD par semaine (lundi, mardi, jeudi, samedi), 4 rounds, 40 à 45 min. Mercredi, vendredi et dimanche : repos ou activité douce.", start: S?.w30Start || "2026-11-23",
   sessions:{D1:{label:"WOD du lundi", short:"WOD lun", kind:"wod", note:W30_NOTE}, D2:{label:"WOD du mardi", short:"WOD mar", kind:"wod", note:W30_NOTE}, D3:{label:"WOD du jeudi", short:"WOD jeu", kind:"wod", note:W30_NOTE}, D4:{label:"WOD du samedi", short:"WOD sam", kind:"wod", note:W30_NOTE}},
   plan:[{dow:0,k:"D1"},{dow:1,k:"D2"},{dow:3,k:"D3"},{dow:5,k:"D4"}], extra:[], weekTargets:{8:{r:2,c:0}}}; }
 // programmes proposés : le 30 WOD + les programmes perso (Big Seven et Attilius retirés, leurs séances restent lisibles dans l'historique)

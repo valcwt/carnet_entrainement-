@@ -18,7 +18,7 @@ export const DEFAULT_PREFS = {
   recap:   { on: true, at: "19:00" },
 };
 // Programme intégré : 30 WOD · 8 semaines (lun, mar, jeu, sam) ; un programme perso actif (settings.programs / activeProgram) le remplace.
-const BUILTIN = { id: "w30", start: "2026-11-16", plan: [{ dow: 0, k: "D1" }, { dow: 1, k: "D2" }, { dow: 3, k: "D3" }, { dow: 5, k: "D4" }],
+const BUILTIN = { id: "w30", start: "2026-11-23", plan: [{ dow: 0, k: "D1" }, { dow: 1, k: "D2" }, { dow: 3, k: "D3" }, { dow: 5, k: "D4" }],
   sessions: { D1: { short: "WOD", kind: "wod" }, D2: { short: "WOD", kind: "wod" }, D3: { short: "WOD", kind: "wod" }, D4: { short: "WOD", kind: "wod" } } };
 // séance prévue aujourd'hui : { label, kind, keys } ou null. dowJs : 0 = dimanche ; dans les programmes, 0 = lundi.
 export function plannedToday(settings, date, dowJs) {
