@@ -17,13 +17,13 @@ export const DEFAULT_PREFS = {
   water:   { on: true, at: "16:00" },
   recap:   { on: true, at: "19:00" },
 };
-// Programme intégré (Big Seven) ; un programme perso actif (settings.programs / activeProgram) le remplace.
-const BUILTIN = { id: "b7", start: "2026-11-02", plan: [{ dow: 0, k: "A" }, { dow: 2, k: "Q" }, { dow: 4, k: "B" }, { dow: 6, k: "E" }],
-  sessions: { A: { short: "Renfo A", kind: "renfo" }, Q: { short: "Fractionné", kind: "run" }, B: { short: "Renfo B", kind: "renfo" }, E: { short: "Endurance", kind: "run" } } };
+// Programme intégré : 30 WOD · 8 semaines (lun, mar, jeu, sam) ; un programme perso actif (settings.programs / activeProgram) le remplace.
+const BUILTIN = { id: "w30", start: "2026-11-16", plan: [{ dow: 0, k: "D1" }, { dow: 1, k: "D2" }, { dow: 3, k: "D3" }, { dow: 5, k: "D4" }],
+  sessions: { D1: { short: "WOD", kind: "wod" }, D2: { short: "WOD", kind: "wod" }, D3: { short: "WOD", kind: "wod" }, D4: { short: "WOD", kind: "wod" } } };
 // séance prévue aujourd'hui : { label, kind, keys } ou null. dowJs : 0 = dimanche ; dans les programmes, 0 = lundi.
 export function plannedToday(settings, date, dowJs) {
   const list = Array.isArray(settings?.programs) ? settings.programs : [];
-  const prog = list.find((p) => p && p.id === settings?.activeProgram) || BUILTIN;
+  const prog = list.find((p) => p && p.id === settings?.activeProgram && !["b7", "att"].includes(p.id)) || { ...BUILTIN, start: settings?.w30Start || BUILTIN.start };
   if (prog.start && date < prog.start) return null;
   const dow = (dowJs + 6) % 7, item = (prog.plan || []).find((x) => Number(x.dow) === dow);
   const ses = item && prog.sessions?.[item.k];
@@ -89,7 +89,7 @@ export function dueReminders({ prefs, sent, now, day, goals, pauses, settings })
     const pl = id === "session" ? plannedToday(settings || {}, now.date, now.dow) : null;
     if (id === "session" && pl && !isPaused(pauses, now.date)) { // programme en pause : pas de rappel de séance
       const done = (day?.sessions || []).some((s) => pl.keys.includes(s.b7) || pl.keys.includes(s.replaces?.k) || (pl.kind === "wod" && s.b7 === "W")); // une activité de remplacement compte
-      if (!done) msg = { title: `💪 ${pl.label} aujourd'hui`, body: pl.kind === "run" ? "Ta sortie du jour t'attend. Note-la dans le carnet en rentrant." : pl.kind === "wod" ? "Ton WOD Attilius t'attend : 20 minutes, chrono prêt." : "Ta séance de renfo t'attend. Le minuteur de repos est prêt.", tag: "session" };
+      if (!done) msg = { title: `💪 ${pl.label} aujourd'hui`, body: pl.kind === "run" ? "Ta sortie du jour t'attend. Note-la dans le carnet en rentrant." : pl.kind === "wod" ? "Ton WOD du jour t'attend : 4 rounds, le chrono est prêt." : "Ta séance de renfo t'attend. Le minuteur de repos est prêt.", tag: "session" };
     }
     if (id === "recap" && now.dow === 0) msg = { title: "📊 Ton récap de la semaine", body: "Séances, km, poids, sommeil : tout est prêt, avec l'image pour ton coach.", tag: "recap", url: "/?tab=sem" };
     out.push({ id, key, msg }); // msg null = condition déjà remplie : on marque quand même pour ne pas revérifier
