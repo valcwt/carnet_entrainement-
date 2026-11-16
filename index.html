@@ -2724,7 +2724,7 @@ function b7Suggest(e, last){
 }
 const setsTxt = (e,sets) => sets.filter(z=>z.r!=null||z.c!=null).map(z=> e.time ? `${z.r??"–"} s` : e.bw ? `${z.r??"–"}` : `${z.c!=null?fmtNum(z.c,1)+" kg × ":""}${z.r??"–"}`).join(" · ");
 const fmtRest = s => s>=60 ? `${Math.floor(s/60)} min${s%60?" "+String(s%60).padStart(2,"0"):""}` : `${s} s`;
-function b7DefaultKind(date){ const dow=(parseIso(date).getDay()+6)%7, p=B7_PLAN.find(x=>x.dow===dow); return p ? p.k : (B7_PLAN[0]?.k || "R"); }
+function b7DefaultKind(date){ if(date<B7_START) return "X"; const dow=(parseIso(date).getDay()+6)%7, p=B7_PLAN.find(x=>x.dow===dow); return p ? p.k : (B7_PLAN[0]?.k || "R"); }
 
 function renderB7(){
   if($("#tab-b7").hidden) return;
@@ -2756,8 +2756,9 @@ function renderB7(){
   const nX=wk.filter(x=>B7[x.b7]?.kind==="other").length, nW=wk.filter(x=>kindOf(x)==="wod").length;
   const pd=pausedDays(mon);
   if(pd) { $("#b7WeekHint").textContent = `⏸ ${pd===7?"Semaine en pause":`${pd} jour${pd>1?"s":""} en pause cette semaine`} : rien à rattraper.${nR+nC+nX?` Séances notées quand même : ${nR+nC+nX+nW}${km?` · ${fmtNum(km,1)} km`:""}.`:""}`; }
+  else if(t<B7_START) $("#b7WeekHint").textContent = `Le programme démarre le lundi ${fmtShort(B7_START).replace(/\.$/,"")}. D'ici là, séances libres : note-les avec + Séance, + Course ou + WOD.`;
   else $("#b7WeekHint").textContent = `${TGT(mon).adj?"Semaine ajustée · ":""}Cette semaine : ${nR}/${TGT(mon).r} ${forceLbl()==="Renfo"?"renfo":forceLbl()}${TGT(mon).c?` · ${nC}/${TGT(mon).c} course${TGT(mon).c>1?"s":""}`:nC?` · ${nC} course${nC>1?"s":""}`:""}${km?` · ${fmtNum(km,1)} km`:""}${nW&&forceLbl()==="Renfo"?` (dont ${nW} WOD)`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}${wn>1&&(wn-1)%5===0?" · semaine allégée conseillée (30 à 40 % de séries en moins)":""}${nRep?` · ${nRep} séance${nRep>1?"s":""} remplacée${nRep>1?"s":""} (non comptée${nRep>1?"s":""} comme ${nRep>1?"prévues":"prévue"})`:""}${(n=>n?` · ${n} reportée${n>1?"s":""} à la semaine pro`:"")(moved().filter(x=>x.from===mon).length)}${(n=>n?` · dont ${n} reportée${n>1?"s":""} de la semaine dernière`:"")(carriedIn(mon).length)}.`;
-  renderWeekAdj(mon);
+  renderWeekAdj(mon); $("#weekAdj").hidden = t<B7_START;
   if(!b7Kind) b7Open($("#b7Date").value || t, null, true);
   renderB7Hist(); renderStrength(); renderRace(); renderB7Recent(); renderRunPlan(); renderKm();
 }
@@ -2778,7 +2779,7 @@ function renderB7Form(){
   $$("#b7DayList [data-id]").forEach(b=>b.onclick=()=>b7Open(date, b.dataset.k, false, b.dataset.id));
   $("#b7LogTitle").innerHTML = `${esc(P.label)}${prev?" <small>déjà notée · modifie ce que tu veux, même la date</small>":""}`;
   $("#b7Note").textContent = runPlanFor(b7Kind, date) || P.note;
-  const nameField = P.free ? `<label style="margin-bottom:10px">Nom<input type="text" id="b7Title" value="${esc(prev?.title&&prev.title!==P.label?prev.title:"")}" placeholder="${P.kind==="run"?"ex. Footing récup, sortie longue…":"ex. Vélo, padel, mobilité…"}"></label>` : "";
+  const nameField = P.free ? `<label style="margin-bottom:10px">Nom<input type="text" id="b7Title" value="${esc(prev?.title&&prev.title!==P.label?prev.title:"")}" placeholder="${P.kind==="run"?"ex. Footing récup, sortie longue…":"ex. Bandes A, vélo, mobilité…"}"></label>` : "";
   if(P.kind==="wod") renderWodForm(prev);
   else if(P.kind==="other"){
     const r=prev?.run||{};
@@ -2959,6 +2960,7 @@ function newRecords(sess, date){
   return recs;
 }
 function renderStrength(){
+  const sp=$("#b7StrHint")?.closest("section,details"); if(sp) sp.hidden = !B7_PLAN.some(p=>B7[p.k]?.kind==="renfo"); if(sp?.hidden) return;
   const ids=[...new Set(b7Sessions().flatMap(x=>Object.keys(x.sets||{})))].filter(id=>{ const e=exInfo(id); return e && !e.time && strSeries(id).pts.length; });
   if(!ids.length){
     $("#b7StrSeg").innerHTML=""; $("#b7StrStats").innerHTML=""; $("#b7StrRecs").innerHTML="";
@@ -3761,7 +3763,8 @@ function paintB7Rep(date, prev){
   swap.hidden = !(inPlan && !prev);
   swap.onclick = ()=>{ b7RepPreset = b7Kind; b7Kind = "X"; b7EditId=null; b7Orig=null; renderB7Form(); $("#b7Msg").textContent="Choisis l'activité faite à la place (+ WOD, + Course, + Séance, Dépl. A/B…) puis enregistre."; $("#b7Msg").className="save-msg"; };
   const mon=mondayOf(date), sk=$("#b7Skip"), skipped=inPlan && isSkipped(mon,b7Kind);
-  sk.hidden = !(inPlan && !prev) || mon<mondayOf(todayIso());
+  sk.hidden = !(inPlan && !prev) || mon<mondayOf(todayIso()) || date<B7_START;
+  if(date<B7_START) swap.hidden = true;
   sk.textContent = skipped ? "↩ Annuler le report : je la fais cette semaine" : "⏭ Pas fait ? Reporter à la semaine prochaine";
   if(skipped) swap.hidden=true;
   sk.onclick = async()=>{
@@ -3772,7 +3775,7 @@ function paintB7Rep(date, prev){
     $("#b7Msg").textContent = isSkipped(mon,k) ? `↪ ${B7[k].short} reportée à la semaine prochaine : elle t'attendra là-bas, à caser quand tu veux.` : "↩ Report annulé."; $("#b7Msg").className="save-msg ok";
     renderToday(); try{ await saveSettings(); }catch(e){}
   };
-  if(inPlan){ wrap.hidden=true; return; }
+  if(inPlan || date<B7_START){ wrap.hidden=true; return; }
   const slots=weekSlots(date), cur = prev?.replaces?.k || b7RepPreset || "";
   const opts = slots.filter(sl=>!sl.doneBy || sl.doneBy.id===prev?.id || sl.k===cur);
   wrap.hidden = !opts.length;
