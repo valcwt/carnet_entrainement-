@@ -429,6 +429,9 @@ section.panel h2.b7-title::before{display:none}
 .b7-chip.on{border-color:var(--accent);color:var(--accent)}
 .b7-kinds button{flex:1 1 30%}
 .b7-kinds button[data-k="R"],.b7-kinds button[data-k="X"]{border-style:dashed}
+.b7-kinds button[data-k="BA"]{border-style:dashed}
+.band-pick{flex-basis:100%;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:4px}
+.band-pick button{font-size:.82rem;padding:7px 2px}
 .b7-kinds button[data-k="W"]{border-style:dashed;color:var(--train)}
 .wod-prog{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 10px;margin:2px 0 8px}
 .wod-prog b{font-family:"Barlow Condensed",sans-serif;font-size:1.2rem;letter-spacing:.02em;text-transform:uppercase}
@@ -2640,6 +2643,34 @@ const B7_BUILTIN = {
     {id:"t_pallof", name:"Pallof press (par côté)", sets:2, lo:10, hi:12, bw:true}]}
 };
 const B7_BUILTIN_PLAN = [{dow:0, k:"A"},{dow:2, k:"Q"},{dow:4, k:"B"},{dow:6, k:"E"}]; // dow : 0 = lundi
+
+// ---- séances avec bandes élastiques en boucle (A à G), notées série par série
+const BW = (id,name,sets,lo,hi,tip) => ({id:"bd_"+id, name, sets, lo, hi:hi??lo, bw:true, rest:60, ...(tip?{tip}:{})});
+const BT = (id,name,sets,sec) => ({id:"bd_"+id, name, sets, lo:sec, hi:sec, time:true, rest:20});
+const BANDS = {
+  BA:{label:"Bandes A · haut du corps", short:"A · Haut", kind:"renfo", band:true, note:"4 tours, 60 s de repos entre les tours. Prends la bande qui te laisse 1–2 reps en réserve.", ex:[
+    BW("row_assis","Rowing assis (bande aux pieds)",4,15), BW("pompes_bande","Pompes, bande dans le dos",4,10,15), BW("pull_apart","Pull-apart",4,20),
+    BW("dev_epaules","Développé épaules (debout sur la bande)",4,12), BW("curl","Curl biceps",4,15), BW("ext_triceps","Extension triceps",4,15), BW("planche_tirage","Planche + tirage (par côté)",4,8)]},
+  BE:{label:"Bandes E · jambes & fessiers", short:"E · Jambes", kind:"renfo", band:true, note:"4 tours, 60 s de repos entre les tours.", ex:[
+    BW("squat_sumo","Squat sumo",4,15), BW("bulgare","Fente bulgare (par jambe)",4,10), BW("good_morning","Good morning",4,15),
+    BW("abduction","Abductions debout, mini-bande (par jambe)",4,15), BW("squat_saute","Squat sauté, mini-bande aux genoux",4,12), BW("mollets","Mollets debout",4,20)]},
+  BB:{label:"Bandes B · bas du corps & gainage", short:"B · Bas", kind:"renfo", band:true, note:"4 tours, 60 s de repos entre les tours.", ex:[
+    BW("squat","Squat (bande sous les pieds)",4,15), BW("sdt_roumain","Soulevé de terre roumain",4,15), BW("pont_fessier","Pont fessier, mini-bande aux genoux",4,20),
+    BW("pas_chasses","Pas chassés latéraux (par côté)",4,15), BW("monster_walk","Monster walk (pas)",4,20), BW("kickback_fessier","Kickback fessier (par jambe)",4,15), BW("dead_bug","Dead bug (par côté)",4,10)]},
+  BD:{label:"Bandes D · dos & épaules", short:"D · Dos", kind:"renfo", band:true, note:"4 tours, 60 s de repos entre les tours. Bande accrochée en haut d'une porte bien fermée.", ex:[
+    BW("tirage_vertical","Tirage vertical à genoux",4,15), BW("row_un_bras","Rowing un bras (par bras)",4,12), BW("pull_apart_haut","Pull-apart au-dessus de la tête",4,15),
+    BW("elev_laterales","Élévations latérales",4,12), BW("face_pull","Face pull",4,15), BW("superman","Superman, bande tendue",4,12)]},
+  BF:{label:"Bandes F · pecs & bras", short:"F · Pecs", kind:"renfo", band:true, note:"4 tours, 60 s de repos entre les tours.", ex:[
+    BW("dev_couche","Développé couché au sol (bande dans le dos)",4,15), BW("ecartes","Écartés debout",4,12), BW("pompes_serrees","Pompes serrées",4,10,12),
+    BW("curl_marteau","Curl marteau",4,15), BW("kickback_triceps","Kickback triceps (par bras)",4,12), BW("dips_chaise","Dips sur une chaise",4,12)]},
+  BC:{label:"Bandes C · circuit full body", short:"C · Circuit", kind:"renfo", band:true, note:"5 tours : 40 s d'effort, 20 s de repos par exercice. Note les secondes tenues.", ex:[
+    BT("thruster","Squat + développé (thruster)",5,40), BT("row_debout","Rowing debout",5,40), BT("jj_bande","Jumping jacks, mini-bande",5,40),
+    BT("sdt_circuit","Soulevé de terre roumain",5,40), BT("pompes_circuit","Pompes",5,40), BT("mountain","Mountain climbers",5,40)]},
+  BG:{label:"Bandes G · abdos & gainage", short:"G · Abdos", kind:"renfo", band:true, note:"3 tours : 40 s d'effort, 20 s de repos par exercice. À enchaîner après la séance D si tu veux.", ex:[
+    BT("pallof","Pallof press (40 s par côté)",3,40), BT("crunch_genoux","Crunch à genoux",3,40), BT("planche_ecarts","Planche, écarts de pieds",3,40),
+    BT("rotation","Rotation du buste",3,40), BT("dead_bug_bande","Dead bug, bande tendue",3,40), BT("planche_lat","Planche latérale + abduction (par côté)",3,20)]},
+};
+const BAND_KEYS = ["BA","BB","BC","BD","BE","BF","BG"];
 // ---- programmes : Big Seven (intégré) + programmes perso (S.programs), un seul actif (S.activeProgram)
 let B7 = {}, B7_PLAN = [], B7_KINDS = [];
 function builtinProgram(){
@@ -2679,11 +2710,11 @@ const slotHit = (x,p,d) => { const P=B7[p.k]; return x.b7===p.k || (P.kind==="re
 function applyProgram(){
   const P=activeProgram(), all={};
   Object.assign(all, LEGACY_SES()); programs().forEach(pr=>Object.assign(all, pr.sessions||{}));   // toutes les séances connues (les anciennes restent lisibles)
-  Object.assign(all, P.sessions, {R:B7_BUILTIN.R, X:B7_BUILTIN.X, W:B7_BUILTIN.W});
+  Object.assign(all, P.sessions, {R:B7_BUILTIN.R, X:B7_BUILTIN.X, W:B7_BUILTIN.W}, BANDS);
   B7 = all;
   B7_PLAN = (P.plan||[]).filter(x=>B7[x.k]).map(x=>({dow:Number(x.dow), k:x.k, d:DOWL[Number(x.dow)]})).sort((a,b)=>a.dow-b.dow);
   const order=[...new Set(B7_PLAN.map(x=>x.k))]; Object.keys(P.sessions||{}).forEach(k=>{ if(!order.includes(k) && !(P.extra||[]).includes(k)) order.push(k); });
-  B7_KINDS = [...order, "W", "R", "X", ...(P.extra||[])].filter(k=>B7[k]);
+  B7_KINDS = [...order, "W", "BA", "R", "X", ...(P.extra||[])].filter(k=>B7[k]);
   B7_START = P.start || mondayOf(todayIso());
   if($("#b7Name")){ $("#b7Name").textContent=P.name; $("#b7Tag").textContent=P.tag||"Mon programme"; $("#b7Desc").textContent=P.desc||""; }
   $$('details.fold[data-fold="deplacement"],details.fold[data-fold="regles"]').forEach(d=>d.hidden=P.id!=="b7");
@@ -2724,7 +2755,7 @@ function b7Suggest(e, last){
 }
 const setsTxt = (e,sets) => sets.filter(z=>z.r!=null||z.c!=null).map(z=> e.time ? `${z.r??"–"} s` : e.bw ? `${z.r??"–"}` : `${z.c!=null?fmtNum(z.c,1)+" kg × ":""}${z.r??"–"}`).join(" · ");
 const fmtRest = s => s>=60 ? `${Math.floor(s/60)} min${s%60?" "+String(s%60).padStart(2,"0"):""}` : `${s} s`;
-function b7DefaultKind(date){ if(date<B7_START) return "X"; const dow=(parseIso(date).getDay()+6)%7, p=B7_PLAN.find(x=>x.dow===dow); return p ? p.k : (B7_PLAN[0]?.k || "R"); }
+function b7DefaultKind(date){ if(date<B7_START) return ({0:"BA",1:"BE",3:"BD",5:"BC"})[(parseIso(date).getDay()+6)%7] || "X"; const dow=(parseIso(date).getDay()+6)%7, p=B7_PLAN.find(x=>x.dow===dow); return p ? p.k : (B7_PLAN[0]?.k || "R"); }
 
 function renderB7(){
   if($("#tab-b7").hidden) return;
@@ -2756,7 +2787,7 @@ function renderB7(){
   const nX=wk.filter(x=>B7[x.b7]?.kind==="other").length, nW=wk.filter(x=>kindOf(x)==="wod").length;
   const pd=pausedDays(mon);
   if(pd) { $("#b7WeekHint").textContent = `⏸ ${pd===7?"Semaine en pause":`${pd} jour${pd>1?"s":""} en pause cette semaine`} : rien à rattraper.${nR+nC+nX?` Séances notées quand même : ${nR+nC+nX+nW}${km?` · ${fmtNum(km,1)} km`:""}.`:""}`; }
-  else if(t<B7_START) $("#b7WeekHint").textContent = `Le programme démarre le lundi ${fmtShort(B7_START).replace(/\.$/,"")}. D'ici là, séances libres : note-les avec + Séance, + Course ou + WOD.`;
+  else if(t<B7_START) $("#b7WeekHint").textContent = `Le programme démarre le lundi ${fmtShort(B7_START).replace(/\.$/,"")}. D'ici là, séances avec les bandes : touche « + Bandes » (A à G) pour les noter série par série.`;
   else $("#b7WeekHint").textContent = `${TGT(mon).adj?"Semaine ajustée · ":""}Cette semaine : ${nR}/${TGT(mon).r} ${forceLbl()==="Renfo"?"renfo":forceLbl()}${TGT(mon).c?` · ${nC}/${TGT(mon).c} course${TGT(mon).c>1?"s":""}`:nC?` · ${nC} course${nC>1?"s":""}`:""}${km?` · ${fmtNum(km,1)} km`:""}${nW&&forceLbl()==="Renfo"?` (dont ${nW} WOD)`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}${wn>1&&(wn-1)%5===0?" · semaine allégée conseillée (30 à 40 % de séries en moins)":""}${nRep?` · ${nRep} séance${nRep>1?"s":""} remplacée${nRep>1?"s":""} (non comptée${nRep>1?"s":""} comme ${nRep>1?"prévues":"prévue"})`:""}${(n=>n?` · ${n} reportée${n>1?"s":""} à la semaine pro`:"")(moved().filter(x=>x.from===mon).length)}${(n=>n?` · dont ${n} reportée${n>1?"s":""} de la semaine dernière`:"")(carriedIn(mon).length)}.`;
   renderWeekAdj(mon); $("#weekAdj").hidden = t<B7_START;
   if(!b7Kind) b7Open($("#b7Date").value || t, null, true);
@@ -2772,8 +2803,9 @@ function renderB7Form(){
   const date=$("#b7Date").value || todayIso(), P=B7[b7Kind];
   const prev = b7Orig ? b7ById(b7Orig.date, b7Orig.id) : b7Find(date,b7Kind);
   b7Orig = prev ? {id:prev.id, date: b7Orig?.date || date} : null;
-  $("#b7Kinds").innerHTML = B7_KINDS.map(k=>[k,B7[k]]).map(([k,v])=>`<button type="button" data-k="${k}" aria-pressed="${k===b7Kind}">${v.short}</button>`).join("");
-  $$("#b7Kinds button").forEach(b=>b.onclick=()=>{ b7Kind=b.dataset.k; b7EditId=null; b7Orig=null; wodSel=null; wodLvCur=null; renderB7Form(); });
+  $("#b7Kinds").innerHTML = B7_KINDS.map(k=>[k,B7[k]]).map(([k,v])=>`<button type="button" data-k="${k}" aria-pressed="${k===b7Kind || (k==="BA" && BAND_KEYS.includes(b7Kind))}">${k==="BA"?"+ Bandes":v.short}</button>`).join("")
+    + (BAND_KEYS.includes(b7Kind) ? `<div class="seg band-pick" id="bandPick">${BAND_KEYS.map(k=>`<button type="button" data-k="${k}" aria-pressed="${k===b7Kind}">${B7[k].short}</button>`).join("")}</div>` : "");
+  $$("#b7Kinds button, #bandPick button").forEach(b=>b.onclick=()=>{ b7Kind=b.dataset.k; b7EditId=null; b7Orig=null; wodSel=null; wodLvCur=null; renderB7Form(); });
   const dl=b7DaySessions(date);
   $("#b7DayList").innerHTML = dl.length ? `<span class="hint" style="margin:0">Déjà noté ce jour-là :</span>`+dl.map(x=>`<button type="button" class="chip b7-chip${(b7EditId===x.id||(!b7EditId&&!B7[b7Kind].multi&&x.b7===b7Kind))?" on":""}" data-id="${x.id}" data-k="${x.b7}">${esc(x.title||B7[x.b7]?.label||"Séance")}${x.run?.km?` · ${fmtNum(x.run.km,1)} km`:""}</button>`).join("") : "";
   $$("#b7DayList [data-id]").forEach(b=>b.onclick=()=>b7Open(date, b.dataset.k, false, b.dataset.id));
