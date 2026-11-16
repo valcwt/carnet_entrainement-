@@ -3165,7 +3165,6 @@ function racePredict(km){
 }
 function renderRace(){
   const R={name:"Semi-marathon", date:"", km:21.1, target:"", ...(S.race||{})}, t=todayIso();
-  $("#racePanel").hidden = !S.race?.date; // objectif course : affiché seulement si une course est prévue
   $("#raceTitle").textContent = R.name || "Objectif course";
   const runs=runList(), mon=mondayOf(t), weeks=[];
   for(let w=7;w>=0;w--){ const m=addDays(mon,-7*w), e=addDays(m,6); weeks.push({d:m, v: runs.filter(x=>x.date>=m&&x.date<=e).reduce((a,x)=>a+(x.run.km||0),0) || null}); }
