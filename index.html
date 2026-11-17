@@ -462,6 +462,19 @@ section.panel h2.b7-title::before{display:none}
 .wod-ex li>span{display:inline-block;max-width:72%}
 .wod-ex li b{float:right;font-family:"Barlow Condensed",sans-serif;font-size:1.15rem;color:var(--train)}
 .wod-ex li.off{opacity:.4}
+.wod-ex li.has-demo{cursor:pointer}
+.wod-ex li.has-demo:active{background:rgba(198,244,50,.08)}
+.demo-ic{font-style:normal;font-size:.65rem;color:var(--accent);vertical-align:2px;margin-left:2px}
+.demo-btn{margin-left:auto;border:1px solid var(--line);background:var(--bg);color:var(--accent);border-radius:999px;padding:3px 10px;font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}
+.exdemo{position:fixed;inset:0;z-index:80;background:rgba(5,7,9,.72);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom))}
+.exdemo[hidden]{display:none}
+.exdemo-card{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;max-width:400px;width:100%;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;animation:demoIn .18s ease-out}
+.exdemo-card canvas{border-radius:12px;background:var(--bg)}
+.exdemo-card h3{font-size:1.35rem;margin-top:6px}
+.exdemo-card p{margin:0;color:var(--train);font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.15rem}
+.exdemo-card a{margin-top:6px;color:var(--muted);font-size:.85rem;font-weight:600}
+.exdemo-x{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:1rem;cursor:pointer;z-index:1}
+@keyframes demoIn{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
 .wod-card .last{font-size:.8rem;color:var(--muted);margin:6px 0 0}
 .wod-chrono{border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;margin-bottom:10px;transition:background .3s}
 .wod-chrono.work{background:rgba(255,122,61,.16);border-color:rgba(255,122,61,.5)}
@@ -695,6 +708,12 @@ nav.bottom-nav{display:none}
 </style>
 </head>
 <body class="booting">
+<div class="exdemo" id="exDemo" hidden><div class="exdemo-card" role="dialog" aria-modal="true" aria-labelledby="exDemoTitle">
+  <button type="button" class="exdemo-x" id="exDemoClose" aria-label="Fermer">✕</button>
+  <canvas id="exDemoCv" aria-hidden="true"></canvas>
+  <h3 id="exDemoTitle"></h3><p id="exDemoQty"></p>
+  <a id="exDemoVid" target="_blank" rel="noopener">▶ Voir une vraie vidéo du mouvement</a>
+</div></div>
 <div id="lock" class="lock" hidden role="dialog" aria-modal="true" aria-labelledby="lockTitle">
   <div class="lock-in">
     <div class="lock-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10v4M21 10v4M6 7v10M18 7v10M6 12h12"/></svg></div>
@@ -2832,7 +2851,7 @@ function renderB7Form(){
           ? `<div class="b7-set one"><span>${i+1}</span><input type="number" min="0" inputmode="numeric" data-ex="${e.id}" data-i="${i}" data-f="r" value="${z.r??""}" placeholder="${e.time?"secondes":"reps"} (${e.lo===e.hi?e.lo:e.lo+"–"+e.hi})" aria-label="${esc(e.name)} série ${i+1}"></div>`
           : `<div class="b7-set"><span>${i+1}</span><input type="number" min="0" step="0.5" inputmode="decimal" data-ex="${e.id}" data-i="${i}" data-f="c" value="${z.c??""}" placeholder="${lastC?fmtNum(lastC,1)+" kg":"kg"}" aria-label="${esc(e.name)} charge série ${i+1}"><input type="number" min="0" inputmode="numeric" data-ex="${e.id}" data-i="${i}" data-f="r" value="${z.r??""}" placeholder="reps (${e.lo}–${e.hi})" aria-label="${esc(e.name)} reps série ${i+1}"></div>`;
       }).join("");
-      return `<div class="b7-ex"><header><h3>${esc(e.name)}</h3><span class="rx">${rx(e)}</span></header>
+      return `<div class="b7-ex"><header><h3>${esc(e.name)}</h3><span class="rx">${rx(e)}</span>${AN.find(e.name)?`<button type="button" class="demo-btn" data-demo="${esc(e.name)}" data-qty="${esc(rx(e))}">▶ Démo</button>`:""}</header>
         ${e.tip?`<p class="tip">${esc(e.tip)}</p>`:""}
         ${last?`<p class="last">Dernière fois (${fmtShort(last.date)}) : ${esc(setsTxt(e,last.sets))}</p>`:""}
         ${sug?`<span class="sug${sug.up?" up":""}">${sug.up?"▲ ":""}${esc(sug.txt)}</span>`:""}
@@ -3573,7 +3592,7 @@ function renderWodForm(prev){
     <div class="wod-card">
       <header><h3>WOD ${n}</h3><span>Palier ${wodPalier(n)}</span></header>
       <p class="wod-how">${esc(w.how[lv])}</p>
-      <ol class="wod-ex">${w.ex.map(e=>e[lv+1]==null ? `<li class="off"><span>${esc(e[0])}</span><b>—</b></li>` : `<li><span>${esc(e[0])}</span><b>${esc(e[lv+1])}</b></li>`).join("")}</ol>
+      <ol class="wod-ex">${w.ex.map(e=>e[lv+1]==null ? `<li class="off"><span>${esc(e[0])}</span><b>—</b></li>` : `<li${demoAttr(e[0],e[lv+1])}><span>${esc(e[0])}${AN.find(e[0])?' <i class="demo-ic" aria-hidden="true">▶</i>':""}</span><b>${esc(e[lv+1])}</b></li>`).join("")}</ol>
       ${best||last ? `<p class="last">${best?`🏆 Meilleur temps (${WOD_LV[lv]}) : <b>${esc(wodTimeTxt(best.wod.time))}</b> le ${fmtShort(best.date)}`:""}${best&&last?" · ":""}${last&&last!==best?`Dernière fois : ${fmtShort(last.date)} (${WOD_LV[last.wod.lv]}${last.wod.time?", "+esc(wodTimeTxt(last.wod.time)):""})`:""}</p>` : `<p class="last">Première fois sur ce WOD : bonne technique avant la vitesse.</p>`}
     </div>
     <div class="wod-chrono" id="wodChrono">
@@ -3682,7 +3701,7 @@ function renderW30Form(prev){
     <div class="wod-card">
       <header><h3>WOD ${pad2(n)}</h3><span>Semaine ${w30WeekOf(n)} · ${esc(wk[0])}</span></header>
       <p class="wod-how">${esc(w.name)} · <b>4 rounds</b> · repos ${wk[3]>=120?"2 min":fmtRest(wk[3])} entre les rounds · intensité ${esc(wk[2])}</p>
-      <ol class="wod-ex">${w.ex.map(e=>`<li><span>${esc(e[0])}</span><b>${esc(e[1])}</b></li>`).join("")}</ol>
+      <ol class="wod-ex">${w.ex.map(e=>`<li${demoAttr(e[0],e[1])}><span>${esc(e[0])}${AN.find(e[0])?' <i class="demo-ic" aria-hidden="true">▶</i>':""}</span><b>${esc(e[1])}</b></li>`).join("")}</ol>
       <p class="last">${best?`🏆 Meilleur temps : <b>${esc(wodTimeTxt(best.wod.time))}</b> le ${fmtShort(best.date)}`:""}${best&&last&&last!==best?" · ":""}${last&&last!==best?`Dernière fois : ${fmtShort(last.date)}${last.wod.time?" en "+esc(wodTimeTxt(last.wod.time)):""}`:""}${!best&&!last?`Échauffement 7 min avant. ${esc(wk[1])}`:""}</p>
     </div>
     <div class="wod-chrono" id="wodChrono">
@@ -3701,6 +3720,179 @@ function renderW30Form(prev){
   if(wch && wch.n===n && wch.mode==="sw"){ wchPaint(); clearInterval(wchTick); if(wch.run) wchTick=setInterval(wchPaint,250); }
   paintWodChronoBtns();
 }
+
+/* ---------- démos d'exercices : bonhomme animé (vue de profil, face à droite) ---------- */
+// pose = {x, t, ua, fa, ub, fb, ta, sa, tb, sb, air}
+//  t : inclinaison du buste (0 = droit, 90 = couché tête à droite) ; autres angles absolus : 0 = vers le bas, 90 = vers l'avant (droite), 180 = vers le haut, -90 = vers l'arrière
+const AN = (()=>{
+  const L={torso:40, neck:12, head:8, up:21, fore:19, thigh:29, shin:29};
+  const rad=d=>d*Math.PI/180, dir=(a,l)=>[Math.sin(rad(a))*l, Math.cos(rad(a))*l];
+  const ST={x:100,t:0,ua:4,fa:4,ub:-4,fb:-4,ta:3,sa:0,tb:-3,sb:0,air:0};
+  const P=o=>({...ST,...o});
+  function joints(p){
+    const hip=[p.x,0], sh=[hip[0]+Math.sin(rad(p.t))*L.torso, hip[1]-Math.cos(rad(p.t))*L.torso];
+    const hd=[sh[0]+Math.sin(rad(p.t+(p.hd||0)))*L.neck, sh[1]-Math.cos(rad(p.t+(p.hd||0)))*L.neck];
+    const add=(a,b)=>[a[0]+b[0],a[1]+b[1]];
+    const ea=add(sh,dir(p.ua,L.up)), ha=add(ea,dir(p.fa,L.fore)), eb=add(sh,dir(p.ub,L.up)), hb=add(eb,dir(p.fb,L.fore));
+    const ka=add(hip,dir(p.ta,L.thigh)), fa=add(ka,dir(p.sa,L.shin)), kb=add(hip,dir(p.tb,L.thigh)), fb=add(kb,dir(p.sb,L.shin));
+    const J={hip,sh,hd,ea,ha,eb,hb,ka,fa,kb,fb};
+    let dy;
+    if(p.anchor){ dy=p.ay-J[p.anchor][1]; }
+    else { const pts=[fa,fb,ha,hb,hip,hd,ka,kb]; dy=138-Math.max(...pts.map(q=>q[1]))-(p.air||0); }
+    Object.values(J).forEach(q=>q[1]+=dy);
+    return J;
+  }
+  const lerp=(a,b,k)=>a+(b-a)*k;
+  function mix(a,b,k){ const o={}; for(const key in a) o[key]= typeof a[key]==="number" ? lerp(a[key], b[key]??a[key], k) : a[key]; return o; }
+  // ---- les mouvements
+  const stand=P({}), M={};
+  const def=(id,frames,opt={})=>M[id]={frames,...opt};
+  // squat (bras devant) et variantes
+  const sqTop=P({ua:60,fa:150,ub:55,fb:145}), sqLow=P({t:38,ua:70,fa:165,ub:65,fb:160,ta:82,sa:-18,tb:78,sb:-22});
+  def("squat",[sqTop,sqLow]);
+  def("goblet",[P({ua:25,fa:160,ub:20,fb:155}),P({t:36,ua:45,fa:175,ub:40,fb:170,ta:82,sa:-18,tb:78,sb:-22})],{prop:"kbChest"});
+  def("jumpsquat",[sqLow,P({ua:-20,fa:-20,ub:-25,fb:-25,air:16}),sqLow]);
+  def("sumo",[P({ua:5,fa:5,ub:-5,fb:-5,ta:12,sa:8,tb:-12,sb:-8}),P({t:20,ua:15,fa:5,ub:5,fb:0,ta:80,sa:5,tb:-80,sb:-5})],{prop:"kbLow"});
+  // fente arrière / alternée / bulgare
+  const lgTop=P({ua:10,fa:5,ub:-10,fb:-5}), lgLow=P({t:5,ua:15,fa:5,ub:-5,fb:-5,ta:88,sa:0,tb:-40,sb:-95});
+  def("lunge",[lgTop,lgLow]);
+  def("jumplunge",[lgLow,P({ua:60,fa:90,ub:-60,fb:-30,ta:30,sa:-10,tb:-30,sb:-60,air:14}),P({t:5,ua:-15,fa:-5,ub:15,fb:5,ta:-40,sa:-95,tb:88,sb:0})]);
+  // pompes
+  const puTop=P({x:90,t:92,ua:0,fa:0,ub:0,fb:0,ta:-86,sa:-86,tb:-86,sb:-86,ground:"hands"}), puLow=P({x:90,t:92,ua:-55,fa:40,ub:-55,fb:40,ta:-86,sa:-86,tb:-86,sb:-86,ground:"hands"});
+  def("pushup",[puTop,puLow]);
+  def("pushup_dec",[P({...puTop,t:80,ta:-100,sa:-100,tb:-100,sb:-100}),P({...puLow,t:80,ta:-100,sa:-100,tb:-100,sb:-100})],{prop:"boxFeet"});
+  // planche, planche latérale, mountain climbers, planche dynamique
+  const plank=P({x:90,t:95,ua:0,fa:90,ub:0,fb:90,ta:-85,sa:-85,tb:-85,sb:-85});
+  def("plank",[plank,P({...plank,t:93})],{slow:true});
+  def("sideplank",[P({x:90,t:80,ua:0,fa:0,ub:150,fb:150,ta:-100,sa:-100,tb:-100,sb:-100}),P({x:90,t:76,ua:0,fa:0,ub:160,fb:160,ta:-104,sa:-104,tb:-104,sb:-104})],{slow:true});
+  def("climber",[P({...puTop,ta:20,sa:-40}),P({...puTop,tb:20,sb:-40})],{fast:true});
+  def("updown",[plank,puTop,plank]);
+  // burpee
+  def("burpee",[stand,sqLow,puTop,puLow,puTop,sqLow,P({ua:175,fa:178,ub:170,fb:175,air:14})]);
+  // kettlebell swing, soulevé de terre, rowing
+  def("swing",[P({t:55,ua:-15,fa:-25,ub:-20,fb:-30,ta:25,sa:-5,tb:20,sb:-8}),P({ua:85,fa:88,ub:80,fb:85,ta:4,sa:0,tb:-2,sb:0})],{prop:"kbHand"});
+  def("deadlift",[P({}),P({t:70,ua:0,fa:0,ub:-5,fb:-5,ta:20,sa:-6,tb:16,sb:-8})],{prop:"kbHand"});
+  def("rdl_band",[P({}),P({t:70,ua:0,fa:0,ub:-5,fb:-5,ta:15,sa:0,tb:12,sb:0})],{prop:"band"});
+  def("row",[P({t:65,ua:0,fa:0,ub:-5,fb:-5,ta:25,sa:-5,tb:-10,sb:-10}),P({t:65,ua:-80,fa:5,ub:-5,fb:-5,ta:25,sa:-5,tb:-10,sb:-10})],{prop:"kbHand"});
+  def("row_seat",[P({t:5,ua:85,fa:88,ub:80,fb:85,ta:90,sa:90,tb:90,sb:90}),P({t:-8,ua:-30,fa:85,ub:-35,fb:80,ta:90,sa:90,tb:90,sb:90})],{prop:"bandFeet"});
+  def("row_stand",[P({ua:85,fa:88,ub:80,fb:85}),P({t:-5,ua:-35,fa:88,ub:-40,fb:85})],{prop:"bandFront"});
+  // développés, épaules, bras
+  def("press",[P({ua:-30,fa:175,ub:-35,fb:170}),P({ua:178,fa:178,ub:175,fb:176})],{prop:"dumbbells"});
+  def("clean",[P({t:55,ua:0,fa:0,ub:-5,fb:-5,ta:25,sa:-5,tb:20,sb:-8}),P({ua:20,fa:170,ub:-5,fb:-5}),P({ua:178,fa:178,ub:-5,fb:-5})],{prop:"kbHand"});
+  def("floorpress",[P({x:100,t:-90,ua:-45,fa:180,ub:-45,fb:180,ta:120,sa:20,tb:115,sb:20}),P({x:100,t:-90,ua:180,fa:180,ub:178,fb:178,ta:120,sa:20,tb:115,sb:20})],{prop:"kbHand"});
+  def("curl",[P({ua:2,fa:2,ub:-2,fb:-2}),P({ua:5,fa:165,ub:0,fb:160})],{prop:"band"});
+  def("triceps",[P({ua:175,fa:20,ub:172,fb:18}),P({ua:175,fa:178,ub:172,fb:175})],{prop:"band"});
+  def("lateral",[P({ua:5,fa:5,ub:-5,fb:-5}),P({ua:85,fa:88,ub:-85,fb:-88})],{front:true});
+  def("pullapart",[P({ua:90,fa:90,ub:90,fb:90}),P({ua:90,fa:90,ub:-90,fb:-90})],{front:true,prop:"bandHands"});
+  def("facepull",[P({ua:88,fa:90,ub:85,fb:88}),P({ua:120,fa:200,ub:115,fb:195})],{prop:"bandFront"});
+  // dips, tractions horizontales
+  def("dips",[P({x:110,t:0,ua:-5,fa:-5,ub:-8,fb:-8,ta:75,sa:10,tb:75,sb:10,anchor:"ha",ay:96}),P({x:110,t:8,ua:-70,fa:-5,ub:-72,fb:-8,ta:85,sa:20,tb:85,sb:20,anchor:"ha",ay:96})],{prop:"chair"});
+  def("invrow",[P({x:110,t:-62,ua:178,fa:178,ub:176,fb:176,ta:66,sa:66,tb:66,sb:66}),P({x:110,t:-50,ua:228,fa:150,ub:226,fb:148,ta:56,sa:56,tb:56,sb:56})],{prop:"bar"});
+  def("vpull",[P({t:0,ua:178,fa:178,ub:175,fb:176,ta:0,sa:-90,tb:0,sb:-90}),P({t:-5,ua:-60,fa:175,ub:-65,fb:172,ta:0,sa:-90,tb:0,sb:-90})],{prop:"bandTop"});
+  // cardio
+  def("jacks",[P({ua:-8,fa:-8,ub:8,fb:8,ta:-3,sa:0,tb:3,sb:0}),P({ua:-160,fa:-170,ub:160,fb:170,ta:-18,sa:-15,tb:18,sb:15,air:6})],{front:true,fast:true});
+  def("rope",[P({ua:-30,fa:20,ub:30,fb:-20,air:0}),P({ua:-30,fa:30,ub:30,fb:-30,air:8})],{front:true,fast:true,prop:"rope"});
+  def("knees",[P({ua:-40,fa:60,ub:40,fb:100,ta:85,sa:0,tb:-3,sb:0,air:4}),P({ua:40,fa:100,ub:-40,fb:60,tb:85,sb:0,ta:-3,sa:0,air:4})],{fast:true});
+  def("skater",[P({t:30,ua:-40,fa:-40,ub:40,fb:40,ta:20,sa:-10,tb:-60,sb:-90}),P({t:30,ua:40,fa:40,ub:-40,fb:-40,tb:20,sb:-10,ta:-60,sa:-90})],{front:true});
+  // abdos au sol
+  def("twist",[P({x:110,t:-40,ua:60,fa:100,ub:50,fb:95,ta:80,sa:-30,tb:78,sb:-32,air:8}),P({x:110,t:-40,ua:20,fa:60,ub:10,fb:55,ta:80,sa:-30,tb:78,sb:-32,air:8})],{prop:"kbChest2"});
+  def("crunch",[P({x:110,t:-90,ua:150,fa:60,ub:150,fb:60,ta:140,sa:20,tb:138,sb:20}),P({x:110,t:-50,ua:110,fa:40,ub:110,fb:40,ta:140,sa:20,tb:138,sb:20})]);
+  def("vup",[P({x:110,t:-90,ua:-180,fa:-180,ub:-178,fb:-178,ta:90,sa:90,tb:90,sb:90}),P({x:110,t:-40,ua:130,fa:130,ub:128,fb:128,ta:140,sa:140,tb:138,sb:138})]);
+  def("deadbug",[P({x:100,t:-90,ua:180,fa:180,ub:180,fb:180,ta:180,sa:90,tb:180,sb:90}),P({x:100,t:-90,ua:-110,fa:-100,ub:180,fb:180,ta:180,sa:90,tb:100,sb:100})]);
+  def("bridge",[P({x:100,t:-90,ua:-90,fa:-90,ub:-90,fb:-90,ta:150,sa:-5,tb:148,sb:-5}),P({x:100,t:-110,ua:-80,fa:-85,ub:-80,fb:-85,ta:120,sa:0,tb:118,sb:0,air:10})]);
+  def("wheel",[P({x:100,t:45,ua:20,fa:20,ub:15,fb:15,ta:0,sa:-90,tb:0,sb:-90}),P({x:100,t:80,ua:95,fa:95,ub:92,fb:92,ta:-40,sa:-90,tb:-40,sb:-90})],{prop:"wheel"});
+  def("birddog",[P({x:100,t:90,ua:0,fa:0,ub:0,fb:0,ta:0,sa:-90,tb:0,sb:-90}),P({x:100,t:90,ua:175,fa:178,ub:0,fb:0,ta:0,sa:-90,tb:-95,sb:-92})]);
+  def("superman",[P({x:100,t:-90+180,ua:178,fa:178,ub:176,fb:176,ta:-90,sa:-90,tb:-90,sb:-90}),P({x:100,t:80,ua:160,fa:165,ub:158,fb:162,ta:-75,sa:-78,tb:-75,sb:-78})]);
+  def("calf",[P({}),P({air:7})]);
+  def("hinge",[P({ua:-30,fa:150,ub:-30,fb:150}),P({t:70,ua:-20,fa:140,ub:-20,fb:140,ta:12,sa:-2,tb:10,sb:-2})]);
+  def("step",[P({ta:60,sa:0}),P({ta:0,sa:0,air:24}),P({ta:60,sa:0})],{prop:"step"});
+  def("wallsit",[P({t:0,ua:0,fa:0,ub:0,fb:0,ta:90,sa:0,tb:90,sb:0}),P({t:0,ua:0,fa:0,ub:0,fb:0,ta:92,sa:0,tb:92,sb:0})],{slow:true,prop:"wall"});
+  def("abduct",[P({}),P({ta:-30,sa:-30})],{front:true});
+  def("walk",[P({ta:-15,sa:-15,tb:15,sb:15,ua:15,ub:-15}),P({ta:15,sa:15,tb:-15,sb:-15,ua:-15,ub:15})]);
+  def("pallof",[P({ua:30,fa:90,ub:25,fb:85}),P({ua:88,fa:90,ub:85,fb:88})],{prop:"bandSide",slow:true});
+  def("thruster",[P({t:38,ua:-30,fa:175,ub:-35,fb:170,ta:82,sa:-18,tb:78,sb:-22}),P({ua:178,fa:178,ub:175,fb:176})],{prop:"band"});
+  def("rotation",[P({ua:60,fa:80,ub:55,fb:75}),P({ua:110,fa:120,ub:105,fb:115})],{prop:"bandSide"});
+  // correspondance nom d'exercice → mouvement
+  const RULES=[
+    [/burpee/,"burpee"],[/jumping jack|jacks/,"jacks"],[/corde|double under|sauts? à la corde/,"rope"],[/high knee|montée de genou/,"knees"],
+    [/mountain/,"climber"],[/planche dynamique|plank up/,"updown"],[/planche latérale|side plank/,"sideplank"],[/planche|gainage/,"plank"],
+    [/levés? de bassin|relevés? de bassin|pont fessier|leg curl/,"bridge"],[/rotation du buste/,"rotation"],[/sauts? groupés|sauts? mogul/,"jumpsquat"],[/chandelle/,"vup"],
+    [/swing/,"swing"],[/clean/,"clean"],[/floor press|développé couché/,"floorpress"],[/thruster/,"thruster"],[/shoulder press|développé épaules|développé militaire/,"press"],
+    [/deadlift sumo|squats? sumo/,"sumo"],[/good morning/,"hinge"],[/roumain|deadlift|soulevé/,"deadlift"],
+    [/row assis|rowing assis/,"row_seat"],[/rowing debout|row debout/,"row_stand"],[/row|rowing|tirage horizontal/,"row"],
+    [/tirage vertical|traction(?! horizontale)/,"vpull"],[/traction/,"invrow"],[/face pull/,"facepull"],[/pull-apart|pull apart|écartés/,"pullapart"],
+    [/dips/,"dips"],[/pompes? .*surélev|pieds surélevés/,"pushup_dec"],[/pompe/,"pushup"],
+    [/jump squat|squats? sautés?|squat sauté/,"jumpsquat"],[/goblet/,"goblet"],[/jump lunge|fentes? sautées?/,"jumplunge"],[/fente|lunge|bulgare|langouste/,"lunge"],[/squat/,"squat"],
+    [/russian twist|twist|rotation/,"twist"],[/roulette|ab wheel/,"wheel"],[/bird.?dog/,"birddog"],[/dead.?bug/,"deadbug"],[/pont fessier|levés? de bassin|relevés? de bassin|bridge/,"bridge"],
+    [/v-?ups?/,"vup"],[/crunch|abdo/,"crunch"],[/superman/,"superman"],[/curl/,"curl"],[/triceps|kickback triceps/,"triceps"],[/élévations? latérales?/,"lateral"],
+    [/mollet/,"calf"],[/chaise contre|^chaise/,"wallsit"],[/monter sur une chaise|step/,"step"],[/abduction|pas chassés|monster walk/,"abduct"],[/pallof/,"pallof"],[/patineur/,"skater"],[/kickback fessier/,"birddog"],[/levés? de jambes|ciseaux|triangles/,"vup"]];
+  const find=name=>{ const n=String(name||"").toLowerCase(); for(const [re,id] of RULES) if(re.test(n)) return id; return null; };
+  // dessin
+  function draw(ctx, id, time, col){
+    const m=M[id]; if(!m) return; const W=ctx.canvas.width, H=ctx.canvas.height, sc=Math.min(W/200,H/150);
+    const dur=m.fast?0.45:m.slow?1.6:0.95, n=m.frames.length, seg=(time/dur)%(m.frames.length>2?n:2);
+    let i=Math.floor(seg), k=seg-i; let a=m.frames[i%n], b=m.frames[(i+1)%n];
+    if(n===2){ if(i===1){ a=m.frames[1]; b=m.frames[0]; } }
+    k=k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2; // ease in-out
+    const p=mix(a,b,k), J=joints(p);
+    ctx.save(); ctx.clearRect(0,0,W,H); ctx.translate((W-200*sc)/2,(H-150*sc)/2); ctx.scale(sc,sc);
+    ctx.lineCap="round"; ctx.lineJoin="round";
+    ctx.strokeStyle=col.line; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(10,139.5); ctx.lineTo(190,139.5); ctx.stroke();
+    // accessoires derrière
+    const pr=m.prop;
+    ctx.strokeStyle=col.prop; ctx.fillStyle=col.prop; ctx.lineWidth=3;
+    if(pr==="chair"){ const c=joints(m.frames[0]).ha; ctx.fillRect(c[0]-26,c[1]+1,32,5); ctx.fillRect(c[0]-24,c[1]+6,4,138-c[1]-5); ctx.fillRect(c[0]+1,c[1]+6,4,138-c[1]-5); }
+    if(pr==="boxFeet"){ ctx.fillRect(18,116,30,23); }
+    if(pr==="bar"){ const c=joints(m.frames[0]).ha; ctx.fillRect(c[0]-22,c[1]-2,44,4); ctx.fillRect(c[0]+18,c[1]-2,4,140-c[1]); }
+    if(pr==="step"){ ctx.fillRect(108,114,40,25); }
+    if(pr==="wall"){ ctx.fillRect(J.hip[0]-11,40,5,99); }
+    const lim=(A,B,w,c)=>{ ctx.strokeStyle=c; ctx.lineWidth=w; ctx.beginPath(); ctx.moveTo(...A); ctx.lineTo(...B); ctx.stroke(); };
+    const limb=(a,b,c,w,cc)=>{ lim(a,b,w,cc); lim(b,c,w,cc); };
+    // membres arrière (plus pâles)
+    limb(J.hip,J.kb,J.fb,8,col.back); limb(J.sh,J.eb,J.hb,7,col.back);
+    // buste + tête
+    lim(J.hip,J.sh,10,col.body);
+    ctx.fillStyle=col.body; ctx.beginPath(); ctx.arc(J.hd[0],J.hd[1],L.head,0,Math.PI*2); ctx.fill();
+    limb(J.hip,J.ka,J.fa,8,col.body); limb(J.sh,J.ea,J.ha,7,col.body);
+    // accessoires devant
+    ctx.strokeStyle=col.prop; ctx.fillStyle=col.prop;
+    const kb=(q)=>{ ctx.beginPath(); ctx.arc(q[0],q[1]+7,7,0,Math.PI*2); ctx.fill(); ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(q[0],q[1]+1,4,Math.PI,0); ctx.stroke(); };
+    if(pr==="kbHand") kb([(J.ha[0]+J.hb[0])/2,(J.ha[1]+J.hb[1])/2]);
+    if(pr==="kbChest"||pr==="kbChest2") kb([(J.ha[0]+J.hb[0])/2,(J.ha[1]+J.hb[1])/2-6]);
+    if(pr==="kbLow") kb([(J.ha[0]+J.hb[0])/2,(J.ha[1]+J.hb[1])/2]);
+    if(pr==="dumbbells"){ [J.ha,J.hb].forEach(q=>{ ctx.fillRect(q[0]-6,q[1]-3,12,6); }); }
+    if(pr==="wheel"){ ctx.lineWidth=3; ctx.beginPath(); ctx.arc(J.ha[0],Math.min(131,J.ha[1]+6),7,0,Math.PI*2); ctx.stroke(); }
+    ctx.lineWidth=2.2; ctx.strokeStyle=col.band;
+    const bandL=(A,B)=>{ ctx.beginPath(); ctx.moveTo(...A); ctx.lineTo(...B); ctx.stroke(); };
+    if(pr==="band"){ bandL(J.ha,[J.fa[0],138]); bandL(J.hb,[J.fb[0],138]); }
+    if(pr==="bandFeet"){ bandL(J.ha,J.fa); }
+    if(pr==="bandFront"){ bandL(J.ha,[190,J.sh[1]+4]); }
+    if(pr==="bandTop"){ bandL(J.ha,[J.sh[0]+10,8]); }
+    if(pr==="bandSide"){ bandL(J.ha,[190,J.sh[1]+18]); }
+    if(pr==="bandHands"){ bandL(J.ha,J.hb); }
+    if(pr==="rope"){ const yy=(Math.sin(time*Math.PI*2/0.45)>0)?14:150; ctx.beginPath(); ctx.moveTo(...J.ha); ctx.quadraticCurveTo(100,yy,J.hb[0],J.hb[1]); ctx.stroke(); }
+    ctx.restore();
+  }
+  return {find, draw, has:id=>!!M[id], ids:()=>Object.keys(M)};
+})();
+
+let demoRaf=null, demoT0=0;
+function openDemo(name, qty){
+  const id=AN.find(name); if(!id) return;
+  const cv=$("#exDemoCv"), dpr=Math.min(3,window.devicePixelRatio||1), w=Math.min(360, window.innerWidth-64), h=Math.round(w*0.75);
+  cv.style.width=w+"px"; cv.style.height=h+"px"; cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr);
+  $("#exDemoTitle").textContent=name; $("#exDemoQty").textContent=qty||""; $("#exDemoQty").hidden=!qty;
+  $("#exDemoVid").href="https://www.youtube.com/results?search_query="+encodeURIComponent(name.replace(/\s*\(.*?\)\s*/g," ").trim()+" exercice");
+  const col={body:css("--accent")||"#C6F432", back:"rgba(198,244,50,.45)", line:css("--line")||"#333", prop:css("--train")||"#FF7A3D", band:css("--weight")||"#3DB2FF"};
+  $("#exDemo").hidden=false; demoT0=performance.now(); cancelAnimationFrame(demoRaf);
+  const loop=now=>{ AN.draw(cv.getContext("2d"), id, (now-demoT0)/1000, col); demoRaf=requestAnimationFrame(loop); }; demoRaf=requestAnimationFrame(loop);
+}
+function closeDemo(){ $("#exDemo").hidden=true; cancelAnimationFrame(demoRaf); }
+$("#exDemoClose").onclick=closeDemo;
+$("#exDemo").addEventListener("click",e=>{ if(e.target.id==="exDemo") closeDemo(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !$("#exDemo").hidden) closeDemo(); });
+$("#b7Form").addEventListener("click",e=>{ const el=e.target.closest("[data-demo]"); if(!el) return; e.preventDefault(); openDemo(el.dataset.demo, el.dataset.qty||""); });
+const demoAttr = (name, qty) => AN.find(name) ? ` data-demo="${esc(name)}" data-qty="${esc(qty||"")}" class="has-demo"` : "";
 
 /* ---------- partager une séance (image format story 1080 × 1920) ---------- */
 function sessionShareData(date, x){
