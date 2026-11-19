@@ -2689,7 +2689,25 @@ const BANDS = {
     BT("pallof","Pallof press (40 s par côté)",3,40), BT("crunch_genoux","Crunch à genoux",3,40), BT("planche_ecarts","Planche, écarts de pieds",3,40),
     BT("rotation","Rotation du buste",3,40), BT("dead_bug_bande","Dead bug, bande tendue",3,40), BT("planche_lat","Planche latérale + abduction (par côté)",3,20)]},
 };
-const BAND_KEYS = ["BA","BB","BC","BD","BE","BF","BG"];
+// Big Seven version bandes (mêmes séances A et B, chaque exercice transposé aux bandes en boucle)
+Object.assign(BANDS, {
+  BSA:{label:"Big Seven A · bandes", short:"Big7 A", kind:"renfo", band:true, note:"Échauffement 5–8 min. Prends une bande qui te laisse 1–3 reps en réserve ; quand tu atteins le haut de la fourchette partout, passe à la bande plus dure (ou double-la).", ex:[
+    {id:"bd_squat", name:"Squat (bande sous les pieds, sur les épaules)", sets:3, lo:10, hi:15, bw:true, rest:90, tip:"Amplitude maîtrisée, gainage solide."},
+    {id:"bd_dev_couche", name:"Développé couché au sol (bande dans le dos)", sets:3, lo:10, hi:15, bw:true, rest:90, tip:"Ou pompes avec la bande dans le dos."},
+    {id:"bd_tirage_vertical", name:"Tirage vertical à genoux", sets:3, lo:10, hi:15, bw:true, rest:90, tip:"Bande accrochée en haut d'une porte bien fermée."},
+    {id:"bd_row_assis", name:"Rowing assis (bande aux pieds)", sets:3, min:2, lo:12, hi:15, bw:true, rest:75, tip:"Serre les omoplates, sans à-coup."},
+    {id:"plank", name:"Planche", sets:3, min:2, lo:30, hi:45, time:true}]},
+  BSB:{label:"Big Seven B · bandes", short:"Big7 B", kind:"renfo", band:true, note:"Garde les fentes modérées pour préserver la qualité de tes sorties.", ex:[
+    {id:"bd_sdt_roumain", name:"Soulevé de terre roumain", sets:3, lo:12, hi:15, bw:true, rest:90, tip:"Hanches en arrière, dos neutre."},
+    {id:"bd_dev_epaules", name:"Développé épaules (debout sur la bande)", sets:3, lo:10, hi:15, bw:true, rest:90, tip:"Évite de compenser en cambrant."},
+    {id:"bd_pompes_serrees", name:"Pompes serrées", sets:3, min:2, lo:8, hi:15, bw:true, rest:75},
+    {id:"bd_fente_arriere", name:"Fentes arrière avec bande (par jambe)", sets:2, lo:10, hi:12, bw:true, rest:75},
+    {id:"bd_face_pull", name:"Face pull", sets:2, lo:15, hi:20, bw:true, rest:60},
+    {id:"bd_dead_bug", name:"Dead bug (par côté)", sets:3, min:2, lo:8, hi:12, bw:true, rest:60}]},
+});
+const BAND_KEYS = ["BA","BB","BC","BD","BE","BF","BG","BSA","BSB"];
+function b7BandsProgram(){ return {id:"b7b", builtin:true, name:"Big Seven · bandes", tag:"Plan hybride, version élastiques", desc:"Le Big Seven avec tes bandes : 2 séances de renforcement (A et B) + 2 sorties course par semaine. Lundi A, mercredi fractionné, vendredi B, dimanche endurance.", start:S?.b7bStart || "2026-11-23", runPlan:true,
+  sessions:{BSA:BANDS.BSA, Q:B7_BUILTIN.Q, BSB:BANDS.BSB, E:B7_BUILTIN.E}, plan:[{dow:0,k:"BSA"},{dow:2,k:"Q"},{dow:4,k:"BSB"},{dow:6,k:"E"}], extra:[]}; }
 // ---- programmes : Big Seven (intégré) + programmes perso (S.programs), un seul actif (S.activeProgram)
 let B7 = {}, B7_PLAN = [], B7_KINDS = [];
 function builtinProgram(){
@@ -2701,7 +2719,7 @@ function w30Program(){ return {id:"w30", builtin:true, name:"30 WOD · 8 semaine
   sessions:{D1:{label:"WOD du lundi", short:"WOD lun", kind:"wod", note:W30_NOTE}, D2:{label:"WOD du mardi", short:"WOD mar", kind:"wod", note:W30_NOTE}, D3:{label:"WOD du jeudi", short:"WOD jeu", kind:"wod", note:W30_NOTE}, D4:{label:"WOD du samedi", short:"WOD sam", kind:"wod", note:W30_NOTE}},
   plan:[{dow:0,k:"D1"},{dow:1,k:"D2"},{dow:3,k:"D3"},{dow:5,k:"D4"}], extra:[], weekTargets:{8:{r:2,c:0}}}; }
 // programmes proposés : le 30 WOD + les programmes perso (Big Seven et Attilius retirés, leurs séances restent lisibles dans l'historique)
-const programs = () => [w30Program(), ...((S && Array.isArray(S.programs)) ? S.programs.filter(p=>p && !["b7","att","w30"].includes(p.id)) : [])];
+const programs = () => [w30Program(), b7BandsProgram(), ...((S && Array.isArray(S.programs)) ? S.programs.filter(p=>p && !["b7","att","w30","b7b"].includes(p.id)) : [])];
 const activeProgram = () => programs().find(p=>p.id===(S?.activeProgram||"w30")) || w30Program();
 const LEGACY_SES = () => { const o={}; Object.entries(B7_BUILTIN).forEach(([k,v])=>{ if(!v.free) o[k]=v; }); (S?.programs||[]).forEach(p=>Object.assign(o, p?.sessions||{})); return o; };
 // Une séance de remplacement compte pour ce qu'elle est vraiment (un vélo n'est pas un renfo) :
@@ -2822,8 +2840,8 @@ function renderB7Form(){
   const date=$("#b7Date").value || todayIso(), P=B7[b7Kind];
   const prev = b7Orig ? b7ById(b7Orig.date, b7Orig.id) : b7Find(date,b7Kind);
   b7Orig = prev ? {id:prev.id, date: b7Orig?.date || date} : null;
-  $("#b7Kinds").innerHTML = B7_KINDS.map(k=>[k,B7[k]]).map(([k,v])=>`<button type="button" data-k="${k}" aria-pressed="${k===b7Kind || (k==="BA" && BAND_KEYS.includes(b7Kind))}">${k==="BA"?"+ Bandes":v.short}</button>`).join("")
-    + (BAND_KEYS.includes(b7Kind) ? `<div class="seg band-pick" id="bandPick">${BAND_KEYS.map(k=>`<button type="button" data-k="${k}" aria-pressed="${k===b7Kind}">${B7[k].short}</button>`).join("")}</div>` : "");
+  $("#b7Kinds").innerHTML = B7_KINDS.map(k=>[k,B7[k]]).map(([k,v])=>`<button type="button" data-k="${k}" aria-pressed="${k===b7Kind || (k==="BA" && BAND_KEYS.includes(b7Kind) && !B7_PLAN.some(p=>p.k===b7Kind))}">${k==="BA"?"+ Bandes":v.short}</button>`).join("")
+    + (BAND_KEYS.includes(b7Kind) && !B7_PLAN.some(p=>p.k===b7Kind) ? `<div class="seg band-pick" id="bandPick">${BAND_KEYS.map(k=>`<button type="button" data-k="${k}" aria-pressed="${k===b7Kind}">${B7[k].short}</button>`).join("")}</div>` : "");
   $$("#b7Kinds button, #bandPick button").forEach(b=>b.onclick=()=>{ b7Kind=b.dataset.k; b7EditId=null; b7Orig=null; wodSel=null; wodLvCur=null; renderB7Form(); });
   const dl=b7DaySessions(date);
   $("#b7DayList").innerHTML = dl.length ? `<span class="hint" style="margin:0">Déjà noté ce jour-là :</span>`+dl.map(x=>`<button type="button" class="chip b7-chip${(b7EditId===x.id||(!b7EditId&&!B7[b7Kind].multi&&x.b7===b7Kind))?" on":""}" data-id="${x.id}" data-k="${x.b7}">${esc(x.title||B7[x.b7]?.label||"Séance")}${x.run?.km?` · ${fmtNum(x.run.km,1)} km`:""}</button>`).join("") : "";

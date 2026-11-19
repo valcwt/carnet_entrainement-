@@ -20,10 +20,13 @@ export const DEFAULT_PREFS = {
 // Programme intégré : 30 WOD · 8 semaines (lun, mar, jeu, sam) ; un programme perso actif (settings.programs / activeProgram) le remplace.
 const BUILTIN = { id: "w30", start: "2026-11-23", plan: [{ dow: 0, k: "D1" }, { dow: 1, k: "D2" }, { dow: 3, k: "D3" }, { dow: 5, k: "D4" }],
   sessions: { D1: { short: "WOD", kind: "wod" }, D2: { short: "WOD", kind: "wod" }, D3: { short: "WOD", kind: "wod" }, D4: { short: "WOD", kind: "wod" } } };
+const B7_BANDS = { id: "b7b", start: "2026-11-23", plan: [{ dow: 0, k: "BSA" }, { dow: 2, k: "Q" }, { dow: 4, k: "BSB" }, { dow: 6, k: "E" }],
+  sessions: { BSA: { short: "Big Seven A", kind: "renfo" }, Q: { short: "Fractionné", kind: "run" }, BSB: { short: "Big Seven B", kind: "renfo" }, E: { short: "Endurance", kind: "run" } } };
 // séance prévue aujourd'hui : { label, kind, keys } ou null. dowJs : 0 = dimanche ; dans les programmes, 0 = lundi.
 export function plannedToday(settings, date, dowJs) {
   const list = Array.isArray(settings?.programs) ? settings.programs : [];
-  const prog = list.find((p) => p && p.id === settings?.activeProgram && !["b7", "att"].includes(p.id)) || { ...BUILTIN, start: settings?.w30Start || BUILTIN.start };
+  const prog = settings?.activeProgram === "b7b" ? { ...B7_BANDS, start: settings?.b7bStart || B7_BANDS.start }
+    : list.find((p) => p && p.id === settings?.activeProgram && !["b7", "att"].includes(p.id)) || { ...BUILTIN, start: settings?.w30Start || BUILTIN.start };
   if (prog.start && date < prog.start) return null;
   const dow = (dowJs + 6) % 7, item = (prog.plan || []).find((x) => Number(x.dow) === dow);
   const ses = item && prog.sessions?.[item.k];
