@@ -1317,6 +1317,7 @@ function normalizeSettings(s){
   }
   if(!Array.isArray(o.plans)||!o.plans.length) o.plans = defaultSettings().plans;
   if(!Array.isArray(o.templates)) o.templates = defaultSettings().templates;
+  if(!o.b7bV1){ o.activeProgram="b7b"; o.b7bStart="2026-11-16"; o.b7bV1=true; o.w30V1=true; o.w30V2=true; }
   if(!o.w30V1){ o.activeProgram="w30"; o.w30V1=true; o.wodProgV1=true; }
   if(!o.w30V2){ o.w30Start="2026-11-23"; o.w30V2=true; } // le 30 WOD démarre le lundi 23 novembre
   if(!o.wodProgV1){
@@ -2705,9 +2706,27 @@ Object.assign(BANDS, {
     {id:"bd_face_pull", name:"Face pull", sets:2, lo:15, hi:20, bw:true, rest:60},
     {id:"bd_dead_bug", name:"Dead bug (par côté)", sets:3, min:2, lo:8, hi:12, bw:true, rest:60}]},
 });
-const BAND_KEYS = ["BA","BB","BC","BD","BE","BF","BG","BSA","BSB"];
-function b7BandsProgram(){ return {id:"b7b", builtin:true, name:"Big Seven · bandes", tag:"Plan hybride, version élastiques", desc:"Le Big Seven avec tes bandes : 2 séances de renforcement (A et B) + 2 sorties course par semaine. Lundi A, mercredi fractionné, vendredi B, dimanche endurance.", start:S?.b7bStart || "2026-11-23", runPlan:true,
-  sessions:{BSA:BANDS.BSA, Q:B7_BUILTIN.Q, BSB:BANDS.BSB, E:B7_BUILTIN.E}, plan:[{dow:0,k:"BSA"},{dow:2,k:"Q"},{dow:4,k:"BSB"},{dow:6,k:"E"}], extra:[]}; }
+// Big Seven sans matériel (poids du corps, une chaise et une table suffisent)
+Object.assign(BANDS, {
+  BNA:{label:"Big Seven A · sans matériel", short:"A sans mat.", kind:"renfo", note:"Échauffement 5–8 min. Quand tu atteins le haut de la fourchette partout, ralentis la descente (4 s) ou ajoute une pause en bas.", ex:[
+    {id:"pc_squat_tempo", name:"Squat tempo (3 s de descente)", sets:3, lo:12, hi:20, bw:true, rest:90, tip:"Amplitude complète, talons au sol."},
+    {id:"pc_pompes", name:"Pompes", sets:3, lo:8, hi:20, bw:true, rest:90, tip:"Trop dur : mains sur une chaise. Trop facile : pieds surélevés."},
+    {id:"pc_row_table", name:"Rowing sous une table", sets:3, lo:8, hi:15, bw:true, rest:90, tip:"Table solide, corps gainé. Sans table : superman Y-T au sol."},
+    {id:"pc_superman", name:"Superman", sets:3, min:2, lo:12, hi:15, bw:true, rest:60},
+    {id:"plank", name:"Planche", sets:3, min:2, lo:30, hi:60, time:true}]},
+  BNB:{label:"Big Seven B · sans matériel", short:"B sans mat.", kind:"renfo", note:"Garde les fentes modérées pour préserver la qualité de tes sorties.", ex:[
+    {id:"pc_sdt_1j", name:"Soulevé de terre roumain sur une jambe (par jambe)", sets:3, lo:10, hi:12, bw:true, rest:75, tip:"Hanche en arrière, dos neutre, bassin bien droit."},
+    {id:"pc_pompes_pike", name:"Pompes pike (épaules)", sets:3, lo:6, hi:12, bw:true, rest:90, tip:"Fesses hautes, tête qui descend entre les mains."},
+    {id:"pc_dips_chaise", name:"Dips sur une chaise", sets:3, min:2, lo:8, hi:15, bw:true, rest:75},
+    {id:"pc_fente_arriere", name:"Fentes arrière (par jambe)", sets:2, lo:10, hi:15, bw:true, rest:75},
+    {id:"pc_ytw", name:"Y-T-W au sol (épaules)", sets:2, lo:8, hi:12, bw:true, rest:60},
+    {id:"pc_dead_bug", name:"Dead bug (par côté)", sets:3, min:2, lo:8, hi:12, bw:true, rest:60}]},
+});
+const BAND_KEYS = [];
+function b7BandsProgram(){ return {id:"b7b", builtin:true, name:"Big Seven · bandes", tag:"Plan hybride, version élastiques", desc:"Le Big Seven avec tes bandes : 2 séances de renforcement (A et B) + 2 sorties course par semaine. Lundi A, mercredi fractionné, vendredi B, dimanche endurance.", start:S?.b7bStart || "2026-11-16", runPlan:true,
+  sessions:{BSA:BANDS.BSA, Q:B7_BUILTIN.Q, BSB:BANDS.BSB, E:B7_BUILTIN.E}, plan:[{dow:0,k:"BSA"},{dow:2,k:"Q"},{dow:4,k:"BSB"},{dow:6,k:"E"}], extra:["BNA","BNB"]}; }
+function b7BodyProgram(){ return {id:"b7n", builtin:true, name:"Big Seven · sans matériel", tag:"Plan hybride, poids du corps", desc:"Le Big Seven sans matériel : 2 séances de renforcement au poids du corps (A et B) + 2 sorties course par semaine. Lundi A, mercredi fractionné, vendredi B, dimanche endurance.", start:S?.b7bStart || "2026-11-16", runPlan:true,
+  sessions:{BNA:BANDS.BNA, Q:B7_BUILTIN.Q, BNB:BANDS.BNB, E:B7_BUILTIN.E}, plan:[{dow:0,k:"BNA"},{dow:2,k:"Q"},{dow:4,k:"BNB"},{dow:6,k:"E"}], extra:["BSA","BSB"]}; }
 // ---- programmes : Big Seven (intégré) + programmes perso (S.programs), un seul actif (S.activeProgram)
 let B7 = {}, B7_PLAN = [], B7_KINDS = [];
 function builtinProgram(){
@@ -2719,9 +2738,10 @@ function w30Program(){ return {id:"w30", builtin:true, name:"30 WOD · 8 semaine
   sessions:{D1:{label:"WOD du lundi", short:"WOD lun", kind:"wod", note:W30_NOTE}, D2:{label:"WOD du mardi", short:"WOD mar", kind:"wod", note:W30_NOTE}, D3:{label:"WOD du jeudi", short:"WOD jeu", kind:"wod", note:W30_NOTE}, D4:{label:"WOD du samedi", short:"WOD sam", kind:"wod", note:W30_NOTE}},
   plan:[{dow:0,k:"D1"},{dow:1,k:"D2"},{dow:3,k:"D3"},{dow:5,k:"D4"}], extra:[], weekTargets:{8:{r:2,c:0}}}; }
 // programmes proposés : le 30 WOD + les programmes perso (Big Seven et Attilius retirés, leurs séances restent lisibles dans l'historique)
-const programs = () => [w30Program(), b7BandsProgram(), ...((S && Array.isArray(S.programs)) ? S.programs.filter(p=>p && !["b7","att","w30","b7b"].includes(p.id)) : [])];
-const activeProgram = () => programs().find(p=>p.id===(S?.activeProgram||"w30")) || w30Program();
-const LEGACY_SES = () => { const o={}; Object.entries(B7_BUILTIN).forEach(([k,v])=>{ if(!v.free) o[k]=v; }); (S?.programs||[]).forEach(p=>Object.assign(o, p?.sessions||{})); return o; };
+// programmes proposés : Big Seven bandes et sans matériel (+ programmes perso). Les anciens (Big Seven charges, Attilius, 30 WOD) restent lisibles dans l'historique.
+const programs = () => [b7BandsProgram(), b7BodyProgram(), ...((S && Array.isArray(S.programs)) ? S.programs.filter(p=>p && !["b7","att","w30","b7b","b7n"].includes(p.id)) : [])];
+const activeProgram = () => programs().find(p=>p.id===(S?.activeProgram||"b7b")) || b7BandsProgram();
+const LEGACY_SES = () => { const o={...w30Program().sessions}; Object.entries(B7_BUILTIN).forEach(([k,v])=>{ if(!v.free) o[k]=v; }); (S?.programs||[]).forEach(p=>Object.assign(o, p?.sessions||{})); return o; };
 // Une séance de remplacement compte pour ce qu'elle est vraiment (un vélo n'est pas un renfo) :
 // la séance prévue est seulement « excusée » (plus de « pas notée », pas de rappel, série non cassée).
 const kindOf = x => B7[x.b7]?.kind;
@@ -2751,7 +2771,7 @@ function applyProgram(){
   B7 = all;
   B7_PLAN = (P.plan||[]).filter(x=>B7[x.k]).map(x=>({dow:Number(x.dow), k:x.k, d:DOWL[Number(x.dow)]})).sort((a,b)=>a.dow-b.dow);
   const order=[...new Set(B7_PLAN.map(x=>x.k))]; Object.keys(P.sessions||{}).forEach(k=>{ if(!order.includes(k) && !(P.extra||[]).includes(k)) order.push(k); });
-  B7_KINDS = [...order, "W", "BA", "R", "X", ...(P.extra||[])].filter(k=>B7[k]);
+  B7_KINDS = [...order, ...(P.extra||[]), "R", "X"].filter(k=>B7[k]);
   B7_START = P.start || mondayOf(todayIso());
   if($("#b7Name")){ $("#b7Name").textContent=P.name; $("#b7Tag").textContent=P.tag||"Mon programme"; $("#b7Desc").textContent=P.desc||""; }
   $$('details.fold[data-fold="deplacement"],details.fold[data-fold="regles"]').forEach(d=>d.hidden=P.id!=="b7");
@@ -2792,7 +2812,7 @@ function b7Suggest(e, last){
 }
 const setsTxt = (e,sets) => sets.filter(z=>z.r!=null||z.c!=null).map(z=> e.time ? `${z.r??"–"} s` : e.bw ? `${z.r??"–"}` : `${z.c!=null?fmtNum(z.c,1)+" kg × ":""}${z.r??"–"}`).join(" · ");
 const fmtRest = s => s>=60 ? `${Math.floor(s/60)} min${s%60?" "+String(s%60).padStart(2,"0"):""}` : `${s} s`;
-function b7DefaultKind(date){ if(date<B7_START) return ({0:"BA",1:"BE",3:"BD",5:"BC"})[(parseIso(date).getDay()+6)%7] || "X"; const dow=(parseIso(date).getDay()+6)%7, p=B7_PLAN.find(x=>x.dow===dow); return p ? p.k : (B7_PLAN[0]?.k || "R"); }
+function b7DefaultKind(date){ if(date<B7_START) return "X"; const dow=(parseIso(date).getDay()+6)%7, p=B7_PLAN.find(x=>x.dow===dow); return p ? p.k : (B7_PLAN[0]?.k || "R"); }
 
 function renderB7(){
   if($("#tab-b7").hidden) return;
@@ -2824,7 +2844,7 @@ function renderB7(){
   const nX=wk.filter(x=>B7[x.b7]?.kind==="other").length, nW=wk.filter(x=>kindOf(x)==="wod").length;
   const pd=pausedDays(mon);
   if(pd) { $("#b7WeekHint").textContent = `⏸ ${pd===7?"Semaine en pause":`${pd} jour${pd>1?"s":""} en pause cette semaine`} : rien à rattraper.${nR+nC+nX?` Séances notées quand même : ${nR+nC+nX+nW}${km?` · ${fmtNum(km,1)} km`:""}.`:""}`; }
-  else if(t<B7_START) $("#b7WeekHint").textContent = `Le programme démarre le lundi ${fmtShort(B7_START).replace(/\.$/,"")}. D'ici là, séances avec les bandes : touche « + Bandes » (A à G) pour les noter série par série.`;
+  else if(t<B7_START) $("#b7WeekHint").textContent = `Le programme démarre le lundi ${fmtShort(B7_START).replace(/\.$/,"")}. D'ici là, séances libres : note-les avec + Séance ou + Course.`;
   else $("#b7WeekHint").textContent = `${TGT(mon).adj?"Semaine ajustée · ":""}Cette semaine : ${nR}/${TGT(mon).r} ${forceLbl()==="Renfo"?"renfo":forceLbl()}${TGT(mon).c?` · ${nC}/${TGT(mon).c} course${TGT(mon).c>1?"s":""}`:nC?` · ${nC} course${nC>1?"s":""}`:""}${km?` · ${fmtNum(km,1)} km`:""}${nW&&forceLbl()==="Renfo"?` (dont ${nW} WOD)`:""}${nX?` · ${nX} autre${nX>1?"s":""} séance${nX>1?"s":""}`:""}${wn>1&&(wn-1)%5===0?" · semaine allégée conseillée (30 à 40 % de séries en moins)":""}${nRep?` · ${nRep} séance${nRep>1?"s":""} remplacée${nRep>1?"s":""} (non comptée${nRep>1?"s":""} comme ${nRep>1?"prévues":"prévue"})`:""}${(n=>n?` · ${n} reportée${n>1?"s":""} à la semaine pro`:"")(moved().filter(x=>x.from===mon).length)}${(n=>n?` · dont ${n} reportée${n>1?"s":""} de la semaine dernière`:"")(carriedIn(mon).length)}.`;
   renderWeekAdj(mon); $("#weekAdj").hidden = t<B7_START;
   if(!b7Kind) b7Open($("#b7Date").value || t, null, true);
@@ -3029,7 +3049,7 @@ function newRecords(sess, date){
   return recs;
 }
 function renderStrength(){
-  const sp=$("#b7StrHint")?.closest("section,details"); if(sp) sp.hidden = !B7_PLAN.some(p=>B7[p.k]?.kind==="renfo"); if(sp?.hidden) return;
+  const sp=$("#b7StrHint")?.closest("section,details"); if(sp) sp.hidden = !B7_PLAN.some(p=>B7[p.k]?.kind==="renfo" && (B7[p.k].ex||[]).some(e=>!e.bw && !e.time)); if(sp?.hidden) return;
   const ids=[...new Set(b7Sessions().flatMap(x=>Object.keys(x.sets||{})))].filter(id=>{ const e=exInfo(id); return e && !e.time && strSeries(id).pts.length; });
   if(!ids.length){
     $("#b7StrSeg").innerHTML=""; $("#b7StrStats").innerHTML=""; $("#b7StrRecs").innerHTML="";
@@ -3412,7 +3432,7 @@ function renderProgLib(){
     Object.entries(src.sessions||{}).forEach(([k,v])=>{ const nk="c"+uid(); map[k]=nk; ses[nk]=v; });
     openPgEdit({id:null, name:src.name+" (perso)", tag:src.tag||"", desc:src.desc||"", start:mondayOf(todayIso())<src.start?src.start:addDays(mondayOf(todayIso()),7), sessions:ses, plan:(src.plan||[]).map(x=>({dow:x.dow,k:map[x.k]})).filter(x=>x.k)}); });
   $$("#progList [data-pdel]").forEach(b=>b.onclick=async()=>{ const p=programs().find(x=>x.id===b.dataset.pdel); if(!p||!confirm(`Supprimer le programme « ${p.name} » ? Les séances déjà notées restent dans ton historique.`)) return;
-    S.programs=(S.programs||[]).filter(x=>x.id!==p.id); if(S.activeProgram===p.id) S.activeProgram="w30"; await afterProgChange(); });
+    S.programs=(S.programs||[]).filter(x=>x.id!==p.id); if(S.activeProgram===p.id) S.activeProgram="b7b"; await afterProgChange(); });
 }
 async function useProgram(id){
   const p=programs().find(x=>x.id===id); if(!p) return;
